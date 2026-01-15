@@ -1,0 +1,56 @@
+name: dist.yml
+on:
+    push:
+        branches:
+        - main
+    pull_request:
+        branches:
+        - main
+    workflow_dispatch:
+
+
+jobs:
+    build:
+        name: Build and Publish Distribution Package
+        runs-on: ubuntu-latest
+        steps:
+        - name: Checkout Repository
+          uses: actions/checkout@v3
+
+        - name: Set up Node.js
+          uses: actions/setup-node@v3
+          with:
+            node-version: '25.x'
+            cache: 'npm'
+
+        - name: Install Dependencies
+          run: npm install
+
+        - name: Build Distribution Package
+          run: npm run generate
+
+        - name: Create Distribution Archive
+          run: |
+            mkdir -p dist
+            zip -r ./dist/package.zip ./.output/public
+
+        - name: Create release
+          id: create_release
+          uses: actions/create-release@v1
+          env:
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          with:
+            tag_name: dist-v${{ github.run_number }}
+            release_name: Distribution Package v${{ github.run_number }}
+            draft: false
+            prerelease: false
+
+        - name: Upload Release Asset
+          uses: actions/upload-release-asset@v1
+          env:
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          with:
+            upload_url: ${{ steps.create_release.outputs.upload_url }}
+            asset_path: ./dist/package.zip
+            asset_name: package-v${{ github.run_number }}.zip
+            asset_content_type: application/zip
