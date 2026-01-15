@@ -18,7 +18,7 @@ Clay is built on **[nuxt.js](https://nuxt.com/)** with **[vue.js](https://vuejs.
 - [WORK IN PROGRESS] Versioning support for documentation.
 - [WORK IN PROGRESS] OpenAPI/Swagger documentation support and rendering both in Markdown docs and in a collected place.
 
-> [!IMPORTATNT]
+> [!DANGER]
 > Clay is **not** a **static site generator**.
 > It is a documentation framework that can be integrated into existing projects with minimal effort.
 
