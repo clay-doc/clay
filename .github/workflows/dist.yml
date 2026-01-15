@@ -34,23 +34,17 @@ jobs:
             mkdir -p dist
             zip -r ./dist/package.zip ./.output/public
 
-        - name: Create release
-          id: create_release
-          uses: actions/create-release@v1
-          env:
-            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        - name: Get Version
+          id: get_version
+          run: echo "version=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
+
+        - name: Create Release
+          uses: softprops/action-gh-release@v1
           with:
-            tag_name: dist-v${{ github.run_number }}
-            release_name: Distribution Package v${{ github.run_number }}
+            tag_name: dist-v${{ steps.get_version.outputs.version }}
+            name: Distribution Package v${{ steps.get_version.outputs.version }}
+            files: ./dist/package.zip
             draft: false
             prerelease: false
-
-        - name: Upload Release Asset
-          uses: actions/upload-release-asset@v1
           env:
             GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          with:
-            upload_url: ${{ steps.create_release.outputs.upload_url }}
-            asset_path: ./dist/package.zip
-            asset_name: package-v${{ github.run_number }}.zip
-            asset_content_type: application/zip
