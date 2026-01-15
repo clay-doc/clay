@@ -44,7 +44,10 @@ jobs:
           uses: softprops/action-gh-release@v1
           with:
             tag_name: dist-v${{ steps.get_version.outputs.version }}
-            name: Distribution Package v${{ steps.get_version.outputs.version }}
+            name: v${{ steps.get_version.outputs.version }}
+            body: | 
+              Automated distribution package release v${{ steps.get_version.outputs.version }}
+              Commit: ${{ github.sha }} - ${{ github.event.head_commit.message }}
             files: ./dist/package.zip
             draft: false
             prerelease: false
