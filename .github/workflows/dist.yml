@@ -8,7 +8,6 @@ on:
         - main
     workflow_dispatch:
 
-
 jobs:
     build:
         name: Build and Publish Distribution Package
@@ -31,14 +30,15 @@ jobs:
         - name: Build Distribution Package
           run: npm run generate
 
-        - name: Create Distribution Archive
-          run: |
-            mkdir -p dist
-            zip -r ./dist/package.zip ./.output/public
-
         - name: Get Version
           id: get_version
           run: echo "version=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
+
+        - name: Create Distribution Archive
+          run: |
+            mkdir -p dist
+            zip -r ./dist/dist-v${{ steps.get_version.outputs.version }}.zip ./.output/public/
+
 
         - name: Create Release
           uses: softprops/action-gh-release@v1
@@ -48,7 +48,7 @@ jobs:
             body: | 
               Automated distribution package release v${{ steps.get_version.outputs.version }}
               Commit: ${{ github.sha }} - ${{ github.event.head_commit.message }}
-            files: ./dist/package.zip
+            files: ./dist/dist-v${{ steps.get_version.outputs.version }}.zip
             draft: false
             prerelease: false
           env:
