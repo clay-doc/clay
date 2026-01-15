@@ -1,0 +1,77 @@
+@import "tailwindcss";
+@plugin "daisyui";
+@plugin "@tailwindcss/typography";
+@plugin "daisyui/theme" {
+    name: "default";
+    default: true;
+    prefersdark: true;
+    color-scheme: "dark";
+    --color-base-100: oklch(19.9% 0.008 17.911);
+    --color-base-200: oklch(18.2% 0.007 17.911);
+    --color-base-300: oklch(15.8% 0.007 17.911);
+    --color-base-content: oklch(83.768% 0.001 17.911);
+    --color-primary: oklch(59% 0.145 163.225);
+    --color-primary-content: oklch(0% 0 0);
+    --color-secondary: oklch(69.776% 0.135 168.327);
+    --color-secondary-content: oklch(13.955% 0.027 168.327);
+    --color-accent: oklch(70.628% 0.119 185.713);
+    --color-accent-content: oklch(14.125% 0.023 185.713);
+    --color-neutral: oklch(30.698% 0.039 171.364);
+    --color-neutral-content: oklch(86.139% 0.007 171.364);
+    --color-info: oklch(72.06% 0.191 231.6);
+    --color-info-content: oklch(0% 0 0);
+    --color-success: oklch(87% 0.15 154.449);
+    --color-success-content: oklch(0% 0 0);
+    --color-warning: oklch(94% 0.129 101.54);
+    --color-warning-content: oklch(0% 0 0);
+    --color-error: oklch(70% 0.191 22.216);
+    --color-error-content: oklch(0% 0 0);
+    --radius-selector: 0.5rem;
+    --radius-field: 0.5rem;
+    --radius-box: 1rem;
+    --size-selector: 0.25rem;
+    --size-field: 0.21875rem;
+    --border: 1px;
+    --depth: 0;
+    --noise: 0;
+}
+
+.shiki {
+    @apply bg-base-200! rounded-md!;
+}
+
+.markdown-alert {
+    @apply my-5 bg-base-200 rounded-md px-5 py-0.5 border-l-2;
+}
+
+.markdown-alert > p {
+    @apply my-2;
+}
+
+.markdown-alert-title {
+    @apply font-bold;
+}
+
+.markdown-alert-caution {
+    @apply border-error;
+}
+
+.markdown-alert-warning {
+    @apply border-warning;
+}
+
+.markdown-alert-tip {
+    @apply border-primary;
+}
+
+.markdown-alert-note {
+    @apply border-base-content;
+}
+
+.markdown-alert-important {
+    @apply border-error;
+}
+
+.markdown-alert-danger {
+    @apply border-error;
+}

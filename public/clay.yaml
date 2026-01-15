@@ -1,0 +1,24 @@
+title: "Clay"
+favicon: "logo.svg"
+fontawesomeKit: "0a7e2ccef9"
+navbar:
+  logo: "logo.svg"
+  source:
+    name: "Github"
+    icon: "fa-brands fa-github"
+    link: "https://github.com/clay-doc/clay"
+  links:
+    - name: "Homepage"
+      icon: "fa-solid fa-house"
+      link: "https://example.com"
+    - name: "Jobs"
+      icon: "fa-solid fa-briefcase"
+      link: "https://example.com/jobs"
+index:
+  title: "Welcome to the Clay docs"
+  description: "This is a clay application."
+  icon: "fa-solid fa-rocket"
+langs:
+  - "cs"
+  - "python"
+  - "js"
