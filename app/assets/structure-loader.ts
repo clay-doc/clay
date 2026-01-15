@@ -89,7 +89,7 @@ export function delimitLinkParts(parts: LinkPart[], count: number): LinkPart[] {
     return sliced;
 }
 
-export function loadFromYamlStructure(structure: string): DocItem {
+export function loadFromYamlStructure(structure: string, docDir: string): DocItem {
     const base = yaml.load(structure) as YamlItem;
     /*
     - "index.md#Home"
@@ -102,7 +102,7 @@ export function loadFromYamlStructure(structure: string): DocItem {
         - "company.md#Company"
      */
 
-    function parseItem(item: YamlItem, currentLink: string): DocItem {
+    function parseItem(item: YamlItem, currentLink: string, docDir: string): DocItem {
         if (typeof item === "string") {
             // Parsing to item with link and title
             const [linkPart, titlePart, iconPart] = item.split("#");
@@ -120,14 +120,14 @@ export function loadFromYamlStructure(structure: string): DocItem {
             const icon = iconPart ? iconPart.trim() : undefined;
             const title = titlePart ? titlePart.trim() : link;
 
-            const actualLink = link === "docs" ? "" : link;
+            const actualLink = link === docDir ? "" : link;
 
-            const children = itemChildren.map((child) => parseItem(child, actualLink + "/"));
+            const children = itemChildren.map((child) => parseItem(child, actualLink + "/", docDir));
             return { title, link, displayLink: link, children, icon };
         }
     }
 
-    return parseItem(base, "")
+    return parseItem(base, "", docDir)
 }
 
 

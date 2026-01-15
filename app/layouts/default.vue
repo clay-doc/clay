@@ -3,7 +3,7 @@ import Navbar from "~/component/Navbar.vue";
 import Sidebar from "~/component/Sidebar.vue";
 import Content from "~/component/Content.vue";
 
-import {type Configuration, DEFAULT_CONFIGURATION} from "~/assets/configuration";
+import {type Configuration} from "~/assets/configuration";
 import { shikiHighlighter } from "~/assets/markdown-parser";
 import {loadFromYamlConfig} from "~/assets/config-loader";
 import {
@@ -12,20 +12,30 @@ import {
   getLinkPartsFromCurrentRoute,
   loadFromYamlStructure
 } from "~/assets/structure-loader";
+import LoadingFailed from "~/component/LoadingFailed.vue";
 
-const configuration = ref<Configuration>(DEFAULT_CONFIGURATION)
-const structure = ref<DocItem | null>(null)
+const configuration = ref<Configuration | undefined>(undefined)
+const structure = ref<DocItem | undefined>(undefined)
+const loadingFailure = ref<string | undefined>(undefined)
 
 async function loadYamlConfig(): Promise<Configuration> {
-  const data = await fetch("/clay.yaml");
-  const yamlString = await data.text();
+  const res = await fetch("/clay.yaml");
+  if (!res.ok) {
+    loadingFailure.value = `Failed to load config file '/clay.yaml': ${res.status} ${res.statusText}`;
+    return Promise.reject(new Error(loadingFailure.value));
+  }
+  const yamlString = await res.text();
   return loadFromYamlConfig(yamlString);
 }
 
 async function loadYamlStructure(): Promise<DocItem> {
-  const data = await fetch("/clay-structure.yaml");
-  const yamlString = await data.text();
-  return loadFromYamlStructure(yamlString);
+  const res = await fetch("/clay-structure.yaml");
+  if (!res.ok) {
+    loadingFailure.value = `Failed to load structure file 'clay-structure-yaml': ${res.status} ${res.statusText}`;
+    return Promise.reject(new Error(loadingFailure.value));
+  }
+  const yamlString = await res.text();
+  return loadFromYamlStructure(yamlString, 'docs');
 }
 
 let shikiReady = ref(false)
@@ -34,8 +44,11 @@ let configReady = ref(false)
 
 onMounted(async () => {
   configuration.value = await loadYamlConfig()
+  if (loadingFailure.value) return;
   configReady.value = true
+
   structure.value = await loadYamlStructure()
+  if (loadingFailure.value) return;
   structureReady.value = true
 
   useHead({
@@ -43,9 +56,6 @@ onMounted(async () => {
     link: [{ rel: 'icon', type: 'image/png', href: '/' + configuration.value.favicon }],
     title: configuration.value.title,
   });
-
-  const img = new Image();
-  img.src = '/' + configuration.value.navbar.logo;
 
   await shikiHighlighter.loadLanguage("text")
 
@@ -72,7 +82,8 @@ provide('configReady', configReady)
 </script>
 
 <template>
-  <div class="grid grid-rows-[4.5rem_1fr] grid-cols-[20rem_1fr] row-end-auto w-screen h-screen">
+  <LoadingFailed v-if="loadingFailure" :message="loadingFailure"/>
+  <div v-else class="grid grid-rows-[4.5rem_1fr] grid-cols-[20rem_1fr] row-end-auto w-screen h-screen">
     <Navbar class="col-span-2"/>
     <Sidebar class="hidden lg:block w-full"/>
     <Content class="h-full w-full col-span-2 lg:col-span-1 overflow-scroll">

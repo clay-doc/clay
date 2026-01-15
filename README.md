@@ -12,8 +12,11 @@ Clay is built on **[nuxt.js](https://nuxt.com/)** with **[vue.js](https://vuejs.
 - Syntax highlighting for code blocks using **[shiki](https://shiki.matsu.io/)**.
 - Customizable configuration via `clay.yaml`.
 - Easy integration into existing projects with minimal setup.
-- [WORK IN PROGRESS] OpenAPI/Swagger documentation support and rendering both in Markdown docs and in a collected place.
+- [WORK IN PROGRESS] Search functionality for documentation.
+- [WORK IN PROGRESS] Theme customization and support for multiple themes.
 - [WORK IN PROGRESS] Multi-language support for documentation content.
+- [WORK IN PROGRESS] Versioning support for documentation.
+- [WORK IN PROGRESS] OpenAPI/Swagger documentation support and rendering both in Markdown docs and in a collected place.
 
 > [!IMPORTATNT]
 > Clay is **not** a **static site generator**.

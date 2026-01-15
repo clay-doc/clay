@@ -64,7 +64,10 @@ onUnmounted(() => {
 
     <div class="navbar-end">
       <ul class="menu menu-horizontal flex-nowrap px-1 sm:px-4">
-        <li>
+        <li v-if="!configReady" class="flex flex-col justify-center">
+          <div class="skeleton h-4 w-32" />
+        </li>
+        <li v-else>
           <NuxtLink :to="config.navbar.source.link" target="_blank">
             <i :class="config.navbar.source.icon"></i>
             {{config.navbar.source.name}}
@@ -74,7 +77,8 @@ onUnmounted(() => {
           <details>
             <summary>More</summary>
             <ul class="bg-base-100 p-2 end-0 sm:end-auto z-10">
-              <li v-for="l in config.navbar.links">
+              <div v-if="!configReady" class="skeleton h-4 w-32" />
+              <li v-else v-for="l in config.navbar.links">
                 <NuxtLink :to="l.link" target="_blank">
                   <i :class="l.icon + ' text-xs'"></i>
                   {{l.name}}

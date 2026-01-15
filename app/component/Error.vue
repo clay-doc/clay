@@ -1,5 +1,8 @@
 <script setup lang="ts">
 const props = defineProps(["message", "code"])
+const route = useRoute()
+const slashIdx = route.fullPath.endsWith('/') ? route.fullPath.lastIndexOf('/', route.fullPath.length - 2) : route.fullPath.lastIndexOf('/')
+const backTarget = route.fullPath.substring(0, slashIdx) || '/'
 </script>
 
 <template>
@@ -14,7 +17,7 @@ const props = defineProps(["message", "code"])
           <br>
           <span class="font-bold">{{props.message}}</span>
         </p>
-        <NuxtLink to="/" class="btn btn-primary no-underline!">
+        <NuxtLink :to="backTarget" class="btn btn-primary no-underline!">
           <i class="fa-solid fa-arrow-left mr-2"/>
           Go back
         </NuxtLink>

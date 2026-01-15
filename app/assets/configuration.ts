@@ -28,24 +28,3 @@ export type IndexConfiguration = {
     description: string,
     icon: string,
 }
-
-export const DEFAULT_CONFIGURATION: Configuration = {
-    title: "",
-    favicon: "",
-    fontawesomeKit: "",
-    navbar: {
-        logo: "",
-        source: {
-            name: "",
-            icon: "",
-            link: ""
-        },
-        links: []
-    },
-    index: {
-        title: "",
-        description: "",
-        icon: ""
-    },
-    langs: []
-}
