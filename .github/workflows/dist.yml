@@ -37,7 +37,7 @@ jobs:
         - name: Create Distribution Archive
           run: |
             mkdir -p dist
-            cd output
+            cd .output
             zip -r ../dist/dist-v${{ steps.get_version.outputs.version }}.zip ./public/
 
 
