@@ -23,3 +23,7 @@ logs
 .env.*
 !.env.example
 /package-lock.json
+/public/docs/
+/public/clay.yaml
+/public/clay-structure.yaml
+/public/logo.svg
