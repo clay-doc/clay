@@ -3,7 +3,7 @@ import {shikiMark} from "~/assets/markdown-parser"
 import MarkdownLoader from "~/component/MarkdownLoader.vue";
 import Error from "~/component/Error.vue";
 import { useMarkdownCache } from "~/composables/use-markdown-cache";
-import {loadFront} from "yaml-front-matter";
+import {dropFrontMatterIfExists} from "~/assets/front-matter-extractor";
 
 const props = defineProps(["url"])
 
@@ -25,9 +25,8 @@ async function loadContent() {
       const response = await fetch("/docs" + props.url + ".md");
       if (response.ok) {
         const data = await response.text();
-        const frontMatterExtract = loadFront(data)
-        const extractContent = frontMatterExtract.__content;
-        const parsed = await shikiMark.parse(extractContent, {gfm: true, breaks: true});
+        const sanitized = dropFrontMatterIfExists(data)
+        const parsed = await shikiMark.parse(sanitized, {gfm: true, breaks: true});
         content.value = parsed;
         markdownReady.value = true
         contentCache.set(cacheKey, parsed);

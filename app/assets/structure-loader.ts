@@ -1,4 +1,4 @@
-import yaml from "js-yaml";
+import {load} from "js-yaml";
 
 type YamlItem = string | Record<string, YamlItem[]>;
 
@@ -90,7 +90,7 @@ export function delimitLinkParts(parts: LinkPart[], count: number): LinkPart[] {
 }
 
 export function loadFromYamlStructure(structure: string, docDir: string): DocItem {
-    const base = yaml.load(structure) as YamlItem;
+    const base = load(structure) as YamlItem;
     /*
     - "index.md#Home"
     - "help.md#Help"
