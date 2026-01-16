@@ -29,6 +29,8 @@ jobs:
 
         - name: Build Distribution Package
           run: npm run generate
+          env:
+            BASE_URL: "/##BASE_URL_BUILD##"
 
         - name: Get Version
           id: get_version
@@ -39,7 +41,6 @@ jobs:
             mkdir -p dist
             cd .output
             zip -r ../dist/dist-v${{ steps.get_version.outputs.version }}.zip ./public/
-
 
         - name: Create Release
           uses: softprops/action-gh-release@v1

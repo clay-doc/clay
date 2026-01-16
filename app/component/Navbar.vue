@@ -44,7 +44,7 @@ onUnmounted(() => {
     <div class="navbar-start">
       <div v-if="!configReady" class="skeleton h-9 w-32" />
       <NuxtLink v-else to="/" class="btn btn-ghost text-xl h-10">
-        <img :src="'/' + config.navbar.logo" alt="logo" class="max-h-8 pl-2"/>
+        <img :src="config.navbar.logo" alt="logo" class="max-h-8 pl-2"/>
         <span class="pr-2">{{config.title}}</span>
       </NuxtLink>
       <div class="breadcrumbs text-md hidden lg:block">

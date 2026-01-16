@@ -54,6 +54,7 @@ Here is an example configuration:
 ```yaml
 title: "Demo"
 favicon: "logo.svg"
+baseURL: "/"
 fontawesomeKit: "0a7e2ccef9"
 navbar:
   logo: "logo.svg"
@@ -111,4 +112,27 @@ docs:
             - other#Other Guides#fa-solid fa-book-open:
                 - "advanced.md#Advanced Topics#fa-solid fa-brain"
                 - "tips.md#Tips and Tricks#fa-solid fa-lightbulb"
+```
+
+## Building a clay bundle
+> [!TIP]
+> It is recommended to use **[clay-oven](https://github.com/clay-docs/clay-oven)** for building a documentation.
+> This is because clay-oven can automatically gather and modify the latest built bundle during build time from your config.
+
+To build a clay bundle from this repository, you need to use the nuxt bundler.
+1. Install dependencies:
+```bash
+npm install
+```
+
+2. Build the project:
+```bash
+npm run generate
+```
+
+When building, you can use the `BASE_URL` environment variable to specify the base URL for the documentation.
+For example, to set the base URL to `/docs/`, you can run:
+```bash
+BASE_URL=/docs/ 
+npm run generate
 ```

@@ -42,6 +42,8 @@ let shikiReady = ref(false)
 let structureReady = ref(false)
 let configReady = ref(false)
 
+const route = useRoute();
+
 onMounted(async () => {
   configuration.value = await loadYamlConfig()
   if (loadingFailure.value) return;
@@ -53,7 +55,7 @@ onMounted(async () => {
 
   useHead({
     script: [{ src: `https://kit.fontawesome.com/${configuration.value.fontawesomeKit}.js`, crossorigin: 'anonymous'}],
-    link: [{ rel: 'icon', type: 'image/png', href: '/' + configuration.value.favicon }],
+    link: [{ rel: 'icon', type: 'image/png', href: configuration.value.favicon }],
     title: configuration.value.title,
   });
 
@@ -64,8 +66,6 @@ onMounted(async () => {
 
   shikiReady.value = true
 })
-
-const route = useRoute();
 
 const linkParts = computed(() => getLinkPartsFromCurrentRoute(route.fullPath, structure.value!!));
 const currentItem = computed(() => getCurrentDocItemFromRoute(route.fullPath, structure.value!!));

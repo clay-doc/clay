@@ -4,7 +4,6 @@ import MarkdownLoader from "~/component/MarkdownLoader.vue";
 import Error from "~/component/Error.vue";
 import { useMarkdownCache } from "~/composables/use-markdown-cache";
 import {dropFrontMatterIfExists} from "~/assets/front-matter-extractor";
-
 const props = defineProps(["url"])
 
 const contentCache = useMarkdownCache();
