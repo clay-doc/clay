@@ -116,7 +116,7 @@ docs:
 
 ## Building a clay bundle
 > [!TIP]
-> It is recommended to use **[clay-oven](https://github.com/clay-docs/clay-oven)** for building a documentation.
+> It is recommended to use **[clay-oven](https://github.com/clay-doc/clay-oven)** for building a documentation.
 > This is because clay-oven can automatically gather and modify the latest built bundle during build time from your config.
 
 To build a clay bundle from this repository, you need to use the nuxt bundler.
