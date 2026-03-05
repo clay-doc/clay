@@ -40,7 +40,7 @@ jobs:
           run: |
             mkdir -p dist
             cd .output
-            zip -r ../dist/dist-v${{ steps.get_version.outputs.version }}.zip ./public/
+            zip -r ../dist/dist.zip ./public/
 
         - name: Create Release
           uses: softprops/action-gh-release@v1
@@ -50,7 +50,7 @@ jobs:
             body: | 
               Automated distribution package release v${{ steps.get_version.outputs.version }}
               Commit: ${{ github.sha }} - ${{ github.event.head_commit.message }}
-            files: ./dist/dist-v${{ steps.get_version.outputs.version }}.zip
+            files: ./dist/dist.zip
             draft: false
             prerelease: false
           env:
