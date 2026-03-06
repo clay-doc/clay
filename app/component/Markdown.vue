@@ -24,7 +24,7 @@ async function loadContent() {
       content.value = contentCache.get(cacheKey);
       markdownReady.value = true
     } else {
-      const response = await fetch(linkConcat(baseUrl.value, "/docs" + props.url + ".md"));
+      const response = await fetch(linkConcat(baseUrl.value, "/docs" + props.url + ".md"), { cache: 'no-store' });
       if (response.ok) {
         const data = await response.text();
         const sanitized = dropFrontMatterIfExists(data)
@@ -50,12 +50,13 @@ function handleClicks(event: MouseEvent) {
 
   if (target && target.tagName === 'A') {
     const href = target.getAttribute('href');
+    if (!href) return;
 
-    if (href && href.startsWith('/')) {
+    if (href.startsWith('http')) {
+      target.setAttribute('target', '_blank');
+    } else {
       event.preventDefault();
       router.push(href);
-    } else {
-      target.setAttribute('target', '_blank');
     }
   }
 }
