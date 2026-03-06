@@ -18,8 +18,11 @@ const configuration = ref<Configuration | undefined>(undefined)
 const structure = ref<DocItem | undefined>(undefined)
 const loadingFailure = ref<string | undefined>(undefined)
 
+const config = useRuntimeConfig()
+const baseUrl = config.public.baseUrl || ""
+
 async function loadYamlConfig(): Promise<Configuration> {
-  const res = await fetch("/clay.yaml");
+  const res = await fetch(baseUrl + "/clay.yaml");
   if (!res.ok) {
     loadingFailure.value = `Failed to load config file '/clay.yaml': ${res.status} ${res.statusText}`;
     return Promise.reject(new Error(loadingFailure.value));
@@ -29,7 +32,7 @@ async function loadYamlConfig(): Promise<Configuration> {
 }
 
 async function loadYamlStructure(): Promise<DocItem> {
-  const res = await fetch("/clay-structure.yaml");
+  const res = await fetch(baseUrl + "/clay-structure.yaml");
   if (!res.ok) {
     loadingFailure.value = `Failed to load structure file 'clay-structure-yaml': ${res.status} ${res.statusText}`;
     return Promise.reject(new Error(loadingFailure.value));

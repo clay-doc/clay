@@ -9,6 +9,11 @@ export default defineNuxtConfig({
   },
   css: ["./app/assets/tailwind.css"],
   app: {
-    baseURL: process.env.BASE_URL || '/abc',
+    baseURL: process.env.BASE_URL || '/',
+  },
+  runtimeConfig: {
+    public: {
+      baseUrl: process.env.BASE_URL || '/',
+    },
   }
 })
