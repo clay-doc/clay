@@ -3,11 +3,14 @@
 import {type LinkPart} from "~/assets/structure-loader";
 import type {Configuration} from "~/assets/configuration";
 import NavbarLoader from "~/component/NavbarLoader.vue";
+import linkConcat from "~/assets/link-concat";
 
 const config = inject('config') as Ref<Configuration>;
 const linkParts = inject("delimitedLinkParts") as Ref<LinkPart[]>;
 const structureReady = inject('structureReady') as Ref<boolean>;
 const configReady = inject('configReady') as Ref<boolean>;
+const baseUrl = inject('baseUrl') as Ref<string>;
+
 
 // On keyboard shortcut cmd+k or ctrl+k, focus the search input
 let keydownHandler: ((e: KeyboardEvent) => void) | null = null;
@@ -44,7 +47,7 @@ onUnmounted(() => {
     <div class="navbar-start">
       <div v-if="!configReady" class="skeleton h-9 w-32" />
       <NuxtLink v-else to="/" class="btn btn-ghost text-xl h-10">
-        <img :src="'/' + config.navbar.logo" alt="logo" class="max-h-8 pl-2"/>
+        <img :src="linkConcat(baseUrl, config.navbar.logo)" alt="logo" class="max-h-8 pl-2"/>
         <span class="pr-2">{{config.title}}</span>
       </NuxtLink>
       <div class="breadcrumbs text-md hidden lg:block">
