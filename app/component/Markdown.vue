@@ -4,7 +4,10 @@ import MarkdownLoader from "~/component/MarkdownLoader.vue";
 import Error from "~/component/Error.vue";
 import { useMarkdownCache } from "~/composables/use-markdown-cache";
 import {dropFrontMatterIfExists} from "~/assets/front-matter-extractor";
+import linkConcat from "~/assets/link-concat";
 const props = defineProps(["url"])
+
+const baseUrl = inject('baseUrl') as Ref<string>;
 
 const contentCache = useMarkdownCache();
 
@@ -21,7 +24,7 @@ async function loadContent() {
       content.value = contentCache.get(cacheKey);
       markdownReady.value = true
     } else {
-      const response = await fetch("/docs" + props.url + ".md");
+      const response = await fetch(linkConcat(baseUrl.value, "/docs" + props.url + ".md"));
       if (response.ok) {
         const data = await response.text();
         const sanitized = dropFrontMatterIfExists(data)

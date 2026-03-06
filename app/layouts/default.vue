@@ -13,16 +13,17 @@ import {
   loadFromYamlStructure
 } from "~/assets/structure-loader";
 import LoadingFailed from "~/component/LoadingFailed.vue";
+import linkConcat from "~/assets/link-concat";
 
 const configuration = ref<Configuration | undefined>(undefined)
 const structure = ref<DocItem | undefined>(undefined)
 const loadingFailure = ref<string | undefined>(undefined)
 
 const config = useRuntimeConfig()
-const baseUrl = config.public.baseUrl || ""
+const baseUrl = computed(() => config.public.baseUrl as string || "")
 
 async function loadYamlConfig(): Promise<Configuration> {
-  const res = await fetch(baseUrl + "/clay.yaml");
+  const res = await fetch(linkConcat(baseUrl.value, "/clay.yaml"));
   if (!res.ok) {
     loadingFailure.value = `Failed to load config file '/clay.yaml': ${res.status} ${res.statusText}`;
     return Promise.reject(new Error(loadingFailure.value));
@@ -32,7 +33,7 @@ async function loadYamlConfig(): Promise<Configuration> {
 }
 
 async function loadYamlStructure(): Promise<DocItem> {
-  const res = await fetch(baseUrl + "/clay-structure.yaml");
+  const res = await fetch(linkConcat(baseUrl.value, "/clay-structure.yaml"));
   if (!res.ok) {
     loadingFailure.value = `Failed to load structure file 'clay-structure-yaml': ${res.status} ${res.statusText}`;
     return Promise.reject(new Error(loadingFailure.value));
@@ -74,6 +75,7 @@ const linkParts = computed(() => getLinkPartsFromCurrentRoute(route.fullPath, st
 const currentItem = computed(() => getCurrentDocItemFromRoute(route.fullPath, structure.value!!));
 const delimitedLinkParts = computed(() => delimitLinkParts(linkParts.value, 3))
 
+provide('baseUrl', baseUrl);
 provide('config', configuration);
 provide('structure', structure);
 provide('linkParts', linkParts)
