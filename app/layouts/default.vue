@@ -65,8 +65,14 @@ onMounted(async () => {
 
   await shikiHighlighter.loadLanguage("text")
 
-  for (const lang of configuration.value.langs)
-    await shikiHighlighter.loadLanguage(lang)
+  // langs are auto-detected by Clay Oven and may include ids Shiki doesn't know
+  for (const lang of configuration.value.langs ?? []) {
+    try {
+      await shikiHighlighter.loadLanguage(lang)
+    } catch {
+      console.warn(`Unsupported code block language: ${lang}`)
+    }
+  }
 
   shikiReady.value = true
 })
