@@ -1,8 +1,10 @@
 <script setup lang="ts">
-import type {Configuration} from "~/assets/configuration";
+import type {Configuration} from "#common/configuration";
 import DirectoryGrid from "~/component/DirectoryGrid.vue";
 
 const config = inject('config') as Ref<Configuration>;
+
+useClaySeo(() => ({title: config.value.title, description: config.value.index?.description, route: "/"}));
 </script>
 
 <template>
@@ -10,11 +12,11 @@ const config = inject('config') as Ref<Configuration>;
     <div class="hero-content text-center">
       <div>
         <h1 class="text-5xl font-bold">
-          <i :class="config.index.icon"/>
-          {{config.index.title}}
+          <i v-if="config.index?.icon" :class="config.index.icon"/>
+          {{config.index?.title || config.title}}
          </h1>
         <p class="py-6 pb-12">
-          {{config.index.description}}
+          {{config.index?.description}}
         </p>
         <DirectoryGrid />
       </div>

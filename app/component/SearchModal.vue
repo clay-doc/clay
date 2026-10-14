@@ -1,12 +1,10 @@
 <script setup lang="ts">
 import type MiniSearch from "minisearch";
-import type {DocItem} from "~/assets/structure-loader";
-import {highlight, searchSections, type SearchHit, type SearchSection, type SearchTarget} from "~/assets/search-index";
+import {highlight, searchSections, type SearchHit, type SearchSection, type SearchTarget} from "#common/search";
 import {getSearchIndex, useSearchOpen} from "~/composables/use-search";
 import SearchHighlight from "~/component/SearchHighlight.vue";
 
 const baseUrl = inject('baseUrl') as Ref<string>;
-const structure = inject('structure') as Ref<DocItem | undefined>;
 const open = useSearchOpen();
 const router = useRouter();
 
@@ -37,13 +35,12 @@ watch(open, async isOpen => {
   input.value?.focus();
   await loadIndex();
 });
-watch(structure, () => open.value && loadIndex());
 
 async function loadIndex() {
-  if (index.value || !structure.value) return;
+  if (index.value) return;
   status.value = "loading";
   try {
-    index.value = await getSearchIndex(baseUrl.value, structure.value);
+    index.value = await getSearchIndex(baseUrl.value);
     status.value = "ready";
   } catch {
     status.value = "error";

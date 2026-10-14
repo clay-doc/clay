@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import {normalizePath} from "~/assets/route-path";
+import {normalizePath} from "#common/route-path";
 
 const props = defineProps(["title", "link", "icon", "children"])
 const route = useRoute()

@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import {editLink, type Configuration} from "~/assets/configuration";
-import {adjacentPages, type DocItem} from "~/assets/structure-loader";
+import {editLink, type Configuration} from "#common/configuration";
+import {adjacentPages, type DocItem} from "#common/nav";
 
 const props = defineProps<{ url: string }>();
 const config = inject('config') as Ref<Configuration | undefined>;
@@ -13,7 +13,8 @@ const edit = computed(() => doc.value ? editLink(config.value, doc.value.link) :
 const updated = computed(() => {
   const date = doc.value?.updated ? new Date(doc.value.updated) : undefined;
   if (!date || isNaN(date.getTime())) return undefined;
-  return {iso: date.toISOString(), text: date.toLocaleDateString(config.value?.lang, {year: "numeric", month: "long", day: "numeric"})};
+  // A fixed locale and time zone: the server-rendered date must match the browser's
+  return {iso: date.toISOString(), text: date.toLocaleDateString(config.value?.lang || "en", {year: "numeric", month: "long", day: "numeric", timeZone: "UTC"})};
 });
 const adjacent = computed(() => structure.value ? adjacentPages(structure.value, props.url) : {});
 </script>

@@ -1,16 +1,13 @@
 <script setup lang="ts">
 
-import {type LinkPart} from "~/assets/structure-loader";
-import type {Configuration} from "~/assets/configuration";
-import NavbarLoader from "~/component/NavbarLoader.vue";
-import linkConcat from "~/assets/link-concat";
+import {type LinkPart} from "#common/nav";
+import type {Configuration} from "#common/configuration";
+import linkConcat from "#common/link-concat";
 import {useSearchOpen} from "~/composables/use-search";
 import {useTheme} from "~/composables/use-theme";
 
 const config = inject('config') as Ref<Configuration>;
 const linkParts = inject("delimitedLinkParts") as Ref<LinkPart[]>;
-const structureReady = inject('structureReady') as Ref<boolean>;
-const configReady = inject('configReady') as Ref<boolean>;
 const baseUrl = inject('baseUrl') as Ref<string>;
 
 
@@ -20,7 +17,7 @@ let superKey = useState<string>("superKey", () => "");
 
 const searchOpen = useSearchOpen();
 const navOpen = useState<boolean>("navOpen", () => false);
-const {theme, toggle: toggleTheme} = useTheme();
+const {toggle: toggleTheme} = useTheme();
 
 function isTyping(target: EventTarget | null) {
   const el = target as HTMLElement | null;
@@ -59,16 +56,14 @@ onUnmounted(() => {
               aria-controls="mobile-nav" :aria-expanded="navOpen" @click="navOpen = true">
         <i class="fa-solid fa-bars"></i>
       </button>
-      <div v-if="!configReady" class="skeleton h-9 w-32" />
-      <NuxtLink v-else to="/" class="btn btn-ghost text-xl h-10">
-        <img :src="linkConcat(baseUrl, config.navbar.logo)" alt="logo" class="max-h-8 pl-2"/>
+      <NuxtLink to="/" class="btn btn-ghost text-xl h-10">
+        <img v-if="config.navbar?.logo" :src="linkConcat(baseUrl, config.navbar.logo)" alt="logo" class="max-h-8 pl-2"/>
         <span class="pr-2">{{config.title}}</span>
       </NuxtLink>
       <div class="breadcrumbs text-md hidden lg:block">
         <ul>
           <li />
-          <NavbarLoader v-if="!structureReady" />
-          <li v-else v-for="p in linkParts">
+          <li v-for="p in linkParts">
             <NuxtLink v-if="p.link" :to="p.link" class="no-underline">
               <i v-if="p.icon" :class="p.icon + ' text-xs'"/>
               <span class="hover:underline!">{{p.title}}</span>
@@ -81,21 +76,17 @@ onUnmounted(() => {
 
     <div class="navbar-end gap-2">
       <ul class="menu menu-horizontal flex-nowrap px-1">
-        <li v-if="!configReady" class="flex flex-col justify-center">
-          <div class="skeleton h-4 w-32" />
-        </li>
-        <li v-else>
+        <li v-if="config.navbar?.source?.link">
           <NuxtLink :to="config.navbar.source.link" target="_blank">
             <i :class="config.navbar.source.icon"></i>
             {{config.navbar.source.name}}
           </NuxtLink>
         </li>
-        <li>
+        <li v-if="config.navbar?.links?.length">
           <details>
             <summary>More</summary>
             <ul class="bg-base-100 p-2 end-0 sm:end-auto z-10">
-              <div v-if="!configReady" class="skeleton h-4 w-32" />
-              <li v-else v-for="l in config.navbar.links">
+              <li v-for="l in config.navbar.links">
                 <NuxtLink :to="l.link" target="_blank">
                   <i :class="l.icon + ' text-xs'"></i>
                   {{l.name}}
@@ -105,11 +96,12 @@ onUnmounted(() => {
           </details>
         </li>
         <li>
-          <button :aria-label="theme === 'clay-dark' ? 'Switch to light theme' : 'Switch to dark theme'"
-                  :title="theme === 'clay-dark' ? 'Light theme' : 'Dark theme'" @click="toggleTheme">
+          <!-- Pages are rendered before the theme is known, so CSS picks the icon (tailwind.css) -->
+          <button aria-label="Toggle light and dark theme" title="Toggle theme" @click="toggleTheme">
             <!-- As tall as a line of text, so it matches the neighbouring menu items -->
             <span class="flex h-lh items-center">
-              <i :class="theme === 'clay-dark' ? 'fa-solid fa-sun' : 'fa-solid fa-moon'"></i>
+              <i class="fa-solid fa-sun theme-to-light"></i>
+              <i class="fa-solid fa-moon theme-to-dark"></i>
             </span>
           </button>
         </li>

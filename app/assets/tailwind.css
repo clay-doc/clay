@@ -164,3 +164,26 @@
         @apply opacity-100;
     }
 }
+
+/* Theme toggle: show the theme it switches to (the moon in light mode, the sun in dark mode) */
+:root .theme-to-light {
+    display: none;
+}
+
+:root[data-theme="clay-dark"] .theme-to-light {
+    display: inline-block;
+}
+
+:root[data-theme="clay-dark"] .theme-to-dark {
+    display: none;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme="clay-light"]) .theme-to-light {
+        display: inline-block;
+    }
+
+    :root:not([data-theme="clay-light"]) .theme-to-dark {
+        display: none;
+    }
+}

@@ -1,15 +1,39 @@
 {
-  "name": "clay-frontend",
-  "type": "module",
-  "private": true,
+  "name": "clay-doc",
   "version": "1.0.2",
+  "description": "Documentation sites from Markdown: write docs, get a fast, searchable, SEO-ready static site.",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/clay-doc/clay.git"
+  },
+  "type": "module",
+  "bin": {
+    "clay": "bin/clay.mjs",
+    "clay-doc": "bin/clay.mjs"
+  },
+  "files": [
+    "bin",
+    "app",
+    "common",
+    "lib",
+    "modules",
+    "server",
+    "nuxt.config.ts",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=20.19"
+  },
   "scripts": {
-    "build": "nuxt build",
     "dev": "nuxt dev",
-    "generate": "nuxt generate",
-    "preview": "nuxt preview",
+    "build": "nuxt generate",
+    "preview": "node bin/clay.mjs preview --root playground",
     "test": "vitest run",
-    "postinstall": "nuxt prepare"
+    "test:e2e": "CLAY_BASE_URL=/clay/ node bin/clay.mjs build --root playground --strict && playwright test",
+    "typecheck": "nuxt typecheck",
+    "prepare": "nuxt prepare"
   },
   "dependencies": {
     "@shikijs/transformers": "^3.21.0",
@@ -19,6 +43,7 @@
     "dompurify": "^3.4.17",
     "github-slugger": "^2.0.0",
     "js-yaml": "^4.1.1",
+    "jsdom": "^29.1.1",
     "marked": "^17.0.1",
     "marked-alert": "^2.1.2",
     "marked-shiki": "^1.2.1",
@@ -30,10 +55,13 @@
     "vue-router": "^4.6.4"
   },
   "devDependencies": {
+    "@playwright/test": "^1.64.1",
     "@types/js-yaml": "^4.0.9",
+    "@types/jsdom": "^30.0.0",
     "@types/node": "^25.0.9",
     "happy-dom": "^21.0.1",
-    "jsdom": "^29.1.1",
-    "vitest": "^4.1.11"
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.11",
+    "vue-tsc": "^3.3.13"
   }
 }

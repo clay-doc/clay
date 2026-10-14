@@ -1,7 +1,8 @@
 // @vitest-environment happy-dom
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import {codeToHtml} from "shiki";
-import {copyCodeBlock, transformerCopyButton} from "../app/assets/code-copy";
+import {copyCodeBlock} from "../common/code-copy";
+import {transformerCopyButton} from "../server/utils/code-block";
 
 const code = "const a = 1;\nconsole.log(a);";
 

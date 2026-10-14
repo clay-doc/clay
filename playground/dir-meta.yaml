@@ -1,0 +1,8 @@
+- path: "guides"
+  name: "Guides"
+  icon: "fa-solid fa-book-open"
+  children:
+    - path: "advanced"
+      name: "Advanced"
+      icon: "fa-solid fa-wand-magic-sparkles"
+      children:

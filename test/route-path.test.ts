@@ -1,5 +1,5 @@
 import {describe, expect, it} from "vitest";
-import {normalizePath} from "../app/assets/route-path";
+import {normalizePath} from "../common/route-path";
 
 describe("normalizePath", () => {
     it.each([

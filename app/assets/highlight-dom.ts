@@ -1,4 +1,4 @@
-import {highlight} from "./search-index";
+import {highlight} from "../../common/search";
 
 const MARK_CLASS = "search-hit";
 

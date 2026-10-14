@@ -1,5 +1,5 @@
 <script setup lang="ts">
-export type TocEntry = { id: string, text: string, level: number };
+import type {TocEntry} from "#common/toc";
 
 const props = defineProps<{ entries: TocEntry[], scrollContainer: HTMLElement | null }>();
 const route = useRoute();

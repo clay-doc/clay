@@ -1,0 +1,20 @@
+# Sample site used for development (npm run dev) and tests
+title: "Clay"
+favicon: "logo.svg"
+baseURL: "/"
+siteURL: "https://clay-doc.github.io"
+editURL: "https://github.com/clay-doc/clay/edit/main/playground/docs/"
+navbar:
+  logo: "logo.svg"
+  source:
+    name: "Github"
+    icon: "fa-brands fa-github"
+    link: "https://github.com/clay-doc/clay"
+  links:
+    - name: "Example"
+      icon: "fa-solid fa-book"
+      link: "https://clay-doc.github.io/clay-example-repo"
+index:
+  title: "Welcome to the Clay playground"
+  description: "A sample site for developing and testing Clay."
+  icon: "fa-solid fa-rocket"

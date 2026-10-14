@@ -26,3 +26,9 @@ logs
 /public/clay.yaml
 /public/clay-structure.yaml
 /public/logo.svg
+
+# Clay build output
+publish/
+playground/publish/
+test-results/
+playwright-report/

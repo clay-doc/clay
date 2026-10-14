@@ -1,5 +1,5 @@
 import {describe, expect, it} from "vitest";
-import {editLink, hasFontawesomeKit, type Configuration} from "../app/assets/configuration";
+import {editLink, hasFontawesomeKit, type Configuration} from "../common/configuration";
 
 const config = (extra: Partial<Configuration>) => ({title: "Docs", ...extra}) as Configuration;
 

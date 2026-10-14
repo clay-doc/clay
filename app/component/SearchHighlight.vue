@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type {Segment} from "~/assets/search-index";
+import type {Segment} from "#common/search";
 
 defineProps<{ segments: Segment[] }>()
 </script>

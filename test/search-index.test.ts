@@ -1,19 +1,11 @@
 import {describe, expect, it} from "vitest";
 import {Marked} from "marked";
-import {headingIds} from "../app/assets/markdown-text";
-import {loadFromYamlStructure} from "../app/assets/structure-loader";
-import {
-    createSearchIndex,
-    directorySection,
-    highlight,
-    listSearchPages,
-    searchSections,
-    snippet,
-    splitIntoSections,
-    type SearchPage
-} from "../app/assets/search-index";
+import {headingIds} from "../common/markdown-text";
+import {highlight, loadSearchIndex, searchSections, snippet} from "../common/search";
+import {buildSearchIndex, createSearchIndex, directorySection, splitIntoSections, type SearchPage} from "../server/utils/search-index";
+import {collectPages, type DocNode} from "../lib/site";
 
-const page: SearchPage = {link: "/guides/setup", markdownPath: "/guides/setup.md", title: "Setup", path: "Guides"};
+const page: SearchPage = {link: "/guides/setup", title: "Setup", path: "Guides"};
 
 const setupMd = `---
 title: Setup
@@ -41,19 +33,20 @@ Deeper heading stays in the configuration section.
 ## Installation
 `;
 
-describe("listSearchPages", () => {
-    it("lists pages and directories with their parent path", () => {
-        const root = loadFromYamlStructure(`docs:
-    - "index.md#Overview#fa-solid fa-home"
-    - "guides#Guides#fa-solid fa-book":
-        - "setup.md#Setup#fa-solid fa-wrench"
-`, "docs");
+describe("buildSearchIndex", () => {
+    const md = (path: string, markdown: string): DocNode =>
+        ({name: path.split("/").pop()!, path, isDir: false, markdown, frontMatter: {}, children: []});
+    const tree: DocNode = {name: "", path: "", isDir: true, frontMatter: {}, children: [
+        md("index.md", "# Overview\n\nWelcome."),
+        {name: "guides", path: "guides", isDir: true, frontMatter: {}, children: [md("guides/setup.md", "# Setup\n\n## Install\n\nRun the installer.")]},
+    ]};
 
-        expect(listSearchPages(root)).toEqual([
-            {link: "/index", markdownPath: "/index.md", title: "Overview", path: ""},
-            {link: "/guides", markdownPath: undefined, title: "Guides", path: ""},
-            {link: "/guides/setup", markdownPath: "/guides/setup.md", title: "Setup", path: "Guides"}
-        ]);
+    it("indexes pages by section and directories by title, and survives a JSON round trip", () => {
+        const index = loadSearchIndex(JSON.stringify(buildSearchIndex(collectPages(tree, [{path: "guides", name: "Guides"}]).pages)));
+
+        expect(searchSections(index, "installer")[0]).toMatchObject({link: "/guides/setup", anchor: "install", path: "Guides"});
+        expect(searchSections(index, "guides").some(hit => hit.link === "/guides")).toBe(true);
+        expect(searchSections(index, "welcom")[0]?.link).toBe("/index");
     });
 });
 
@@ -95,7 +88,7 @@ describe("searchSections", () => {
     const index = createSearchIndex([
         ...splitIntoSections(setupMd, page),
         ...splitIntoSections("Intro text.\n\n## Highlighting\n\nCall `loadLanguage` for each language.\n\n```ts\nhighlighter.loadLanguage(lang)\n```",
-            {link: "/guides/syntax", markdownPath: "/guides/syntax.md", title: "Syntax", path: "Guides"}),
+            {link: "/guides/syntax", title: "Syntax", path: "Guides"}),
         directorySection({link: "/guides", title: "Guides", path: ""})
     ]);
     const search = (q: string) => searchSections(index, q);
