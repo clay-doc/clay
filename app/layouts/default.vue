@@ -3,7 +3,7 @@ import Navbar from "~/component/Navbar.vue";
 import Sidebar from "~/component/Sidebar.vue";
 import Content from "~/component/Content.vue";
 
-import {type Configuration} from "~/assets/configuration";
+import {type Configuration, hasFontawesomeKit} from "~/assets/configuration";
 import { shikiHighlighter } from "~/assets/markdown-parser";
 import {loadFromYamlConfig} from "~/assets/config-loader";
 import {
@@ -14,6 +14,9 @@ import {
 } from "~/assets/structure-loader";
 import LoadingFailed from "~/component/LoadingFailed.vue";
 import SearchModal from "~/component/SearchModal.vue";
+import MobileNav from "~/component/MobileNav.vue";
+import {fetchContent} from "~/assets/content-fetch";
+import {normalizePath} from "~/assets/route-path";
 import linkConcat from "~/assets/link-concat";
 
 const configuration = ref<Configuration | undefined>(undefined)
@@ -24,7 +27,7 @@ const config = useRuntimeConfig()
 const baseUrl = computed(() => config.public.baseUrl as string || "")
 
 async function loadYamlConfig(): Promise<Configuration> {
-  const res = await fetch(linkConcat(baseUrl.value, "/clay.yaml"), { cache: 'no-store' });
+  const res = await fetchContent(linkConcat(baseUrl.value, "/clay.yaml"));
   if (!res.ok) {
     loadingFailure.value = `Failed to load config file '/clay.yaml': ${res.status} ${res.statusText}`;
     return Promise.reject(new Error(loadingFailure.value));
@@ -34,7 +37,7 @@ async function loadYamlConfig(): Promise<Configuration> {
 }
 
 async function loadYamlStructure(): Promise<DocItem> {
-  const res = await fetch(linkConcat(baseUrl.value, "/clay-structure.yaml"), { cache: 'no-store' });
+  const res = await fetchContent(linkConcat(baseUrl.value, "/clay-structure.yaml"));
   if (!res.ok) {
     loadingFailure.value = `Failed to load structure file 'clay-structure-yaml': ${res.status} ${res.statusText}`;
     return Promise.reject(new Error(loadingFailure.value));
@@ -42,6 +45,9 @@ async function loadYamlStructure(): Promise<DocItem> {
   const yamlString = await res.text();
   return loadFromYamlStructure(yamlString, 'docs');
 }
+
+const FONTAWESOME_FREE_CSS = "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css";
+const FONTAWESOME_FREE_SRI = "sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg==";
 
 let shikiReady = ref(false)
 let structureReady = ref(false)
@@ -58,10 +64,20 @@ onMounted(async () => {
   if (loadingFailure.value) return;
   structureReady.value = true
 
+  // Icons: the configured Font Awesome kit, or the free icons without one
+  const icons = hasFontawesomeKit(configuration.value)
+      ? {script: [{src: `https://kit.fontawesome.com/${configuration.value.fontawesomeKit}.js`, crossorigin: 'anonymous' as const}], link: []}
+      : {script: [], link: [{rel: 'stylesheet', href: FONTAWESOME_FREE_CSS, integrity: FONTAWESOME_FREE_SRI, crossorigin: 'anonymous' as const}]};
+
   useHead({
-    script: [{ src: `https://kit.fontawesome.com/${configuration.value.fontawesomeKit}.js`, crossorigin: 'anonymous'}],
-    link: [{ rel: 'icon', type: 'image/png', href: configuration.value.favicon }],
-    title: configuration.value.title,
+    script: icons.script,
+    link: [...icons.link, { rel: 'icon', href: linkConcat(baseUrl.value, configuration.value.favicon) }],
+    // Same format as the titles Clay Oven writes into each page's HTML
+    title: () => {
+      const site = configuration.value?.title ?? "";
+      const page = linkParts.value.at(-1)?.title;
+      return page && page !== site ? `${page} · ${site}` : site;
+    },
   });
 
   await shikiHighlighter.loadLanguage("text")
@@ -78,8 +94,8 @@ onMounted(async () => {
   shikiReady.value = true
 })
 
-const linkParts = computed(() => getLinkPartsFromCurrentRoute(route.path, structure.value!!));
-const currentItem = computed(() => getCurrentDocItemFromRoute(route.path, structure.value!!));
+const linkParts = computed(() => getLinkPartsFromCurrentRoute(normalizePath(route.path), structure.value!!));
+const currentItem = computed(() => getCurrentDocItemFromRoute(normalizePath(route.path), structure.value!!));
 const delimitedLinkParts = computed(() => delimitLinkParts(linkParts.value, 3))
 
 provide('baseUrl', baseUrl);
@@ -102,5 +118,6 @@ provide('configReady', configReady)
       <slot />
     </Content>
     <SearchModal/>
+    <MobileNav/>
   </div>
 </template>

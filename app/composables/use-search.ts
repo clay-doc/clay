@@ -1,6 +1,7 @@
 import type MiniSearch from "minisearch";
 import type {DocItem} from "~/assets/structure-loader";
 import linkConcat from "~/assets/link-concat";
+import {fetchContent} from "~/assets/content-fetch";
 import {
     createSearchIndex,
     directorySection,
@@ -39,7 +40,7 @@ async function buildIndex(baseUrl: string, root: DocItem): Promise<MiniSearch<Se
 
 async function loadBundledDocs(baseUrl: string): Promise<Map<string, string> | undefined> {
     try {
-        const res = await fetch(linkConcat(baseUrl, "/search-docs.json"), {cache: "no-store"});
+        const res = await fetchContent(linkConcat(baseUrl, "/search-docs.json"));
         if (!res.ok) return undefined;
         // Dev servers may answer unknown paths with the app's HTML, so parse defensively
         const docs = await res.json() as SearchDoc[];
@@ -54,7 +55,7 @@ async function fetchDocs(baseUrl: string, pages: SearchPage[]): Promise<Map<stri
     const entries = await Promise.all(pages
         .filter(page => page.markdownPath !== undefined)
         .map(async page => {
-            const res = await fetch(linkConcat(baseUrl, "/docs" + page.markdownPath), {cache: "no-store"});
+            const res = await fetchContent(linkConcat(baseUrl, "/docs" + page.markdownPath));
             return [page.markdownPath!, res.ok ? await res.text() : ""] as const;
         }));
     return new Map(entries);

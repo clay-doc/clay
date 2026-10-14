@@ -4,6 +4,7 @@ import {type LinkPart} from "~/assets/structure-loader";
 import MarkdownLoader from "~/component/MarkdownLoader.vue";
 import Directory from "~/component/Directory.vue";
 import ContentLoader from "~/component/ContentLoader.vue";
+import {normalizePath} from "~/assets/route-path";
 
 const route = useRoute();
 const linkParts = inject('linkParts') as Ref<LinkPart[]>;
@@ -14,7 +15,7 @@ const isDirectory = computed(() => linkParts.value[linkParts.value.length - 1]?.
 <template>
   <Directory v-if="isDirectory"/>
   <MarkdownLoader v-else-if="!shikiReady" />
-  <Markdown v-else :url="route.path" class="min-w-full"/>
+  <Markdown v-else :url="normalizePath(route.path)" class="min-w-full"/>
 </template>
 
 <style scoped>

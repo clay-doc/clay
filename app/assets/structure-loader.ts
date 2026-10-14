@@ -8,6 +8,7 @@ export type DocItem = {
     link: string;
     displayLink: string;
     children: DocItem[] | undefined;
+    updated?: string; // last-updated date (ISO 8601), when Clay Oven had git history
 }
 
 export type LinkPart = {
@@ -89,6 +90,19 @@ export function delimitLinkParts(parts: LinkPart[], count: number): LinkPart[] {
     return sliced;
 }
 
+// Pages (not directories) in navigation order
+export function flattenPages(root: DocItem): DocItem[] {
+    return (root.children ?? []).flatMap(item => item.children ? flattenPages(item) : [item]);
+}
+
+// The pages before and after a page in navigation order, for prev/next links
+export function adjacentPages(root: DocItem, displayLink: string): { previous?: DocItem, next?: DocItem } {
+    const pages = flattenPages(root);
+    const index = pages.findIndex(page => page.displayLink === displayLink);
+    if (index < 0) return {};
+    return {previous: pages[index - 1], next: pages[index + 1]};
+}
+
 export function loadFromYamlStructure(structure: string, docDir: string): DocItem {
     const base = load(structure) as YamlItem;
     /*
@@ -105,16 +119,18 @@ export function loadFromYamlStructure(structure: string, docDir: string): DocIte
     function parseItem(item: YamlItem, currentLink: string, docDir: string): DocItem {
         if (typeof item === "string") {
             // Parsing to item with link and title
-            const [linkPart, titlePart, iconPart] = item.split("#");
+            const [linkPart, titlePart, iconPart, updatedPart] = item.split("#");
             const link = currentLink + linkPart?.trim() || "unset";
             const icon = iconPart ? iconPart.trim() : undefined;
             const displayLink = link.replace(/\.md$/, "");
             const title = titlePart ? titlePart.trim() : link;
-            return { title, link, displayLink, icon, children: undefined };
+            const updated = updatedPart?.trim() || undefined;
+            return { title, link, displayLink, icon, children: undefined, updated };
         } else {
             // Parsing to item with title, link and children
             const key = Object.keys(item)[0]!!;
-            const itemChildren = item[key]!!;
+            // An empty directory has no children list (null in YAML)
+            const itemChildren = item[key] ?? [];
             const [linkPart, titlePart, iconPart] = key.split("#");
             const link = currentLink + linkPart?.trim() || "unset";
             const icon = iconPart ? iconPart.trim() : undefined;

@@ -1,0 +1,92 @@
+// @vitest-environment happy-dom
+import {describe, expect, it} from "vitest";
+import {isAssetLink, resolveDocAsset, resolveDocLink, rewriteDocHtml} from "../app/assets/doc-links";
+
+describe("resolveDocLink", () => {
+    it.each([
+        // relative to the doc's file, regardless of a trailing slash in the URL
+        ["./other.md", "/guides/setup", "/guides/other"],
+        ["./other.md", "/guides/setup/", "/guides/other"],
+        ["other", "/guides/setup", "/guides/other"],
+        ["../index.md", "/guides/setup", "/index"],
+        ["advanced/deep.md#usage", "/guides/setup", "/guides/advanced/deep#usage"],
+        ["sub/", "/guides/setup", "/guides/sub"],
+        // absolute paths stay as they are
+        ["/index", "/guides/setup", "/index"],
+        ["/guides/setup.md?highlight=x", "/a", "/guides/setup?highlight=x"],
+        ["/Guide.MD", "/a", "/Guide"],
+        // in-page anchors
+        ["#install", "/guides/setup", "#install"],
+    ])("%j on %j => %j", (href, docPath, expected) => {
+        expect(resolveDocLink(href, docPath)).toBe(expected);
+    });
+
+    it.each([
+        "https://example.com/docs",
+        "http://example.com",
+        "mailto:team@example.com",
+        "tel:+123",
+        "//cdn.example.com/file",
+    ])("leaves %j to the browser", href => {
+        expect(resolveDocLink(href, "/guides/setup")).toBeUndefined();
+    });
+});
+
+describe("resolveDocAsset", () => {
+    it.each([
+        ["img.png", "/guides/setup", "/docs/guides/img.png"],
+        ["./img/a.png", "/guides/setup/", "/docs/guides/img/a.png"],
+        ["../shared/logo.svg", "/guides/setup", "/docs/shared/logo.svg"],
+        ["file.pdf#page=2", "/index", "/docs/file.pdf#page=2"],
+    ])("%j on %j => %j", (ref, docPath, expected) => {
+        expect(resolveDocAsset(ref, docPath)).toBe(expected);
+    });
+
+    it.each(["/images/a.png", "https://x.dev/a.png", "data:image/png;base64,AAAA", "#top"])("leaves %j alone", ref => {
+        expect(resolveDocAsset(ref, "/guides/setup")).toBeUndefined();
+    });
+});
+
+describe("isAssetLink", () => {
+    it.each([["file.pdf", true], ["img/a.PNG?x=1", true], ["other.md", false], ["other", false], ["../dir/", false], ["#a.b", false]])(
+        "%j => %j", (href, expected) => {
+            expect(isAssetLink(href)).toBe(expected);
+        });
+});
+
+describe("rewriteDocHtml", () => {
+    const routeHref = (route: string) => "/base" + route;
+    const rewrite = (html: string) => {
+        const root = document.createElement("div");
+        root.innerHTML = rewriteDocHtml(html, "/guides/setup", "/base/", routeHref);
+        return root;
+    };
+
+    it("points doc links at their routes", () => {
+        const a = rewrite('<a href="./other.md#x">o</a>').querySelector("a")!;
+        expect(a.getAttribute("href")).toBe("/base/guides/other#x");
+        expect(a.dataset.route).toBe("/guides/other#x");
+    });
+
+    it("points relative images and files into docs/", () => {
+        const root = rewrite('<img src="img.png" alt=""><a href="files/guide.pdf">pdf</a>');
+        expect(root.querySelector("img")!.getAttribute("src")).toBe("/base/docs/guides/img.png");
+        expect(root.querySelector("a")!.getAttribute("href")).toBe("/base/docs/guides/files/guide.pdf");
+        expect(root.querySelector("a")!.dataset.route).toBeUndefined();
+    });
+
+    it("opens external links in a new tab and leaves other schemes alone", () => {
+        const root = rewrite('<a href="https://x.dev/a.png">x</a><a href="mailto:a@b.c">m</a>');
+        const [external, mail] = root.querySelectorAll("a");
+        expect(external!.getAttribute("target")).toBe("_blank");
+        expect(external!.getAttribute("rel")).toBe("noopener noreferrer");
+        expect(external!.getAttribute("href")).toBe("https://x.dev/a.png");
+        expect(mail!.getAttribute("href")).toBe("mailto:a@b.c");
+        expect(mail!.hasAttribute("target")).toBe(false);
+    });
+
+    it("keeps the rest of the markup", () => {
+        const html = '<h2 id="a">A</h2><pre><code>x &lt; y</code></pre>';
+        expect(rewriteDocHtml(html, "/a", "/", r => r)).toBe(html);
+    });
+});

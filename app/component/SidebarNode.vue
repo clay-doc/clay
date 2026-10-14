@@ -1,8 +1,9 @@
 <script setup lang="ts">
+import {normalizePath} from "~/assets/route-path";
 
 const props = defineProps(["title", "link", "icon", "children"])
 const route = useRoute()
-const isActive = computed(() => route.path === props.link)
+const isActive = computed(() => normalizePath(route.path) === props.link)
 </script>
 
 <template>

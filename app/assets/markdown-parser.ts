@@ -17,7 +17,7 @@ import {transformerCopyButton} from "~/assets/code-copy";
 
 export const shikiHighlighter = await createHighlighter({
     langs: [],
-    themes: ['dark-plus']
+    themes: ['dark-plus', 'light-plus']
 })
 
 export function hasLang(lang: string) {
@@ -72,7 +72,9 @@ export const shikiMark = new Marked()
                 if (!hasLang(lang)) {
                     return shikiHighlighter.codeToHtml(code, {
                         lang: "text",
-                        theme: 'dark-plus',
+                        // Both themes as CSS variables; tailwind.css picks one per site theme
+                        themes: {light: 'light-plus', dark: 'dark-plus'},
+                        defaultColor: false,
                         meta: {__raw: props.join(' ')},
                         transformers: [
                             transformerNotationDiff({
@@ -99,7 +101,9 @@ export const shikiMark = new Marked()
 
                 return shikiHighlighter.codeToHtml(code, {
                     lang,
-                    theme: 'dark-plus',
+                    // Both themes as CSS variables; tailwind.css picks one per site theme
+                    themes: {light: 'light-plus', dark: 'dark-plus'},
+                    defaultColor: false,
                     meta: {__raw: props.join(' ')},
                     transformers: [
                         transformerNotationDiff({

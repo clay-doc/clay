@@ -2,8 +2,8 @@
 @plugin "daisyui";
 @plugin "@tailwindcss/typography";
 @plugin "daisyui/theme" {
-    name: "default";
-    default: true;
+    name: "clay-dark";
+    default: false;
     prefersdark: true;
     color-scheme: "dark";
     --color-base-100: oklch(19.9% 0.008 17.911);
@@ -26,6 +26,44 @@
     --color-warning-content: oklch(0% 0 0);
     --color-error: oklch(70% 0.191 22.216);
     --color-error-content: oklch(0% 0 0);
+    --clay-active-bg: oklch(30.698% 0.039 171.364);
+    --clay-active-fg: oklch(86.139% 0.007 171.364);
+    --radius-selector: 0.5rem;
+    --radius-field: 0.5rem;
+    --radius-box: 1rem;
+    --size-selector: 0.25rem;
+    --size-field: 0.21875rem;
+    --border: 1px;
+    --depth: 0;
+    --noise: 0;
+}
+@plugin "daisyui/theme" {
+    name: "clay-light";
+    default: true;
+    prefersdark: false;
+    color-scheme: "light";
+    --color-base-100: oklch(99.5% 0.002 17.911);
+    --color-base-200: oklch(96.5% 0.004 17.911);
+    --color-base-300: oklch(91.5% 0.006 17.911);
+    --color-base-content: oklch(26% 0.012 17.911);
+    --color-primary: oklch(52% 0.13 163.225);
+    --color-primary-content: oklch(100% 0 0);
+    --color-secondary: oklch(55% 0.12 168.327);
+    --color-secondary-content: oklch(100% 0 0);
+    --color-accent: oklch(55% 0.11 185.713);
+    --color-accent-content: oklch(100% 0 0);
+    --color-neutral: oklch(30.698% 0.039 171.364);
+    --color-neutral-content: oklch(96% 0.007 171.364);
+    --color-info: oklch(55% 0.17 231.6);
+    --color-info-content: oklch(100% 0 0);
+    --color-success: oklch(55% 0.14 154.449);
+    --color-success-content: oklch(100% 0 0);
+    --color-warning: oklch(65% 0.15 75);
+    --color-warning-content: oklch(0% 0 0);
+    --color-error: oklch(55% 0.2 22.216);
+    --color-error-content: oklch(100% 0 0);
+    --clay-active-bg: oklch(52% 0.13 163.225 / 0.14);
+    --clay-active-fg: oklch(38% 0.1 163.225);
     --radius-selector: 0.5rem;
     --radius-field: 0.5rem;
     --radius-box: 1rem;
@@ -38,6 +76,30 @@
 
 .shiki {
     @apply bg-base-200! rounded-md!;
+}
+
+/* Active sidebar entry and selected search result: a soft tint in the light theme */
+.menu {
+    --menu-active-bg: var(--clay-active-bg);
+    --menu-active-fg: var(--clay-active-fg);
+}
+
+/* Code is highlighted in both themes (as CSS variables); show the one matching the site theme */
+.shiki,
+.shiki span {
+    color: var(--shiki-light);
+}
+
+:root[data-theme="clay-dark"] .shiki,
+:root[data-theme="clay-dark"] .shiki span {
+    color: var(--shiki-dark);
+}
+
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme="clay-light"]) .shiki,
+    :root:not([data-theme="clay-light"]) .shiki span {
+        color: var(--shiki-dark);
+    }
 }
 
 .markdown-alert {

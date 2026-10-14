@@ -1,6 +1,8 @@
 import {describe, expect, it} from "vitest";
 import {
+    adjacentPages,
     delimitLinkParts,
+    flattenPages,
     getCurrentDocItemFromRoute,
     getLinkPartsFromCurrentRoute,
     loadFromYamlStructure,
@@ -53,6 +55,16 @@ describe("loadFromYamlStructure", () => {
     });
 });
 
+describe("loadFromYamlStructure with an empty directory", () => {
+    it("does not crash on a directory without children", () => {
+        const tree = loadFromYamlStructure(`docs:
+    - "empty#Empty#fa-solid fa-folder":
+    - "a.md#A"
+`, "docs");
+        expect(tree.children?.map(c => [c.title, c.children])).toEqual([["Empty", []], ["A", undefined]]);
+    });
+});
+
 describe("getLinkPartsFromCurrentRoute", () => {
     it("builds breadcrumb parts for a nested page", () => {
         expect(getLinkPartsFromCurrentRoute("/products/product1", root)).toEqual([
@@ -91,5 +103,36 @@ describe("delimitLinkParts", () => {
 
     it("returns all parts when within the limit", () => {
         expect(delimitLinkParts(parts.slice(0, 2), 3)).toEqual(parts.slice(0, 2));
+    });
+});
+
+describe("last-updated dates", () => {
+    it("reads the optional fourth field", () => {
+        const tree = loadFromYamlStructure(`docs:
+    - "a.md#A#fa-solid fa-file#2026-03-04T05:06:07Z"
+    - "b.md#B"
+`, "docs");
+        expect(tree.children?.map(c => c.updated)).toEqual(["2026-03-04T05:06:07Z", undefined]);
+    });
+});
+
+describe("prev/next pages", () => {
+    it("lists pages in navigation order, skipping directories", () => {
+        expect(flattenPages(root).map(p => p.displayLink)).toEqual(["/index", "/products/product1", "/products/product2"]);
+    });
+
+    it("finds the neighbours of a page across directories", () => {
+        const {previous, next} = adjacentPages(root, "/products/product1");
+        expect(previous?.title).toBe("Overview");
+        expect(next?.title).toBe("Product 2");
+    });
+
+    it("has no previous on the first page and no next on the last", () => {
+        expect(adjacentPages(root, "/index").previous).toBeUndefined();
+        expect(adjacentPages(root, "/products/product2").next).toBeUndefined();
+    });
+
+    it("returns nothing for unknown pages", () => {
+        expect(adjacentPages(root, "/missing")).toEqual({});
     });
 });

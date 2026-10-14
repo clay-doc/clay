@@ -10,6 +10,10 @@ export default defineNuxtConfig({
   css: ["./app/assets/tailwind.css"],
   app: {
     baseURL: process.env.BASE_URL || '/',
+    head: {
+      // Apply a stored theme choice before the first paint (see use-theme.ts)
+      script: [{innerHTML: "try{var t=localStorage.getItem('clay-theme');if(t==='clay-light'||t==='clay-dark')document.documentElement.dataset.theme=t}catch(e){}"}],
+    },
   },
   runtimeConfig: {
     public: {

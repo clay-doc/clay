@@ -5,6 +5,7 @@ import type {Configuration} from "~/assets/configuration";
 import NavbarLoader from "~/component/NavbarLoader.vue";
 import linkConcat from "~/assets/link-concat";
 import {useSearchOpen} from "~/composables/use-search";
+import {useTheme} from "~/composables/use-theme";
 
 const config = inject('config') as Ref<Configuration>;
 const linkParts = inject("delimitedLinkParts") as Ref<LinkPart[]>;
@@ -18,6 +19,8 @@ let keydownHandler: ((e: KeyboardEvent) => void) | null = null;
 let superKey = useState<string>("superKey", () => "");
 
 const searchOpen = useSearchOpen();
+const navOpen = useState<boolean>("navOpen", () => false);
+const {theme, toggle: toggleTheme} = useTheme();
 
 function isTyping(target: EventTarget | null) {
   const el = target as HTMLElement | null;
@@ -50,8 +53,12 @@ onUnmounted(() => {
 
 
 <template>
-  <div class="navbar bg-base-200">
+  <div class="navbar bg-base-200 pr-4">
     <div class="navbar-start">
+      <button id="nav-toggle" class="btn btn-ghost btn-square lg:hidden" aria-label="Open navigation"
+              aria-controls="mobile-nav" :aria-expanded="navOpen" @click="navOpen = true">
+        <i class="fa-solid fa-bars"></i>
+      </button>
       <div v-if="!configReady" class="skeleton h-9 w-32" />
       <NuxtLink v-else to="/" class="btn btn-ghost text-xl h-10">
         <img :src="linkConcat(baseUrl, config.navbar.logo)" alt="logo" class="max-h-8 pl-2"/>
@@ -72,8 +79,8 @@ onUnmounted(() => {
       </div>
     </div>
 
-    <div class="navbar-end">
-      <ul class="menu menu-horizontal flex-nowrap px-1 sm:px-4">
+    <div class="navbar-end gap-2">
+      <ul class="menu menu-horizontal flex-nowrap px-1">
         <li v-if="!configReady" class="flex flex-col justify-center">
           <div class="skeleton h-4 w-32" />
         </li>
@@ -96,6 +103,15 @@ onUnmounted(() => {
               </li>
             </ul>
           </details>
+        </li>
+        <li>
+          <button :aria-label="theme === 'clay-dark' ? 'Switch to light theme' : 'Switch to dark theme'"
+                  :title="theme === 'clay-dark' ? 'Light theme' : 'Dark theme'" @click="toggleTheme">
+            <!-- As tall as a line of text, so it matches the neighbouring menu items -->
+            <span class="flex h-lh items-center">
+              <i :class="theme === 'clay-dark' ? 'fa-solid fa-sun' : 'fa-solid fa-moon'"></i>
+            </span>
+          </button>
         </li>
       </ul>
       <button class="btn btn-ghost btn-square sm:hidden" aria-label="Search" @click="searchOpen = true">

@@ -1,0 +1,40 @@
+<script setup lang="ts">
+import Sidebar from "~/component/Sidebar.vue";
+
+// Navigation drawer for screens too narrow for the sidebar
+const open = useState<boolean>("navOpen", () => false);
+const route = useRoute();
+const panel = ref<HTMLElement | null>(null);
+
+watch(() => route.path, () => open.value = false);
+watch(open, async isOpen => {
+  if (!isOpen) {
+    document.getElementById("nav-toggle")?.focus();
+    return;
+  }
+  await nextTick();
+  panel.value?.querySelector<HTMLElement>("a, summary")?.focus();
+});
+
+function onKeydown(e: KeyboardEvent) {
+  if (e.key === "Escape") open.value = false;
+}
+</script>
+
+<template>
+  <Transition enter-from-class="opacity-0" leave-to-class="opacity-0" enter-active-class="transition-opacity" leave-active-class="transition-opacity">
+    <div v-if="open" class="fixed inset-0 z-40 lg:hidden" @keydown="onKeydown">
+      <div class="absolute inset-0 bg-black/50" aria-hidden="true" @click="open = false"></div>
+      <nav ref="panel" id="mobile-nav" aria-label="Documentation"
+           class="absolute inset-y-0 left-0 w-80 max-w-[85vw] bg-base-200 shadow-xl flex flex-col">
+        <div class="flex items-center justify-between p-2 pl-4">
+          <span class="font-semibold">Navigation</span>
+          <button class="btn btn-ghost btn-square btn-sm" aria-label="Close navigation" @click="open = false">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+        <Sidebar class="w-full grow flex-nowrap"/>
+      </nav>
+    </div>
+  </Transition>
+</template>
