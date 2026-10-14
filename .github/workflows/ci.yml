@@ -2,9 +2,9 @@ name: CI
 
 on:
   pull_request:
-  push:
-    branches:
-      - main
+  # Pushes to main are tested by the release workflow, which only releases
+  # after the tests pass (release.yml)
+  workflow_call:
 
 permissions:
   contents: read

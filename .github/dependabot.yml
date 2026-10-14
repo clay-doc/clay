@@ -14,3 +14,10 @@ updates:
       dependencies:
         patterns: ["*"]
     open-pull-requests-limit: 5
+    ignore:
+      # The type check needs vue-tsc, which does not support TypeScript 7 yet
+      - dependency-name: typescript
+        update-types: ["version-update:semver-major"]
+      # Breaks Nitro's prerendering ("Invalid key"); unstorage is pinned to 1.17.5
+      - dependency-name: unstorage
+        versions: ["1.17.6"]

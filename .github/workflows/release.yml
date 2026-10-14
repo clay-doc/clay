@@ -12,9 +12,20 @@ permissions:
   pull-requests: write  # the release pull request
   id-token: write       # npm provenance
 
+# One release at a time, in the order of the pushes
+concurrency:
+  group: release
+  cancel-in-progress: false
+
 jobs:
+  test:
+    name: Test
+    uses: ./.github/workflows/ci.yml
+
   release:
     name: Release
+    # Nothing is released or published unless the tests pass
+    needs: test
     runs-on: ubuntu-latest
     steps:
       # Keeps a release pull request with the next version and changelog,
@@ -48,10 +59,6 @@ jobs:
       - name: Install Dependencies
         if: ${{ (steps.release.outputs.release_created || github.event_name == 'workflow_dispatch') && !steps.published.outputs.exists }}
         run: npm ci
-
-      - name: Unit Tests
-        if: ${{ (steps.release.outputs.release_created || github.event_name == 'workflow_dispatch') && !steps.published.outputs.exists }}
-        run: npm test
 
       # Signed provenance links the package to this workflow run. Uses npm
       # trusted publishing when configured for the package, NPM_TOKEN otherwise.
