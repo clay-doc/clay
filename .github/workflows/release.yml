@@ -62,7 +62,8 @@ jobs:
 
       # npm trusted publishing: npm authenticates with this workflow's OIDC
       # token, so no token secret is needed; signed provenance links the
-      # package to the run.
-      - name: Publish to npm
+      # package to the run. The version is only staged: it goes live once a
+      # maintainer approves it on npmjs.com with 2FA.
+      - name: Stage on npm
         if: ${{ (steps.release.outputs.release_created || github.event_name == 'workflow_dispatch') && !steps.published.outputs.exists }}
-        run: npm publish --provenance --access public
+        run: npm stage publish . --provenance --access public
