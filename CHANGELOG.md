@@ -1,5 +1,23 @@
 # Changelog
 
+## [2.1.0](https://github.com/clay-doc/clay/compare/v2.0.0...v2.1.0) (2026-10-14)
+
+
+### Features
+
+* add translations with a language switcher and localized interface ([7417153](https://github.com/clay-doc/clay/commit/74171534029483fa171b5c91ced04be3e06379e1))
+* add versioned docs with clay version and a version switcher ([cad6b73](https://github.com/clay-doc/clay/commit/cad6b73686d8f8453de0ae2d92faf8d6af1a43db))
+* **cli:** add clay edit for page order, titles, icons and settings ([876781d](https://github.com/clay-doc/clay/commit/876781d99d9aa625815ebc430073ddfef833a4cb))
+* **cli:** show build progress instead of the nuxt output ([e1e89b7](https://github.com/clay-doc/clay/commit/e1e89b749f826b1134507d52f1f6e6a7176c4aa0))
+
+
+### Bug Fixes
+
+* **cli:** show why pages fail to render ([8ccd1c4](https://github.com/clay-doc/clay/commit/8ccd1c425c0b3fe1375cb78df33e8a20a532a810))
+* **deps:** pin unstorage to 1.17.5 ([848e85b](https://github.com/clay-doc/clay/commit/848e85b899d8321214932d580da9950d59f95d73))
+* **layout:** read the base URL during setup ([7977c84](https://github.com/clay-doc/clay/commit/7977c845c5d263d4e9c9307275a0e26f6f6cc803))
+* **markdown:** number heading ids per document ([08f1843](https://github.com/clay-doc/clay/commit/08f1843042bed349edc27b83de7323e1d51a43d4))
+
 ## [2.0.0](https://github.com/clay-doc/clay/compare/v1.0.2...v2.0.0) (2026-10-14)
 
 
