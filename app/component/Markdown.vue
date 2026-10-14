@@ -14,6 +14,7 @@ const route = useRoute();
 const linkParts = inject('linkParts') as Ref<LinkPart[]>;
 const currentDocItem = inject('currentDocItem') as Ref<DocItem | undefined>;
 const untranslatedNote = inject('untranslatedNote') as Ref<string>;
+const t = useMessages();
 
 type RenderedDoc = { html: string, toc: TocEntry[], description: string };
 
@@ -61,7 +62,7 @@ function handleClicks(event: MouseEvent) {
 
   const copyButton = target?.closest<HTMLElement>('button.copy-code');
   if (copyButton) {
-    copyCodeBlock(copyButton);
+    copyCodeBlock(copyButton, navigator.clipboard, t.value);
     return;
   }
 

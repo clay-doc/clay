@@ -12,10 +12,11 @@ import {
 import markedShiki from "marked-shiki";
 import markedAlert from "marked-alert";
 import {headingIds} from "../../common/markdown-text";
+import {messagesFor, type Messages} from "../../common/i18n";
 import {transformerCopyButton} from "./code-block";
 
 
-const transformers = (): ShikiTransformer[] => [
+const transformers = (messages: Messages): ShikiTransformer[] => [
     transformerNotationDiff({matchAlgorithm: "v3"}),
     transformerNotationHighlight({matchAlgorithm: "v3"}),
     transformerNotationWordHighlight({matchAlgorithm: "v3"}),
@@ -23,7 +24,7 @@ const transformers = (): ShikiTransformer[] => [
     transformerNotationErrorLevel({matchAlgorithm: "v3"}),
     transformerMetaHighlight(),
     transformerMetaWordHighlight(),
-    transformerCopyButton()
+    transformerCopyButton(messages.copyCode)
 ];
 
 type Highlighter = Awaited<ReturnType<typeof createHighlighter>>;
@@ -47,17 +48,18 @@ async function loadLanguages(highlighter: Highlighter, tokens: Token[], lexer: M
     }
 }
 
-function createRenderer(highlighter: Highlighter) {
+// Alert titles and the copy button are in the language of the doc
+function createRenderer(highlighter: Highlighter, messages: Messages) {
     return new Marked()
     .use(headingIds())
     .use(markedAlert({
         variants: [
-            {type: "caution", icon: '<i class="fa-solid fa-triangle-exclamation mr-2"></i>', title: "Caution", titleClassName: "markdown-alert-title text-error"},
-            {type: "warning", icon: '<i class="fa-solid fa-triangle-exclamation mr-2"></i>', title: "Warning", titleClassName: "markdown-alert-title text-warning"},
-            {type: "important", icon: '<i class="fa-solid fa-circle-exclamation mr-2"></i>', title: "Important", titleClassName: "markdown-alert-title text-error"},
-            {type: "tip", icon: '<i class="fa-solid fa-lightbulb mr-2"></i>', title: "Tip", titleClassName: "markdown-alert-title text-primary"},
-            {type: "note", icon: '<i class="fa-solid fa-sticky-note mr-2"></i>', title: "Note", titleClassName: "markdown-alert-title text-base-content"},
-            {type: "danger", icon: '<i class="fa-solid fa-skull-crossbones mr-2"></i>', title: "Danger", titleClassName: "markdown-alert-title text-error"}
+            {type: "caution", icon: '<i class="fa-solid fa-triangle-exclamation mr-2"></i>', title: messages.alertCaution, titleClassName: "markdown-alert-title text-error"},
+            {type: "warning", icon: '<i class="fa-solid fa-triangle-exclamation mr-2"></i>', title: messages.alertWarning, titleClassName: "markdown-alert-title text-warning"},
+            {type: "important", icon: '<i class="fa-solid fa-circle-exclamation mr-2"></i>', title: messages.alertImportant, titleClassName: "markdown-alert-title text-error"},
+            {type: "tip", icon: '<i class="fa-solid fa-lightbulb mr-2"></i>', title: messages.alertTip, titleClassName: "markdown-alert-title text-primary"},
+            {type: "note", icon: '<i class="fa-solid fa-sticky-note mr-2"></i>', title: messages.alertNote, titleClassName: "markdown-alert-title text-base-content"},
+            {type: "danger", icon: '<i class="fa-solid fa-skull-crossbones mr-2"></i>', title: messages.alertDanger, titleClassName: "markdown-alert-title text-error"}
         ]
     }))
     .use(markedShiki({
@@ -68,7 +70,7 @@ function createRenderer(highlighter: Highlighter) {
                 themes: {light: "light-plus", dark: "dark-plus"},
                 defaultColor: false,
                 meta: {__raw: props.join(" ")},
-                transformers: transformers()
+                transformers: transformers(messages)
             });
         }
     }));
@@ -83,11 +85,11 @@ function getHighlighter() {
 }
 
 // Markdown to HTML with headings ids, alerts and highlighted code blocks
-export async function renderMarkdown(markdown: string): Promise<string> {
+export async function renderMarkdown(markdown: string, messages: Messages = messagesFor("en")): Promise<string> {
     const highlighter = await getHighlighter();
     const lexer = new Marked({gfm: true});
     await loadLanguages(highlighter, lexer.lexer(markdown), lexer);
     // A renderer per document: heading ids are numbered per document, and
     // documents are rendered concurrently during the build
-    return createRenderer(highlighter).parse(markdown, {gfm: true, breaks: true});
+    return createRenderer(highlighter, messages).parse(markdown, {gfm: true, breaks: true});
 }

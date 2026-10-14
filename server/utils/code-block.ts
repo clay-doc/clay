@@ -4,7 +4,7 @@ import {COPY_ICON} from "../../common/code-copy";
 
 // Wraps the highlighted <pre> in a div with a copy button. The button sits
 // outside the <pre> so it stays in place when long lines scroll sideways.
-export function transformerCopyButton(): ShikiTransformer {
+export function transformerCopyButton(label = "Copy code"): ShikiTransformer {
     return {
         name: "clay:copy-button",
         root(root) {
@@ -14,8 +14,8 @@ export function transformerCopyButton(): ShikiTransformer {
                 properties: {
                     type: "button",
                     class: "copy-code btn btn-sm btn-square btn-ghost",
-                    title: "Copy code",
-                    ariaLabel: "Copy code"
+                    title: label,
+                    ariaLabel: label
                 },
                 children: [{type: "element", tagName: "i", properties: {class: COPY_ICON}, children: []}]
             };

@@ -7,6 +7,7 @@ import linkConcat from "../../common/link-concat";
 import {truncate} from "../../common/seo";
 import type {TocEntry} from "../../common/toc";
 import {parseFrontMatter, stripFrontMatter} from "../../lib/front-matter";
+import {messagesFor, type Messages} from "../../common/i18n";
 import {renderMarkdown} from "./markdown";
 import {sanitizeHtml, serverDocument} from "./sanitize";
 
@@ -30,10 +31,11 @@ export function firstParagraph(markdown: string): string {
 
 // Renders a doc for the app: sanitized HTML with links resolved for the site's
 // base URL, its table of contents and a description for search engines.
-export async function renderDoc(markdown: string, docPath: string, baseURL: string, fallbackDescription = "", assetPath = docPath): Promise<RenderedDoc> {
+export async function renderDoc(markdown: string, docPath: string, baseURL: string, fallbackDescription = "", assetPath = docPath,
+                                messages: Messages = messagesFor("en")): Promise<RenderedDoc> {
     const body = stripFrontMatter(markdown);
     const routeHref = (route: string) => route.startsWith("#") ? route : linkConcat(baseURL, route);
-    const html = rewriteDocHtml(sanitizeHtml(await renderMarkdown(body)), docPath, baseURL, routeHref, serverDocument, assetPath);
+    const html = rewriteDocHtml(sanitizeHtml(await renderMarkdown(body, messages)), docPath, baseURL, routeHref, serverDocument, assetPath);
 
     const template = serverDocument.createElement("template");
     template.innerHTML = html;

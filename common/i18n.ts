@@ -28,6 +28,15 @@ const en = {
     notFound: "Page Not Found",
     errorIntro: "There was a problem while fetching your resource:",
     goBack: "Go back",
+    copyCode: "Copy code",
+    copied: "Copied",
+    copyFailed: "Copy failed",
+    alertNote: "Note",
+    alertTip: "Tip",
+    alertImportant: "Important",
+    alertWarning: "Warning",
+    alertCaution: "Caution",
+    alertDanger: "Danger",
 };
 
 export type Messages = typeof en;
@@ -60,6 +69,15 @@ const de: Messages = {
     notFound: "Seite nicht gefunden",
     errorIntro: "Beim Laden ist ein Problem aufgetreten:",
     goBack: "Zurück",
+    copyCode: "Code kopieren",
+    copied: "Kopiert",
+    copyFailed: "Kopieren fehlgeschlagen",
+    alertNote: "Hinweis",
+    alertTip: "Tipp",
+    alertImportant: "Wichtig",
+    alertWarning: "Warnung",
+    alertCaution: "Vorsicht",
+    alertDanger: "Gefahr",
 };
 
 const fr: Messages = {
@@ -90,6 +108,15 @@ const fr: Messages = {
     notFound: "Page introuvable",
     errorIntro: "Un problème est survenu lors du chargement :",
     goBack: "Retour",
+    copyCode: "Copier le code",
+    copied: "Copié",
+    copyFailed: "Échec de la copie",
+    alertNote: "Remarque",
+    alertTip: "Astuce",
+    alertImportant: "Important",
+    alertWarning: "Avertissement",
+    alertCaution: "Attention",
+    alertDanger: "Danger",
 };
 
 const es: Messages = {
@@ -120,6 +147,15 @@ const es: Messages = {
     notFound: "Página no encontrada",
     errorIntro: "Hubo un problema al cargar el recurso:",
     goBack: "Volver",
+    copyCode: "Copiar código",
+    copied: "Copiado",
+    copyFailed: "Error al copiar",
+    alertNote: "Nota",
+    alertTip: "Consejo",
+    alertImportant: "Importante",
+    alertWarning: "Advertencia",
+    alertCaution: "Precaución",
+    alertDanger: "Peligro",
 };
 
 const it: Messages = {
@@ -150,6 +186,15 @@ const it: Messages = {
     notFound: "Pagina non trovata",
     errorIntro: "Si è verificato un problema durante il caricamento:",
     goBack: "Indietro",
+    copyCode: "Copia codice",
+    copied: "Copiato",
+    copyFailed: "Copia non riuscita",
+    alertNote: "Nota",
+    alertTip: "Suggerimento",
+    alertImportant: "Importante",
+    alertWarning: "Avviso",
+    alertCaution: "Attenzione",
+    alertDanger: "Pericolo",
 };
 
 const pt: Messages = {
@@ -180,6 +225,15 @@ const pt: Messages = {
     notFound: "Página não encontrada",
     errorIntro: "Ocorreu um problema ao carregar o recurso:",
     goBack: "Voltar",
+    copyCode: "Copiar código",
+    copied: "Copiado",
+    copyFailed: "Falha ao copiar",
+    alertNote: "Nota",
+    alertTip: "Dica",
+    alertImportant: "Importante",
+    alertWarning: "Aviso",
+    alertCaution: "Cuidado",
+    alertDanger: "Perigo",
 };
 
 const nl: Messages = {
@@ -210,6 +264,15 @@ const nl: Messages = {
     notFound: "Pagina niet gevonden",
     errorIntro: "Er is een probleem opgetreden bij het laden:",
     goBack: "Terug",
+    copyCode: "Code kopiëren",
+    copied: "Gekopieerd",
+    copyFailed: "Kopiëren mislukt",
+    alertNote: "Opmerking",
+    alertTip: "Tip",
+    alertImportant: "Belangrijk",
+    alertWarning: "Waarschuwing",
+    alertCaution: "Let op",
+    alertDanger: "Gevaar",
 };
 
 const pl: Messages = {
@@ -240,6 +303,15 @@ const pl: Messages = {
     notFound: "Nie znaleziono strony",
     errorIntro: "Wystąpił problem podczas wczytywania:",
     goBack: "Wróć",
+    copyCode: "Kopiuj kod",
+    copied: "Skopiowano",
+    copyFailed: "Nie udało się skopiować",
+    alertNote: "Uwaga",
+    alertTip: "Wskazówka",
+    alertImportant: "Ważne",
+    alertWarning: "Ostrzeżenie",
+    alertCaution: "Przestroga",
+    alertDanger: "Niebezpieczeństwo",
 };
 
 const ru: Messages = {
@@ -270,6 +342,15 @@ const ru: Messages = {
     notFound: "Страница не найдена",
     errorIntro: "При загрузке возникла проблема:",
     goBack: "Назад",
+    copyCode: "Копировать код",
+    copied: "Скопировано",
+    copyFailed: "Не удалось скопировать",
+    alertNote: "Примечание",
+    alertTip: "Совет",
+    alertImportant: "Важно",
+    alertWarning: "Предупреждение",
+    alertCaution: "Осторожно",
+    alertDanger: "Опасность",
 };
 
 const ja: Messages = {
@@ -300,6 +381,15 @@ const ja: Messages = {
     notFound: "ページが見つかりません",
     errorIntro: "読み込み中に問題が発生しました:",
     goBack: "戻る",
+    copyCode: "コードをコピー",
+    copied: "コピーしました",
+    copyFailed: "コピーできませんでした",
+    alertNote: "注記",
+    alertTip: "ヒント",
+    alertImportant: "重要",
+    alertWarning: "警告",
+    alertCaution: "注意",
+    alertDanger: "危険",
 };
 
 const zh: Messages = {
@@ -330,6 +420,15 @@ const zh: Messages = {
     notFound: "页面未找到",
     errorIntro: "加载时出现问题：",
     goBack: "返回",
+    copyCode: "复制代码",
+    copied: "已复制",
+    copyFailed: "复制失败",
+    alertNote: "注意",
+    alertTip: "提示",
+    alertImportant: "重要",
+    alertWarning: "警告",
+    alertCaution: "小心",
+    alertDanger: "危险",
 };
 
 const ko: Messages = {
@@ -360,6 +459,15 @@ const ko: Messages = {
     notFound: "페이지를 찾을 수 없습니다",
     errorIntro: "불러오는 중 문제가 발생했습니다:",
     goBack: "뒤로",
+    copyCode: "코드 복사",
+    copied: "복사됨",
+    copyFailed: "복사 실패",
+    alertNote: "참고",
+    alertTip: "팁",
+    alertImportant: "중요",
+    alertWarning: "경고",
+    alertCaution: "주의",
+    alertDanger: "위험",
 };
 
 // The most widely used languages; others use English unless clay.yaml provides "messages"

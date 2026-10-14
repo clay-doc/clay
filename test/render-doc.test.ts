@@ -1,5 +1,6 @@
 import {describe, expect, it} from "vitest";
 import {renderDoc} from "../server/utils/render-doc";
+import {messagesFor} from "../common/i18n";
 
 const doc = `---
 title: Setup
@@ -71,5 +72,14 @@ describe("renderDoc in parallel", () => {
     it("resolves files against the asset path, e.g. without a language prefix", async () => {
         const {html} = await renderDoc("![A](img/a.png)", "/1.x/de/guides/page", "/base/", "", "/1.x/guides/page");
         expect(html).toContain('src="/base/docs/1.x/guides/img/a.png"');
+    });
+});
+
+describe("renderDoc in another language", () => {
+    it("titles alerts and the copy button in the doc's language", async () => {
+        const {html} = await renderDoc("> [!NOTE]\n> Text\n\n```ts\nconst a = 1;\n```", "/de/page", "/", "", "/page", messagesFor("de"));
+        expect(html).toContain("Hinweis");
+        expect(html).toContain('title="Code kopieren"');
+        expect(html).not.toContain("Copy code");
     });
 });
