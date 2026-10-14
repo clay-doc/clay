@@ -8,6 +8,7 @@ const ANSI = /\x1b\[[0-9;?]*[A-Za-z]/g;
 export function createBuildParser() {
     let routes = 0;
     let inErrors = false;
+    let failedRequest = null; // a page that failed to render; its cause follows on the next line
     const errors = new Set();
 
     return function parse(raw) {
@@ -18,6 +19,18 @@ export function createBuildParser() {
         if (inErrors && !/^ERROR\s/.test(text)) return text ? [{type: "error", text}] : [];
         inErrors = false;
 
+        // The cause of a failed page, reported once for all pages it breaks
+        if (failedRequest && text && !text.startsWith("at ") && !/^ERROR\s/.test(text)) {
+            const page = failedRequest;
+            failedRequest = null;
+            if (errors.has(text)) return [];
+            errors.add(text);
+            return [{type: "error", text: `${text} (rendering ${page})`}];
+        }
+        if ((match = text.match(/^ERROR\s+\[request error\].*?\[GET\]\s+https?:\/\/[^/]+(\S*)/))) {
+            failedRequest = match[1] || "/";
+            return [];
+        }
         if (/^ERROR\s/.test(text)) {
             const message = text.replace(/^ERROR\s+/, "");
             if (errors.has(message)) return [];
@@ -167,7 +180,9 @@ export function createProgress(title, {stream = process.stdout, now = Date.now} 
                 stream.write([
                     `${paint("31", "✖")}  ${failed}`,
                     ...(step?.warnings ?? []).map(warning => `${bar}  ${paint("33", "▲")} ${warning}`),
-                    ...errors.map(error => `${bar}  ${paint("31", error)}`),
+                    // Nitro lists every failed page; the first ones show the pattern
+                    ...errors.slice(0, 16).map(error => `${bar}  ${paint("31", error)}`),
+                    ...(errors.length > 16 ? [`${bar}  ${gray(`… ${errors.length - 16} more lines`)}`] : []),
                     bar,
                     signal
                         ? `${gray("└")}  Build cancelled`

@@ -105,3 +105,22 @@ describe("progress without a terminal", () => {
         expect(output).not.toContain("\x1b");
     });
 });
+
+describe("build parser with failing pages", () => {
+    it("reports the cause of failed pages once, without the stack", () => {
+        const parse = createBuildParser();
+        const events = [
+            " ERROR  [request error] [unhandled] [GET] http://localhost/de",
+            " [nuxt] instance unavailable",
+            "",
+            "    at useNuxtApp (server.mjs:246:13)",
+            " ERROR  [request error] [unhandled] [GET] http://localhost/",
+            " [nuxt] instance unavailable",
+            " ERROR  Exiting due to prerender errors.",
+        ].flatMap(line => parse(line));
+        expect(events).toEqual([
+            {type: "error", text: "[nuxt] instance unavailable (rendering /de)"},
+            {type: "error", text: "Exiting due to prerender errors."},
+        ]);
+    });
+});
