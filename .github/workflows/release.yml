@@ -60,10 +60,9 @@ jobs:
         if: ${{ (steps.release.outputs.release_created || github.event_name == 'workflow_dispatch') && !steps.published.outputs.exists }}
         run: npm ci
 
-      # Signed provenance links the package to this workflow run. Uses npm
-      # trusted publishing when configured for the package, NPM_TOKEN otherwise.
+      # npm trusted publishing: npm authenticates with this workflow's OIDC
+      # token, so no token secret is needed; signed provenance links the
+      # package to the run.
       - name: Publish to npm
         if: ${{ (steps.release.outputs.release_created || github.event_name == 'workflow_dispatch') && !steps.published.outputs.exists }}
         run: npm publish --provenance --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
