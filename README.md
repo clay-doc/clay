@@ -28,6 +28,10 @@ Clay is a documentation framework designed to help developers speed up their dev
 - Rich Markdown parsing and rendering via **[marked.js](https://marked.js.org/)**.
 - Syntax highlighting for code blocks using **[Shiki](https://shiki.matsu.io/)**.
 - Full-text search across all pages via **[MiniSearch](https://lucaong.github.io/minisearch/)**: open it with <kbd>⌘ K</kbd> / <kbd>Ctrl K</kbd> or <kbd>/</kbd>. Results link to the matching section, tolerate typos and match as you type.
+- Navigation for every screen size: sidebar, a menu drawer on phones, an "On this page" table of contents and previous/next links.
+- Light and dark theme, following the system setting with a toggle in the navbar.
+- "Edit this page" links (`editURL` in `clay.yaml`) and last-updated dates from git.
+- Rendered Markdown is sanitized with **[DOMPurify](https://github.com/cure53/DOMPurify)**, so docs from outside contributors cannot run scripts.
 - Customizable configuration via `clay.yaml`.
 - Easy integration into existing projects with minimal setup.
 
