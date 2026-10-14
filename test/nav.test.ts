@@ -15,18 +15,19 @@ const dir = (path: string, children: DocNode[]): DocNode =>
     ({name: path.split("/").pop()!, path, isDir: true, frontMatter: {}, children});
 
 const tree = dir("", [
-    file("index.md", {title: "Overview", icon: "fa-solid fa-home"}, {updated: "2026-03-04T05:06:07Z"}),
+    file("overview.md", {title: "Overview", icon: "fa-solid fa-home"}, {updated: "2026-03-04T05:06:07Z"}),
     dir("products", [
         file("products/product1.md", {title: "Product 1", icon: "fa-solid fa-box"}),
         file("products/product2.md", {title: "Product 2"}),
     ]),
 ]);
-const root = buildNav(tree, [{path: "products", name: "Products", icon: "fa-solid fa-boxes"}]);
+tree.children[1]!.index = file("products/index.md", {title: "Products", icon: "fa-solid fa-boxes"});
+const root = buildNav(tree);
 
 describe("buildNav", () => {
     it("builds the navigation tree with titles, icons, links and dates", () => {
         expect(root.children).toEqual([
-            {title: "Overview", icon: "fa-solid fa-home", link: "/index.md", displayLink: "/index", children: undefined, updated: "2026-03-04T05:06:07Z", source: "index.md"},
+            {title: "Overview", icon: "fa-solid fa-home", link: "/overview.md", displayLink: "/overview", children: undefined, updated: "2026-03-04T05:06:07Z", source: "overview.md"},
             {
                 title: "Products",
                 icon: "fa-solid fa-boxes",
@@ -41,7 +42,7 @@ describe("buildNav", () => {
     });
 
     it("leaves out directories without pages and files that are not markdown", () => {
-        const nav = buildNav(dir("", [dir("images", [file("images/a.png")]), dir("empty", []), file("notes.txt"), file("a.md")]), []);
+        const nav = buildNav(dir("", [dir("images", [file("images/a.png")]), dir("empty", []), file("notes.txt"), file("a.md")]));
         expect(nav.children?.map(c => c.displayLink)).toEqual(["/a"]);
     });
 });
@@ -89,7 +90,7 @@ describe("delimitLinkParts", () => {
 
 describe("prev/next pages", () => {
     it("lists pages in navigation order, skipping directories", () => {
-        expect(flattenPages(root).map(p => p.displayLink)).toEqual(["/index", "/products/product1", "/products/product2"]);
+        expect(flattenPages(root).map(p => p.displayLink)).toEqual(["/overview", "/products/product1", "/products/product2"]);
     });
 
     it("finds the neighbours of a page across directories", () => {
@@ -99,7 +100,7 @@ describe("prev/next pages", () => {
     });
 
     it("has no previous on the first page and no next on the last", () => {
-        expect(adjacentPages(root, "/index").previous).toBeUndefined();
+        expect(adjacentPages(root, "/overview").previous).toBeUndefined();
         expect(adjacentPages(root, "/products/product2").next).toBeUndefined();
     });
 

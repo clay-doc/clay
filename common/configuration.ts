@@ -13,7 +13,6 @@ export type Configuration = {
     languages?: string[], // language codes; the first is the default language
     messages?: Record<string, Partial<Messages>>, // interface texts by language
     navbar?: NavbarConfiguration,
-    index?: IndexConfiguration,
     langs?: string[], // obsolete: code languages are detected automatically
 }
 
@@ -31,11 +30,6 @@ export type NavbarConfiguration = {
     }[]
 }
 
-export type IndexConfiguration = {
-    title?: string,
-    description?: string,
-    icon?: string,
-}
 
 // Link to edit a doc in its repository, e.g. editURL + "guides/setup.md". Docs
 // of an older version are in versions/<name>/docs/, next to docs/, so editURL

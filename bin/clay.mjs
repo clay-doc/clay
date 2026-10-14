@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Clay command line: build, preview and develop a documentation site from the
-// docs project in the current directory (clay.yaml, dir-meta.yaml, docs/).
+// docs project in the current directory (clay.yaml, docs/).
 import {spawn} from "node:child_process";
 import {cpSync, existsSync, readFileSync} from "node:fs";
 import {createRequire} from "node:module";
@@ -95,7 +95,7 @@ function nuxt(args, {onLine, onClose} = {}) {
     });
 }
 
-// Copies docs/ and dir-meta.yaml into versions/<name>; docs/ stays the latest version
+// Copies docs/ into versions/<name>; docs/ stays the latest version
 function saveVersion(name) {
     const fail = message => {
         console.error(message);
@@ -110,7 +110,6 @@ function saveVersion(name) {
     if (existsSync(target)) fail(`versions/${name} already exists.`);
 
     cpSync(join(root, "docs"), join(target, "docs"), {recursive: true, filter: source => !basename(source).startsWith(".")});
-    if (existsSync(join(root, "dir-meta.yaml"))) cpSync(join(root, "dir-meta.yaml"), join(target, "dir-meta.yaml"));
     console.log(`Saved the current docs as version ${name} in versions/${name}.`);
     console.log(`docs/ stays the latest version; the switcher calls it "Latest" unless clay.yaml sets "version".`);
 }

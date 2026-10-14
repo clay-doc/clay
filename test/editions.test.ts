@@ -57,7 +57,7 @@ describe("loadSite with versions", () => {
             "clay.yaml": "title: T\nversion: \"3.x\"",
             "docs/a.md": "# A",
             "versions/1.x/docs/guides/b.md": "# B",
-            "versions/1.x/dir-meta.yaml": "- path: guides\n  name: Old guides\n  typo: 1",
+            "versions/1.x/docs/guides/index.md": "---\ntitle: Old guides\n---\n",
             "versions/2.x/docs/c.md": "# C",
             "versions/10.x/docs/d.md": "# D",
         }), {gitDates: false, env: {}});
@@ -67,7 +67,7 @@ describe("loadSite with versions", () => {
             ["/a", ""], ["/10.x/d", "10.x"], ["/2.x/c", "2.x"], ["/1.x/guides", "1.x"], ["/1.x/guides/b", "1.x"],
         ]);
         expect(site.versions[3]!.nav.children![0]).toMatchObject({title: "Old guides", displayLink: "/1.x/guides"});
-        expect(site.warnings).toEqual(['versions/1.x/dir-meta.yaml: unknown key "[0].typo" is ignored (typo?)']);
+        expect(site.warnings).toEqual([]);
     });
 
     it("skips unusable folders and reports URL clashes", () => {
@@ -91,8 +91,11 @@ describe("loadSite with versions", () => {
 
 describe("translations", () => {
     const root = project({
-        "clay.yaml": "title: {en: Docs, de: Doku}\nlanguages: [en, de]\nindex:\n  title: {en: Welcome, de: Willkommen}\nmessages:\n  de: {search: Finden}",
-        "dir-meta.yaml": "- path: guides\n  name: {en: Guides, de: Anleitungen}",
+        "clay.yaml": "title: {en: Docs, de: Doku}\nlanguages: [en, de]\nnavbar:\n  source: {name: {en: Source, de: Quelle}, icon: x, link: y}\nmessages:\n  de: {search: Finden}",
+        "docs/index.md": "# Welcome\n\nHello.",
+        "docs/index.de.md": "# Willkommen\n\nHallo.",
+        "docs/guides/index.md": "---\ntitle: Guides\n---\n",
+        "docs/guides/index.de.md": "---\ntitle: Anleitungen\n---\n",
         "docs/setup.md": "---\norder: 2\n---\n# Setup\n\n![Shot](shot.png)",
         "docs/setup.de.md": "---\ntitle: Einrichtung\n---\n# Einrichtung",
         "docs/intro.md": "---\norder: 1\n---\n# Intro",
@@ -122,6 +125,9 @@ describe("translations", () => {
         expect(page("/de/intro")).toMatchObject({title: "Intro", source: "intro.md", untranslated: true});
         expect(page("/de/guides").title).toBe("Anleitungen");
         expect(page("/guides").title).toBe("Guides");
+        // Start pages: docs/index.md and its translation
+        expect(page("/")).toMatchObject({title: "Welcome", source: "index.md"});
+        expect(page("/de")).toMatchObject({title: "Willkommen", source: "index.de.md", prefix: "/de"});
     });
 
     it("keeps the order of the original in every language", () => {
@@ -131,8 +137,8 @@ describe("translations", () => {
     });
 
     it("localizes clay.yaml per language and keeps interface texts as they are", () => {
-        expect(site.config).toMatchObject({title: "Docs", lang: "en", index: {title: "Welcome"}});
-        expect(site.configs.de).toMatchObject({title: "Doku", lang: "de", index: {title: "Willkommen"}, messages: {de: {search: "Finden"}}});
+        expect(site.config).toMatchObject({title: "Docs", lang: "en", navbar: {source: {name: "Source"}}});
+        expect(site.configs.de).toMatchObject({title: "Doku", lang: "de", navbar: {source: {name: "Quelle"}}, messages: {de: {search: "Finden"}}});
         expect(localize({a: {en: 1, de: 2}, b: [{en: "x"}]}, "fr", ["en", "de", "fr"])).toEqual({a: 1, b: ["x"]});
     });
 

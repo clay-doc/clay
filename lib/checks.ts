@@ -2,6 +2,7 @@ import {existsSync} from "node:fs";
 import {join, posix} from "node:path";
 import {Marked, type Token} from "marked";
 import {stripFrontMatter} from "./front-matter";
+import {docPath} from "../common/route-path";
 import type {Page} from "./site";
 
 // Shape of a YAML document: an object maps keys to their schema, an array
@@ -12,15 +13,10 @@ const link: Schema = {name: true, icon: true, link: true};
 
 export const configSchema: Schema = {
     title: true, favicon: true, baseURL: true, siteURL: true, lang: true, editURL: true, fontawesomeKit: true, version: true, languages: true, messages: true,
-    langs: true, // obsolete, reported separately
+    // obsolete, reported separately
+    langs: true, index: true,
     navbar: {logo: true, source: link, links: [link]},
-    index: {title: true, description: true, icon: true},
 };
-
-// Directories nest: children have the same keys
-const dirMetaFields: { [key: string]: Schema } = {path: true, name: true, icon: true, order: true};
-dirMetaFields.children = [dirMetaFields];
-export const dirMetaSchema: Schema = dirMetaFields;
 
 // Keys in YAML data that the schema does not define, e.g. "navbar.lgo", so
 // typos in config files do not go unnoticed.
@@ -68,7 +64,8 @@ export function brokenLinks(pages: Page[], docsDirs: string | Record<string, str
         if (page.isDir || !page.markdown || page.untranslated) continue;
         const version = page.version ?? "";
         for (const ref of markdownRefs(page.markdown)) {
-            const reason = checkRef(ref, page.route, routes, dirs[version]!, page.prefix ?? "");
+            // A folder's index.md links relative to its folder
+            const reason = checkRef(ref, docPath(page.route, page.isDir), routes, dirs[version]!, page.prefix ?? "");
             const source = version ? `versions/${version}/docs/${page.source}` : page.source;
             if (reason) broken.push(`${source}: "${ref.href}" ${reason}`);
         }
@@ -97,6 +94,6 @@ function checkRef(ref: { href: string, isImage: boolean }, route: string, routes
         return existsSync(join(docsDir, inDocs)) ? undefined : "points to a missing file";
     }
 
-    const page = posix.normalize("/" + resolved.replace(/\.md$/i, "")).replace(/\/$/, "") || "/";
+    const page = posix.normalize("/" + resolved.replace(/\.md$/i, "")).replace(/(^|\/)index$/i, "").replace(/\/$/, "") || "/";
     return routes.has(page) ? undefined : `points to a missing page (${page})`;
 }

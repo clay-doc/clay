@@ -14,7 +14,8 @@ export function resolveDocLink(href: string, docPath: string): string | undefine
 
     const base = new URL(normalizePath(docPath), "http://clay.local");
     const url = new URL(href, base);
-    const path = normalizePath(url.pathname.replace(/\.md$/i, ""));
+    // "guides/index.md" is the page of the folder "guides"
+    const path = normalizePath(url.pathname.replace(/\.md$/i, "").replace(/(^|\/)index$/i, "/"));
     return path + url.search + url.hash;
 }
 

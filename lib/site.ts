@@ -9,16 +9,7 @@ import {editionPrefix, type LanguageInfo, type VersionInfo} from "../common/edit
 import {languageName} from "../common/i18n";
 import {parseFrontMatter, stripFrontMatter, type FrontMatter} from "./front-matter";
 import {lastUpdated} from "./git-dates";
-import {configSchema, dirMetaSchema, unknownKeys} from "./checks";
-
-// Directory metadata from dir-meta.yaml
-export type DirMeta = {
-    path: string;
-    name?: string | Record<string, string>; // per language: {en: "Guides", de: "Anleitungen"}
-    icon?: string;
-    order?: number;
-    children?: DirMeta[];
-};
+import {configSchema, unknownKeys} from "./checks";
 
 // A file or directory below docs/
 export type DocNode = {
@@ -32,11 +23,13 @@ export type DocNode = {
     source?: string; // the translation file a page is read from, e.g. "setup.de.md"
     untranslated?: boolean; // shown in the default language, no translation exists
     children: DocNode[];
+    index?: DocNode; // a folder's index.md: its page, title, icon and order
 };
 
 export type Crumb = { title: string, route: string };
 
-// A route of the site: a markdown page or a directory
+// A route of the site: a markdown page or a folder; a folder's page is its
+// index.md when it has one (markdown is then set)
 export type Page = {
     route: string; // e.g. "/guides/setup"
     source: string; // path relative to docs/
@@ -57,7 +50,6 @@ export type Page = {
 // One version of the docs: the current docs/ (name "") or versions/<name>/docs
 export type SiteVersion = VersionInfo & {
     docsDir: string;
-    meta: DirMeta[];
     tree: DocNode;
     nav: DocItem;
 };
@@ -72,10 +64,9 @@ export type SiteEdition = {
 
 export type Site = {
     root: string;
-    docsDir: string; // of the current docs; the same goes for meta, tree and nav (default language)
+    docsDir: string; // of the current docs; the same goes for tree and nav (default language)
     config: Configuration; // in the default language
     configs: Record<string, Configuration>; // by language
-    meta: DirMeta[];
     tree: DocNode;
     nav: DocItem;
     versions: SiteVersion[]; // the current docs first, then older versions, newest first
@@ -86,6 +77,7 @@ export type Site = {
 };
 
 export const isMarkdown = (name: string) => name.toLowerCase().endsWith(".md");
+export const isIndex = (name: string) => name.toLowerCase() === "index.md";
 const isHidden = (name: string) => name.startsWith(".");
 
 const marked = new Marked({gfm: true});
@@ -125,19 +117,28 @@ export function loadTree(docsDir: string, path = ""): DocNode[] {
         });
 }
 
-// Whether a directory contains a markdown page at any depth
-export function hasPages(node: DocNode): boolean {
-    return node.children.some(child => child.isDir ? hasPages(child) : isMarkdown(child.name));
+// Takes each folder's index.md out of its children: it is the folder's own page
+export function attachIndexes(node: DocNode): DocNode {
+    if (!node.isDir) return node;
+    const index = node.children.find(child => !child.isDir && isIndex(child.name));
+    return {
+        ...node,
+        ...(index ? {index} : {}),
+        children: node.children.filter(child => child !== index).map(attachIndexes),
+    };
 }
 
-const findMeta = (meta: DirMeta[] | undefined, name: string) => meta?.find(m => m.path === name);
+// Whether a folder has a page: its index.md, or a markdown page at any depth
+export function hasPages(node: DocNode): boolean {
+    return !!node.index || node.children.some(child => child.isDir ? hasPages(child) : isMarkdown(child.name));
+}
 
-export function resolveDir(node: DocNode, meta: DirMeta[] | undefined): { title: string, icon: string, childMeta: DirMeta[] | undefined } {
-    const entry = findMeta(meta, node.name);
-    const name = typeof entry?.name === "object" ? Object.values(entry.name)[0] : entry?.name;
-    if (entry) return {title: name ?? prettyName(node.name), icon: entry.icon ?? "fa-solid fa-folder", childMeta: entry.children};
-    // Without an entry, children are still looked up in the same level (as Clay Oven did)
-    return {title: prettyName(node.name), icon: "fa-solid fa-folder", childMeta: meta};
+// A folder's title and icon come from its index.md, like a page's
+export function resolveDir(node: DocNode): { title: string, icon: string } {
+    return {
+        title: node.index?.frontMatter.title || node.index?.heading || prettyName(node.name),
+        icon: node.index?.frontMatter.icon || "fa-solid fa-folder",
+    };
 }
 
 // Front matter title, else the first heading, else the file name
@@ -148,10 +149,10 @@ export function resolveFile(node: DocNode): { title: string, icon: string } {
     };
 }
 
-// Entries with an order (front matter for pages, dir-meta.yaml for directories)
-// come first, ascending; the rest keep their alphabetical order after them.
-export function sortTree(nodes: DocNode[], meta: DirMeta[] | undefined): DocNode[] {
-    const orderOf = (node: DocNode) => node.isDir ? findMeta(meta, node.name)?.order : node.frontMatter.order;
+// Entries with an order (front matter of pages, of folders' index.md) come
+// first, ascending; the rest keep their alphabetical order after them.
+export function sortTree(nodes: DocNode[]): DocNode[] {
+    const orderOf = (node: DocNode) => node.isDir ? node.index?.frontMatter.order : node.frontMatter.order;
     const sorted = nodes
         .map((node, index) => ({node, index, order: orderOf(node)}))
         .sort((a, b) => {
@@ -163,28 +164,38 @@ export function sortTree(nodes: DocNode[], meta: DirMeta[] | undefined): DocNode
         .map(({node}) => node);
 
     for (const node of sorted) {
-        if (node.isDir) node.children = sortTree(node.children, resolveDir(node, meta).childMeta);
+        if (node.isDir) node.children = sortTree(node.children);
     }
     return sorted;
 }
 
 export function applyDates(nodes: DocNode[], dates: Map<string, string>) {
     for (const node of nodes) {
+        if (node.index) node.index.updated = dates.get(node.index.path);
         if (node.isDir) applyDates(node.children, dates);
         else node.updated = dates.get(node.path);
     }
 }
 
-// Navigation tree for the app: markdown pages and directories that contain pages
-export function buildNav(tree: DocNode, meta: DirMeta[], prefix = ""): DocItem {
-    function walk(nodes: DocNode[], meta: DirMeta[] | undefined, prefix: string): DocItem[] {
+// An index.md with only front matter names the folder; one with text is also its page
+const hasText = (index: DocNode | undefined): index is DocNode => !!index && stripFrontMatter(index.markdown ?? "").trim() !== "";
+
+// What the navigation and the pages know about a folder's index.md
+function indexInfo(index: DocNode | undefined) {
+    if (!hasText(index)) return {};
+    return {hasIndex: true, source: index.source ?? index.path, updated: index.updated, ...(index.untranslated ? {untranslated: true} : {})};
+}
+
+// Navigation tree for the app: markdown pages and folders that contain pages
+export function buildNav(tree: DocNode, prefix = ""): DocItem {
+    function walk(nodes: DocNode[], prefix: string): DocItem[] {
         const items: DocItem[] = [];
         for (const node of nodes) {
             if (node.isDir) {
                 if (!hasPages(node)) continue;
-                const {title, icon, childMeta} = resolveDir(node, meta);
+                const {title, icon} = resolveDir(node);
                 const link = `${prefix}/${node.name}`;
-                items.push({title, icon, link, displayLink: link, children: walk(node.children, childMeta, link)});
+                items.push({title, icon, link, displayLink: link, children: walk(node.children, link), ...indexInfo(node.index)});
             } else if (isMarkdown(node.name)) {
                 const {title, icon} = resolveFile(node);
                 const link = `${prefix}/${node.name}`;
@@ -197,23 +208,32 @@ export function buildNav(tree: DocNode, meta: DirMeta[], prefix = ""): DocItem {
         return items;
     }
 
-    return {title: "docs", link: "docs", displayLink: "docs", children: walk(tree.children, meta, prefix)};
+    return {title: "docs", link: "docs", displayLink: "docs", children: walk(tree.children, prefix), ...indexInfo(tree.index)};
 }
 
-export function collectPages(tree: DocNode, meta: DirMeta[], prefix = "", version = "", language = ""): { pages: Page[], topLevel: Crumb[] } {
+export function collectPages(tree: DocNode, prefix = "", version = "", language = ""): { pages: Page[], topLevel: Crumb[] } {
     const edition = {version, language, prefix};
     const pages: Page[] = [];
 
-    function walk(nodes: DocNode[], meta: DirMeta[] | undefined, prefix: string, parents: Crumb[]): Crumb[] {
+    // A folder's page; with an index.md it carries that page's content
+    const folderPage = (node: DocNode, route: string, title: string, icon: string, parents: Crumb[]): Page => ({
+        route, title, icon, isDir: true, parents, children: [], ...edition,
+        source: hasText(node.index) ? node.index.source ?? node.index.path : node.path,
+        frontMatter: node.index?.frontMatter ?? {},
+        ...(hasText(node.index) ? {markdown: node.index.markdown, updated: node.index.updated} : {}),
+        ...(hasText(node.index) && node.index.untranslated ? {untranslated: true} : {}),
+    });
+
+    function walk(nodes: DocNode[], prefix: string, parents: Crumb[]): Crumb[] {
         const children: Crumb[] = [];
         for (const node of nodes) {
             if (node.isDir) {
                 if (!hasPages(node)) continue;
-                const {title, icon, childMeta} = resolveDir(node, meta);
+                const {title, icon} = resolveDir(node);
                 const crumb = {title, route: `${prefix}/${node.name}`};
-                const page: Page = {route: crumb.route, source: node.path, title, icon, isDir: true, parents, children: [], frontMatter: {}, ...edition};
+                const page = folderPage(node, crumb.route, title, icon, parents);
                 pages.push(page);
-                page.children = walk(node.children, childMeta, crumb.route, [...parents, crumb]);
+                page.children = walk(node.children, crumb.route, [...parents, crumb]);
                 children.push(crumb);
             } else if (isMarkdown(node.name)) {
                 const {title, icon} = resolveFile(node);
@@ -230,11 +250,16 @@ export function collectPages(tree: DocNode, meta: DirMeta[], prefix = "", versio
         return children;
     }
 
-    return {pages, topLevel: walk(tree.children, meta, prefix, [])};
+    // The start page, docs/index.md, at the root of its edition
+    const start = hasText(tree.index) ? folderPage(tree, prefix || "/", resolveDir(tree).title, resolveDir(tree).icon, []) : undefined;
+    if (start) pages.push(start);
+    const topLevel = walk(tree.children, prefix, []);
+    if (start) start.children = topLevel;
+    return {pages, topLevel};
 }
 
-// Values in clay.yaml and dir-meta.yaml can be given per language, e.g.
-// title: {en: "Guides", de: "Anleitungen"}; missing languages use the default one
+// Values in clay.yaml can be given per language, e.g. title: {en: "Docs",
+// de: "Doku"}; missing languages use the default one
 export function localize<T>(value: T, language: string, codes: string[]): T {
     if (Array.isArray(value)) return value.map(item => localize(item, language, codes)) as T;
     if (!value || typeof value !== "object") return value;
@@ -288,21 +313,13 @@ export function loadConfig(root: string, env: Record<string, string | undefined>
     const warnings = unknownKeys(load(text), configSchema).map(key => `clay.yaml: unknown key "${key}" is ignored (typo?)`);
     if (!config.title) warnings.push(`clay.yaml: "title" is not set`);
     if (config.langs) warnings.push(`clay.yaml: "langs" is no longer needed and is ignored; code languages are detected automatically`);
+    if ((config as Record<string, unknown>).index) warnings.push(`clay.yaml: "index" is no longer read since Clay 3; write the start page in docs/index.md`);
 
     for (const [name, key] of envOverrides) {
         const value = env[name];
         if (value) (config as Record<string, unknown>)[key] = value;
     }
     return {config, warnings};
-}
-
-export function loadDirMeta(root: string): { meta: DirMeta[], warnings: string[] } {
-    const path = join(root, "dir-meta.yaml");
-    if (!existsSync(path)) return {meta: [], warnings: []};
-
-    const data = load(readFileSync(path, "utf8"));
-    const warnings = unknownKeys(data, [dirMetaSchema]).map(key => `dir-meta.yaml: unknown key "${key}" is ignored (typo?)`);
-    return {meta: (Array.isArray(data) ? data : []) as DirMeta[], warnings};
 }
 
 export type LoadOptions = {
@@ -334,9 +351,9 @@ export function listVersions(root: string): { names: string[], warnings: string[
     return {names: names.sort((a, b) => b.localeCompare(a, undefined, {numeric: true})), warnings};
 }
 
-// The docs of one version in every language: dir holds its docs/ folder and
-// dir-meta.yaml. Translations ("setup.de.md") replace their original in their
-// language; pages without one show the original there.
+// The docs of one version in every language: dir holds its docs/ folder.
+// Translations ("setup.de.md") replace their original in their language;
+// pages without one show the original there.
 function loadVersion(dir: string, info: VersionInfo, gitDates: boolean, languages: LanguageInfo[]): {
     version: SiteVersion, editions: SiteEdition[], pages: Page[], warnings: string[]
 } {
@@ -344,7 +361,10 @@ function loadVersion(dir: string, info: VersionInfo, gitDates: boolean, language
     if (!existsSync(docsDir)) throw new Error(`No docs/ directory found in ${dir}`);
     const codes = languages.map(language => language.code);
 
-    const {meta, warnings} = loadDirMeta(dir);
+    const warnings: string[] = [];
+    if (existsSync(join(dir, "dir-meta.yaml"))) {
+        warnings.push(`dir-meta.yaml is no longer read since Clay 3; give each folder an index.md with its title, icon and order`);
+    }
     const translations = new Map<string, DocNode>();
     const originals = new Set<string>();
     const split = (nodes: DocNode[]): DocNode[] => nodes.flatMap(node => {
@@ -356,8 +376,8 @@ function loadVersion(dir: string, info: VersionInfo, gitDates: boolean, language
         if (isMarkdown(node.name)) originals.add(node.path.toLowerCase());
         return [node];
     });
-    const tree: DocNode = {name: "docs", path: "", isDir: true, frontMatter: {}, children: split(loadTree(docsDir))};
-    tree.children = sortTree(tree.children, localize(meta, codes[0]!, codes));
+    const tree = attachIndexes({name: "docs", path: "", isDir: true, frontMatter: {}, children: split(loadTree(docsDir))});
+    tree.children = sortTree(tree.children);
     for (const path of translations.keys()) {
         const original = path.replace(/\.[^.]+\.md$/i, ".md");
         if (!originals.has(original.toLowerCase())) warnings.push(`${path}: translates ${original}, which does not exist; the file is skipped`);
@@ -367,12 +387,15 @@ function loadVersion(dir: string, info: VersionInfo, gitDates: boolean, language
     if (gitDates) {
         const result = lastUpdated(docsDir);
         dates = result.dates;
-        if (dates) applyDates(tree.children, dates);
+        if (dates) applyDates([tree], dates);
         else if (result.reason) warnings.push(result.reason);
     }
 
-    const translate = (nodes: DocNode[], code: string): DocNode[] => nodes.map(node => {
-        if (node.isDir) return {...node, children: translate(node.children, code)};
+    const translate = (nodes: DocNode[], code: string): DocNode[] => nodes.map(node => translateNode(node, code));
+    const translateNode = (node: DocNode, code: string): DocNode => {
+        if (node.isDir) {
+            return {...node, ...(node.index ? {index: translateNode(node.index, code)} : {}), children: translate(node.children, code)};
+        }
         if (!isMarkdown(node.name)) return node;
         const translation = translations.get(node.path.replace(/\.md$/i, `.${code}.md`));
         if (!translation) return {...node, untranslated: true};
@@ -382,18 +405,17 @@ function loadVersion(dir: string, info: VersionInfo, gitDates: boolean, language
             frontMatter: {...translation.frontMatter, order: node.frontMatter.order},
             updated: dates?.get(translation.path),
         };
-    });
+    };
 
     const editions: SiteEdition[] = [];
     const pages: Page[] = [];
     for (const language of languages) {
-        const localMeta = localize(meta, language.code, codes);
-        const languageTree = language.code === codes[0] ? tree : {...tree, children: translate(tree.children, language.code)};
+        const languageTree = language.code === codes[0] ? tree : translateNode(tree, language.code);
         const prefix = editionPrefix(info.name, language.code, codes[0]!);
-        editions.push({prefix, version: info.name, language: language.code, nav: buildNav(languageTree, localMeta, prefix)});
-        pages.push(...collectPages(languageTree, localMeta, prefix, info.name, language.code).pages);
+        editions.push({prefix, version: info.name, language: language.code, nav: buildNav(languageTree, prefix)});
+        pages.push(...collectPages(languageTree, prefix, info.name, language.code).pages);
     }
-    return {version: {...info, docsDir, meta, tree, nav: editions[0]!.nav}, editions, pages, warnings};
+    return {version: {...info, docsDir, tree, nav: editions[0]!.nav}, editions, pages, warnings};
 }
 
 // Loads everything Clay needs from a project: config, directory metadata and
@@ -411,7 +433,7 @@ export function loadSite(root: string, {env = process.env, gitDates = true}: Loa
 
     const {names, warnings: versionWarnings} = listVersions(root);
     warnings.push(...versionWarnings);
-    const topLevel = new Set(current.pages.filter(page => page.parents.length === 0 && !page.prefix).map(page => page.route.slice(1)));
+    const topLevel = new Set(current.pages.filter(page => page.parents.length === 0 && !page.prefix && page.route !== "/").map(page => page.route.slice(1)));
     for (const code of codes.slice(1)) {
         if (topLevel.has(code)) warnings.push(`docs/${code} has the same URL as the language ${code}; rename the folder`);
     }
@@ -423,9 +445,9 @@ export function loadSite(root: string, {env = process.env, gitDates = true}: Loa
         return loaded;
     });
 
-    const {docsDir, meta, tree, nav} = current.version;
+    const {docsDir, tree, nav} = current.version;
     return {
-        root, docsDir, config, configs, meta, tree, nav, languages,
+        root, docsDir, config, configs, tree, nav, languages,
         versions: [current.version, ...older.map(o => o.version)],
         editions: [current.editions, ...older.map(o => o.editions)].flat(),
         pages: [current.pages, ...older.map(o => o.pages)].flat(),

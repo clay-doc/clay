@@ -43,11 +43,12 @@ Or try it without installing: `npx clay-doc dev`.
 ```text
 .
 ├── docs/                  # Markdown files; folders become sections
+│   ├── index.md           # Optional: the start page
 │   ├── getting-started.md
 │   └── guides/
+│       ├── index.md       # Optional: the folder's page, name, icon and order
 │       └── setup.md
 ├── clay.yaml              # Site settings
-├── dir-meta.yaml          # Optional: names, icons and order of folders
 └── logo.svg               # Optional
 ```
 
@@ -87,10 +88,6 @@ navbar:
     - name: "Homepage"
       icon: "fa-solid fa-house"
       link: "https://example.com"
-index:
-  title: "Welcome to My Project"
-  description: "Everything you need to know."
-  icon: "fa-solid fa-rocket"
 ```
 
 Only `title` is required. `CLAY_TITLE`, `CLAY_BASE_URL`, `CLAY_SITE_URL` and `CLAY_FONTAWESOME_KIT` override
@@ -110,17 +107,26 @@ order: 1                  # position in the navigation
 ```
 
 Pages and folders are sorted alphabetically; entries with an `order` come first (`clay edit` sets these for you).
-Folders get their name, icon and order from `dir-meta.yaml`:
+
+### Index pages
+
+`index.md` in a folder is that folder's page, at the folder's URL (`docs/guides/index.md` → `/guides`), and its
+front matter gives the folder its name, icon and order. `docs/index.md` is the start page. Two more fields lay out
+these pages:
 
 ```yaml
-- path: "guides"
-  name: "Guides"
-  icon: "fa-solid fa-book"
-  order: 2
-  children:
-    - path: "advanced"
-      name: "Advanced"
+---
+title: Guides
+icon: fa-solid fa-book-open
+order: 2
+cards: true   # cards of the folder's pages below the text
+hero: true    # title, icon and description as a large centered header
+---
 ```
+
+An `index.md` with only front matter names the folder; a folder without text in its `index.md` (or without one)
+shows its title and cards of its pages. In the sidebar, a folder's title opens its page; the arrow shows and hides
+its entries.
 
 Links between docs work like on GitHub: `[Setup](./guides/setup.md)` is resolved relative to the page.
 Images and other files next to your docs (`![Diagram](img/diagram.png)`) are published with the site.
@@ -131,7 +137,7 @@ Images and other files next to your docs (`![Diagram](img/diagram.png)`) are pub
 as an older version:
 
 ```bash
-npx clay version 1.x   # copies docs/ and dir-meta.yaml to versions/1.x/
+npx clay version 1.x   # copies docs/ to versions/1.x/
 ```
 
 Each folder in `versions/` becomes a version under its own path (`/1.x/guides/setup`), with its own navigation and
@@ -148,8 +154,8 @@ prefix (`/de/setup`, `/1.x/de/setup`), and a switcher in the navbar keeps the pa
 - A page without a translation is shown in the default language, with a note, and search engines are pointed to the
   original. Navigation, search and links work the same in every language.
 - The position in the navigation comes from the original; the translation sets its own title, icon and description.
-- Values in `clay.yaml` and folder names in `dir-meta.yaml` can be given per language:
-  `title: {en: "Guides", de: "Anleitungen"}`.
+- Values in `clay.yaml` can be given per language: `title: {en: "Docs", de: "Doku"}`. Folders are translated with
+  their `index.de.md`, like pages.
 - The interface comes in English, German, French, Spanish, Italian, Portuguese, Dutch, Polish, Russian, Japanese,
   Chinese and Korean. `messages` in `clay.yaml` changes single texts, or adds a language:
   `messages: {de: {search: "Finden"}}`.
@@ -161,13 +167,14 @@ prefix (`/de/setup`, `/1.x/de/setup`), and a switcher in the navbar keeps the pa
 | `clay dev`     | Development server with live reload               |
 | `clay build`   | Build the static site into `<out>/public`         |
 | `clay preview` | Serve the build under its base URL, like GitHub Pages |
-| `clay edit`    | Edit page order, titles and icons, and the settings in `clay.yaml` |
+| `clay edit`    | Create, edit, order, rename, move and delete pages and folders, and edit `clay.yaml` |
 | `clay version <name>` | Save the current docs as an older version in `versions/<name>/` |
 
-`clay edit` opens an editor in the terminal: move pages and folders (`m` picks one up, ↑↓ moves it, ⏎ drops it),
-set titles and icons, and switch to the site settings with Tab. Saving writes `order`, `title` and `icon` to the
-front matter and `dir-meta.yaml`, and keeps comments and formatting of these files. With `clay dev` running, the
-site updates on every save.
+`clay edit` opens an editor in the terminal for every version (`v`) and language (`l`): create pages (`n`) and
+folders (`f`), edit their front matter (`⏎`), order them (`m`), rename (`r`), move (`o`) and delete (`x`) them, and
+start translations (`c`); Tab switches to the settings in `clay.yaml`. Changes are written right away, only the
+values that change: comments and formatting stay. Renaming, moving and deleting report the links that broke. With
+`clay dev` running, the site updates with every change.
 
 | Option         | Description                                                  | Default             |
 |----------------|--------------------------------------------------------------|---------------------|
@@ -214,6 +221,16 @@ jobs:
         uses: actions/deploy-pages@v5
 ```
 
+## Migrating from Clay 2
+
+Clay 3 drops `dir-meta.yaml` and the `index` section of `clay.yaml`; the build warns while they are there.
+
+1. Move each folder's `name`, `icon` and `order` from `dir-meta.yaml` into the front matter of the folder's
+   `index.md` (`name` becomes `title`); names per language go into `index.de.md` and so on. Delete `dir-meta.yaml`.
+2. Write the start page in `docs/index.md`: `index.title`, `index.description` and `index.icon` become `title`,
+   `description` and `icon`, with `hero: true` and `cards: true` for the previous layout. Remove `index` from
+   `clay.yaml`.
+
 ## Migrating from Clay Oven
 
 Clay 1 was a prebuilt frontend that the separate Clay Oven tool filled with your docs. Clay 2 builds the site
@@ -223,7 +240,7 @@ itself:
 2. Replace the `run-oven.sh` step in CI with `npm ci` and `npx clay build`. The output is still `publish/public`.
 3. Remove `langs` from `clay.yaml`: code languages are detected automatically.
 
-`clay.yaml`, `dir-meta.yaml` and `docs/` stay as they are.
+`clay.yaml` and `docs/` stay as they are; then follow "Migrating from Clay 2".
 
 ## Developing Clay
 

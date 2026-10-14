@@ -7,6 +7,7 @@ export type DocItem = {
     updated?: string; // last-updated date (ISO 8601), when the docs have git history
     source?: string; // file of a page, relative to docs/, e.g. "guides/setup.de.md"
     untranslated?: boolean; // shown in the default language, no translation exists
+    hasIndex?: boolean; // a folder whose page is its index.md
 }
 
 export type LinkPart = {
@@ -88,9 +89,9 @@ export function delimitLinkParts(parts: LinkPart[], count: number): LinkPart[] {
     return sliced;
 }
 
-// Pages (not directories) in navigation order
+// Pages in navigation order, with folders that have a page (index.md) before their contents
 export function flattenPages(root: DocItem): DocItem[] {
-    return (root.children ?? []).flatMap(item => item.children ? flattenPages(item) : [item]);
+    return (root.children ?? []).flatMap(item => item.children ? [...(item.hasIndex ? [item] : []), ...flattenPages(item)] : [item]);
 }
 
 // The pages before and after a page in navigation order, for prev/next links

@@ -8,11 +8,14 @@ describe("resolveDocLink", () => {
         ["./other.md", "/guides/setup", "/guides/other"],
         ["./other.md", "/guides/setup/", "/guides/other"],
         ["other", "/guides/setup", "/guides/other"],
-        ["../index.md", "/guides/setup", "/index"],
+        // index.md is its folder's page
+        ["../index.md", "/guides/setup", "/"],
+        ["index.md#intro", "/guides/setup", "/guides#intro"],
+        ["setup.md", "/guides/index", "/guides/setup"],
         ["advanced/deep.md#usage", "/guides/setup", "/guides/advanced/deep#usage"],
         ["sub/", "/guides/setup", "/guides/sub"],
         // absolute paths stay as they are
-        ["/index", "/guides/setup", "/index"],
+        ["/reference/index.md", "/guides/setup", "/reference"],
         ["/guides/setup.md?highlight=x", "/a", "/guides/setup?highlight=x"],
         ["/Guide.MD", "/a", "/Guide"],
         // in-page anchors

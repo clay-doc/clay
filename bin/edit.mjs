@@ -1,5 +1,7 @@
-// "clay edit": a full-screen editor for the order, titles and icons of pages
-// and folders, and for the settings in clay.yaml. The model lives in lib/editor.ts.
+// "clay edit": a full-screen editor for the docs of every version and language
+// (pages, folders, their front matter, order, translations) and for the
+// settings in clay.yaml. Changes are written right away. The model lives in
+// lib/editor.ts.
 import {emitKeypressEvents} from "node:readline";
 import {createJiti} from "jiti";
 import {GRAY, MINT, SAGE, rgb} from "./colors.mjs";
@@ -11,11 +13,15 @@ const mint = text => paint(rgb(...MINT), text);
 const gray = text => paint(rgb(...GRAY), text);
 const bold = text => paint("1", text);
 const yellow = text => paint("33", text);
+const red = text => paint("31", text);
 
 const HELP = {
-    pages: "↑↓ select · m move · ←→ fold · ⏎ title · i icon · tab settings · s save · q quit",
-    moving: "↑↓ move · ⏎ drop",
-    settings: "↑↓ select · ⏎ edit · d remove link · tab pages · s save · q quit",
+    pages: "⏎ details · n page · f folder · m order · o move · r rename · x delete · v version · l language · tab · q",
+    translate: "c translate",
+    moving: "↑↓ move · ⏎ drop · esc cancel",
+    details: "↑↓ select · ⏎ edit · esc back",
+    pick: "↑↓ select · ⏎ move here · esc cancel",
+    settings: "⏎ edit · d remove link · l language · tab pages · q quit",
 };
 
 const chars = text => [...text];
@@ -40,41 +46,72 @@ function fit(line, columns) {
     return out;
 }
 
+// Front matter fields the details view edits; cards and hero only apply to index.md
+const FIELDS = [
+    {key: "title", label: "Title", type: "text"},
+    {key: "icon", label: "Icon", type: "text"},
+    {key: "description", label: "Description", type: "text"},
+    {key: "order", label: "Order", type: "number", defaultOnly: true},
+    {key: "cards", label: "Cards of the folder's pages", type: "boolean", index: true},
+    {key: "hero", label: "Large header (hero)", type: "boolean", index: true},
+];
+
 export async function edit(root) {
     if (!process.stdin.isTTY || !process.stdout.isTTY) {
         console.error("clay edit needs an interactive terminal.");
         process.exit(1);
     }
     const editor = await createJiti(import.meta.url).import("../lib/editor.ts");
+    const {versions, languages} = editor.editorContext(root);
+    const edition = {version: "", language: languages[0]};
+    const isDefaultLanguage = () => edition.language === languages[0];
 
-    let original = editor.loadDocsTree(root);
-    let tree = structuredClone(original);
+    let tree = editor.loadDocsTree(root, edition);
     let settings = editor.loadSettings(root);
-    let savedDoc = editor.loadSettings(root).doc;
     const collapsed = new Set();
     let tab = "pages";
-    let selected = {pages: 0, settings: 1};
+    let mode = "list"; // list, moving, details, pick, confirm
+    const selected = {pages: 0, settings: 1, details: 0, pick: 0};
     let scroll = 0;
     let input = null; // {label, value: [...chars], cursor, placeholder, done(value)}
+    let confirm = null; // {question, yes()}
+    let picks = []; // folders to move an entry into
     let message = "";
-    let confirmQuit = false;
-    let moving = false; // the selected entry is picked up and moves with ↑↓
 
     // Visible tree rows with what is needed to move them
     const pageRows = () => {
         const rows = [];
         const walk = (nodes, depth, parent) => nodes.forEach((node, index) => {
             rows.push({node, depth, siblings: nodes, index, parent});
-            if (node.isDir && !collapsed.has(node.path)) walk(node.children, depth + 1, node);
+            if (node.kind === "folder" && !collapsed.has(node.path)) walk(node.children, depth + 1, node);
         });
         walk(tree, 0, null);
         return rows;
     };
+    const currentRow = () => pageRows()[selected.pages];
+    const detailFields = node => FIELDS.filter(field => (!field.index || node.kind !== "page") && (!field.defaultOnly || isDefaultLanguage()))
+        .filter(field => !(field.key === "order" && node.kind === "start"));
     const settingRows = () => editor.settingRows(settings.doc);
     const selectable = row => row.kind !== "section";
+    const editionLabel = () => `${edition.version || "latest"} · ${edition.language}`;
 
-    const changeCount = () => editor.docsChanges(original, tree).length + (editor.settingsChanged(settings) ? 1 : 0);
-    const changedPaths = () => new Set(editor.docsChanges(original, tree).map(change => change.path));
+    // Reloads the tree after a write, keeping the selection on the same entry
+    function reload(path = currentRow()?.node.path) {
+        tree = editor.loadDocsTree(root, edition);
+        const index = pageRows().findIndex(row => row.node.path === path);
+        selected.pages = Math.max(index, 0);
+    }
+
+    function run(action) {
+        try {
+            action();
+        } catch (error) {
+            message = red(error.message);
+        }
+    }
+
+    const done = (text, files = []) => message = sage(`${text}${files.length ? `: ${files.join(", ")}` : ""}`);
+    const reportBroken = broken => broken.length === 0 ? "" : ` · ${yellow(`${broken.length} link(s) broke`)}: ${broken[0]}${broken.length > 1 ? " …" : ""}`;
 
     function render() {
         const columns = process.stdout.columns || 80;
@@ -83,22 +120,37 @@ export async function edit(root) {
             const label = name[0].toUpperCase() + name.slice(1);
             return name === tab ? bold(sage(label)) : gray(label);
         }).join("   ");
-        const lines = [`${gray("┌")}  ${bold("Clay")} ${gray("· edit")}   ${tabs}`, gray("│")];
+        const lines = [`${gray("┌")}  ${bold("Clay")} ${gray("· edit")}   ${tabs}   ${gray(editionLabel())}`, gray("│")];
 
         let body;
-        if (tab === "pages") {
-            const changed = changedPaths();
+        let current = 0;
+        if (mode === "details") {
+            const node = currentRow().node;
+            const fields = detailFields(node);
+            lines.push(`${gray("│")}   ${bold(node.frontMatter.title ?? node.fallbackTitle)} ${gray(node.file)}${node.exists ? "" : ` ${yellow("(not created yet)")}`}`, gray("│"));
+            body = fields.map((field, i) => {
+                const value = field.key === "order" ? node.order : node.frontMatter[field.key];
+                const shown = value === undefined ? gray("—") : String(value);
+                return `${i === selected.details ? sage("›") : " "}   ${pad(i === selected.details ? bold(field.label) : field.label, 30)}${shown}`;
+            });
+            current = selected.details;
+        } else if (mode === "pick") {
+            lines.push(`${gray("│")}   Move ${bold(currentRow().node.name)} to:`, gray("│"));
+            body = picks.map((folder, i) => `${i === selected.pick ? sage("›") : " "}   ${i === selected.pick ? bold(`docs/${folder}`) : `docs/${folder}`}`);
+            current = selected.pick;
+        } else if (tab === "pages") {
             const rows = pageRows();
-            const titleWidth = Math.min(Math.max(...rows.map(({node, depth}) => depth * 3 + 2 + width(node.title ?? node.fallbackTitle)), 10) + 2, 48);
+            const titleWidth = Math.min(Math.max(...rows.map(({node, depth}) => depth * 3 + 2 + width(node.frontMatter.title ?? node.fallbackTitle)), 10) + 2, 48);
             body = rows.map(({node, depth}, i) => {
                 const isSelected = i === selected.pages;
-                const marker = node.isDir ? (collapsed.has(node.path) ? "▸" : "▾") : "◆";
-                const title = node.title ?? gray(node.fallbackTitle);
+                const marker = node.kind === "start" ? "⌂" : node.kind === "folder" ? (collapsed.has(node.path) ? "▸" : "▾") : "◆";
+                const title = node.frontMatter.title ?? gray(node.fallbackTitle);
                 const label = `${gray("│  ".repeat(depth))}${isSelected ? mint(marker) : sage(marker)} ${isSelected ? bold(title) : title}`;
-                const icon = node.icon ? gray(node.icon) : "";
-                const status = `${changed.has(node.path) ? ` ${yellow("•")}` : ""}${isSelected && moving ? ` ${sage("↕ moving")}` : ""}`;
-                return `${isSelected ? sage("›") : " "} ${pad(label, titleWidth)}${icon}${status}`;
+                const missing = !node.exists && (node.kind === "page" || !isDefaultLanguage()) ? ` ${yellow("untranslated")}` : "";
+                const icon = node.frontMatter.icon ? gray(node.frontMatter.icon) : "";
+                return `${isSelected ? sage("›") : " "} ${pad(label, titleWidth)}${icon}${missing}${isSelected && mode === "moving" ? ` ${sage("↕ moving")}` : ""}`;
             });
+            current = selected.pages;
         } else {
             const rows = settingRows();
             const labelWidth = Math.max(...rows.map(row => width(row.label))) + 4;
@@ -107,19 +159,18 @@ export async function edit(root) {
                 const cursor = isSelected ? sage("›") : " ";
                 if (row.kind === "section") return `  ${bold(row.label)}`;
                 if (row.kind === "add-link") return `${cursor}   ${sage("+")} ${isSelected ? bold(row.label) : row.label}`;
-                const value = editor.getSetting(settings.doc, row.path);
-                const changed = value !== editor.getSetting(savedDoc, row.path);
-                const label = pad(isSelected ? bold(row.label) : row.label, labelWidth);
-                return `${cursor}   ${label}${value || gray("—")}${changed ? ` ${yellow("•")}` : ""}`;
+                const value = editor.getSetting(settings.doc, row.path, edition.language);
+                return `${cursor}   ${pad(isSelected ? bold(row.label) : row.label, labelWidth)}${value || gray("—")}`;
             });
+            current = selected.settings;
         }
 
         // Keep the selection in view
-        const current = selected[tab];
+        const room = height - (lines.length - 2);
         if (current < scroll) scroll = current;
-        if (current >= scroll + height) scroll = current - height + 1;
-        scroll = Math.max(Math.min(scroll, body.length - height), 0);
-        lines.push(...body.slice(scroll, scroll + height).map(line => `${gray("│")} ${line}`));
+        if (current >= scroll + room) scroll = current - room + 1;
+        scroll = Math.max(Math.min(scroll, body.length - room), 0);
+        lines.push(...body.slice(scroll, scroll + room).map(line => `${gray("│")} ${line}`));
         lines.push(gray("│"));
 
         if (input) {
@@ -127,28 +178,20 @@ export async function edit(root) {
             const text = value
                 ? value.map((char, i) => i === input.cursor ? paint("7", char) : char).join("") + (input.cursor === value.length ? paint("7", " ") : "")
                 : paint("7", " ") + gray(input.placeholder);
-            lines.push(`${gray("└")}  ${input.label}: ${text}`, `   ${gray("⏎ apply · esc cancel · empty resets")}`);
-        } else if (confirmQuit) {
-            lines.push(`${gray("└")}  ${yellow(`${changeCount()} unsaved change(s).`)} s save and quit · d discard · esc keep editing`, "");
+            lines.push(`${gray("└")}  ${input.label}: ${text}`, `   ${gray("⏎ apply · esc cancel · empty removes")}`);
+        } else if (confirm) {
+            lines.push(`${gray("└")}  ${yellow(confirm.question)} ${gray("y yes · n no")}`, "");
         } else {
-            const count = changeCount();
-            lines.push(`${gray("└")}  ${gray(HELP[moving ? "moving" : tab])}`, `   ${message || (count ? yellow(`${count} unsaved change(s)`) : gray("No changes"))}`);
+            let help = mode === "list" ? HELP[tab] : HELP[mode];
+            if (mode === "list" && tab === "pages" && !isDefaultLanguage()) help = `${HELP.translate} · ${help}`;
+            lines.push(`${gray("└")}  ${gray(help)}`, `   ${message}`);
         }
 
         process.stdout.write("\x1b[H" + lines.map(line => fit(line, columns) + "\x1b[K").join("\n") + "\x1b[J");
     }
 
-    function ask(label, value, placeholder, done) {
-        input = {label, value: chars(value ?? ""), cursor: chars(value ?? "").length, placeholder, done};
-    }
-
-    function save() {
-        const written = [...editor.saveDocs(root, editor.docsChanges(original, tree)), ...(editor.saveSettings(root, settings) ? ["clay.yaml"] : [])];
-        original = editor.loadDocsTree(root);
-        tree = structuredClone(original);
-        settings = editor.loadSettings(root);
-        savedDoc = editor.loadSettings(root).doc;
-        message = written.length ? sage(`Saved ${written.length} file(s): ${written.join(", ")}`) : gray("Nothing to save");
+    function ask(label, value, placeholder, onDone) {
+        input = {label, value: chars(value ?? ""), cursor: chars(value ?? "").length, placeholder, done: onDone};
     }
 
     function quit() {
@@ -159,9 +202,9 @@ export async function edit(root) {
     function onInput(text, key) {
         if (key.name === "return") {
             const value = input.value.join("").trim();
-            const done = input.done;
+            const onDone = input.done;
             input = null;
-            done(value);
+            run(() => onDone(value));
         } else if (key.name === "escape" || (key.ctrl && key.name === "c")) input = null;
         else if (key.name === "backspace") {
             if (input.cursor > 0) input.value.splice(--input.cursor, 1);
@@ -179,32 +222,166 @@ export async function edit(root) {
         }
     }
 
+    // Sets one front matter field of an entry and shows what was written
+    function setField(node, key, value) {
+        if (key === "order") {
+            const written = editor.setFields(root, {...edition, language: languages[0]}, {...node, file: node.kind === "page" ? node.path : `${node.path}/index.md`}, {order: value});
+            done("Saved", [written]);
+        } else {
+            done("Saved", [editor.setFields(root, edition, node, {[key]: value})]);
+        }
+        reload(node.path);
+    }
+
+    // The folder new entries go into: the selected folder, or the folder of the selected page
+    function targetFolder(row) {
+        if (row.node.kind === "folder") return {folder: row.node.path, siblings: row.node.children};
+        return {folder: row.parent?.path ?? "", siblings: row.siblings};
+    }
+
+    function create(kind) {
+        if (!isDefaultLanguage()) {
+            message = yellow(`New ${kind === "page" ? "pages" : "folders"} are created in ${languages[0]}; translate them afterwards`);
+            return;
+        }
+        const row = currentRow();
+        const {folder, siblings} = row ? targetFolder(row) : {folder: "", siblings: tree};
+        ask(`New ${kind} in docs/${folder}${folder ? "/" : ""} · title`, "", "", title => {
+            if (!title) return;
+            ask("File name", editor.slugify(title), "", slug => {
+                if (!slug) return;
+                const file = kind === "page"
+                    ? editor.createPage(root, edition.version, folder, title, editor.slugify(slug), siblings)
+                    : editor.createFolder(root, edition.version, folder, title, editor.slugify(slug), siblings);
+                collapsed.delete(folder);
+                done("Created", [file]);
+                reload(kind === "page" ? file.replace(/^.*?docs\//, "") : file.replace(/^.*?docs\//, "").replace(/\/index\.md$/, ""));
+            });
+        });
+    }
+
     function onPages(key) {
         const rows = pageRows();
         const row = rows[selected.pages];
         if (!row) return;
-        const select = node => selected.pages = Math.max(pageRows().findIndex(r => r.node === node), 0);
+        const node = row.node;
+        const select = target => selected.pages = Math.max(pageRows().findIndex(r => r.node === target), 0);
+        const movable = node.kind !== "start";
 
-        // Moves stay within the folder; terminals that keep Shift/Alt+arrows to themselves use "m"
-        if ((key.name === "up" || key.name === "down") && (moving || key.shift || key.meta)) {
-            const target = row.index + (key.name === "up" ? -1 : 1);
-            if (target < 0 || target >= row.siblings.length) return;
-            [row.siblings[row.index], row.siblings[target]] = [row.siblings[target], row.siblings[row.index]];
-            select(row.node);
-        } else if (moving) {
-            if (["return", "space", "escape", "m"].includes(key.name)) moving = false;
-        } else if (key.name === "m" || key.name === "space") moving = true;
-        else if (key.name === "up" || key.name === "k") selected.pages = Math.max(selected.pages - 1, 0);
+        if (mode === "moving") {
+            if (key.name === "up" || key.name === "down") {
+                const target = row.index + (key.name === "up" ? -1 : 1);
+                // The start page stays first
+                if (target < 0 || target >= row.siblings.length || row.siblings[target].kind === "start") return;
+                [row.siblings[row.index], row.siblings[target]] = [row.siblings[target], row.siblings[row.index]];
+                select(node);
+            } else if (["return", "space", "m"].includes(key.name)) {
+                mode = "list";
+                const written = editor.reorder(root, edition.version, row.siblings);
+                done(written.length ? "Saved the order" : "Order unchanged", written);
+                reload(node.path);
+            } else if (key.name === "escape") {
+                mode = "list";
+                reload(node.path);
+            }
+            return;
+        }
+
+        if (key.name === "up" || key.name === "k") selected.pages = Math.max(selected.pages - 1, 0);
         else if (key.name === "down" || key.name === "j") selected.pages = Math.min(selected.pages + 1, rows.length - 1);
         else if (key.name === "left") {
-            if (row.node.isDir && !collapsed.has(row.node.path)) collapsed.add(row.node.path);
+            if (node.kind === "folder" && !collapsed.has(node.path)) collapsed.add(node.path);
             else if (row.parent) select(row.parent);
-        } else if (key.name === "right" && row.node.isDir) collapsed.delete(row.node.path);
-        else if (key.name === "return" || key.name === "t") {
-            const from = row.node.isDir ? "folder name" : "first heading";
-            ask("Title", row.node.title, `${row.node.fallbackTitle} (from the ${from})`, value => row.node.title = value || undefined);
+        } else if (key.name === "right" && node.kind === "folder") collapsed.delete(node.path);
+        else if (key.name === "return") {
+            mode = "details";
+            selected.details = 0;
+        } else if (key.name === "t") {
+            ask("Title", node.frontMatter.title, `${node.fallbackTitle} (default)`, value => setField(node, "title", value || null));
         } else if (key.name === "i") {
-            ask("Icon", row.node.icon, `${row.node.isDir ? "fa-solid fa-folder" : "fa-solid fa-file"} (default)`, value => row.node.icon = value || undefined);
+            ask("Icon", node.frontMatter.icon, "default icon", value => setField(node, "icon", value || null));
+        } else if (key.name === "m" || key.name === "space") {
+            if (!movable) message = yellow("The start page stays first");
+            else if (!isDefaultLanguage()) message = yellow(`The order is the same in every language; change it in ${languages[0]}`);
+            else mode = "moving";
+        } else if (key.name === "n") create("page");
+        else if (key.name === "f") create("folder");
+        else if (key.name === "c") {
+            if (isDefaultLanguage()) message = yellow("Switch to another language with l to translate");
+            else if (node.exists) message = yellow(`${node.file} already exists`);
+            else {
+                done("Created a copy to translate", [editor.createTranslation(root, edition, node)]);
+                reload(node.path);
+            }
+        } else if (key.name === "r" && movable) {
+            const folder = node.path.includes("/") ? node.path.slice(0, node.path.lastIndexOf("/")) : "";
+            const name = node.kind === "page" ? node.name.replace(/\.md$/i, "") : node.name;
+            ask("New file name", name, "", slug => {
+                if (!slug || slug === name) return;
+                const {moved, broken} = editor.moveEntry(root, edition.version, node, folder, editor.slugify(slug));
+                message = sage(`Renamed ${moved.join(", ")}`) + reportBroken(broken);
+                reload(node.kind === "page" ? `${folder ? folder + "/" : ""}${editor.slugify(slug)}.md` : `${folder ? folder + "/" : ""}${editor.slugify(slug)}`);
+            });
+        } else if (key.name === "o" && movable) {
+            const folders = [""];
+            const walk = nodes => nodes.forEach(n => {
+                if (n.kind !== "folder" || n === node) return;
+                folders.push(n.path);
+                walk(n.children);
+            });
+            walk(tree);
+            picks = folders;
+            selected.pick = 0;
+            mode = "pick";
+        } else if ((key.name === "x" || key.name === "delete") && movable) {
+            const what = node.kind === "folder"
+                ? `docs/${node.path}/ and all ${editor.countFiles(root, edition.version, node.path)} files in it`
+                : `docs/${node.path} and its translations`;
+            confirm = {
+                question: `Delete ${what}?`,
+                yes: () => {
+                    const {deleted, broken} = editor.deleteEntry(root, edition.version, node);
+                    message = sage(`Deleted ${deleted.join(", ")}`) + reportBroken(broken);
+                    reload(row.parent?.path ?? "");
+                },
+            };
+        }
+    }
+
+    function onDetails(key) {
+        const node = currentRow().node;
+        const fields = detailFields(node);
+        const field = fields[selected.details];
+        if (key.name === "escape" || key.name === "left") mode = "list";
+        else if (key.name === "up" || key.name === "k") selected.details = Math.max(selected.details - 1, 0);
+        else if (key.name === "down" || key.name === "j") selected.details = Math.min(selected.details + 1, fields.length - 1);
+        else if (key.name === "return" && field) {
+            if (field.type === "boolean") setField(node, field.key, node.frontMatter[field.key] ? null : true);
+            else if (field.type === "number") {
+                ask(field.label, node.order === undefined ? "" : String(node.order), "none", value => {
+                    if (value !== "" && !/^-?\d+$/.test(value)) throw new Error("The order is a whole number");
+                    setField(node, "order", value === "" ? null : Number(value));
+                });
+            } else {
+                ask(field.label, node.frontMatter[field.key], field.key === "title" ? `${node.fallbackTitle} (default)` : "not set",
+                    value => setField(node, field.key, value || null));
+            }
+        }
+    }
+
+    function onPick(key) {
+        if (key.name === "escape") mode = "list";
+        else if (key.name === "up" || key.name === "k") selected.pick = Math.max(selected.pick - 1, 0);
+        else if (key.name === "down" || key.name === "j") selected.pick = Math.min(selected.pick + 1, picks.length - 1);
+        else if (key.name === "return") {
+            const node = currentRow().node;
+            const folder = picks[selected.pick];
+            mode = "list";
+            const slug = node.kind === "page" ? node.name.replace(/\.md$/i, "") : node.name;
+            const {moved, broken} = editor.moveEntry(root, edition.version, node, folder, slug);
+            message = sage(`Moved ${moved.join(", ")}`) + reportBroken(broken);
+            collapsed.delete(folder);
+            reload(node.kind === "page" ? `${folder ? folder + "/" : ""}${node.name}` : `${folder ? folder + "/" : ""}${node.name}`);
         }
     }
 
@@ -216,41 +393,65 @@ export async function edit(root) {
             while (rows[i] && !selectable(rows[i])) i += delta;
             if (rows[i]) selected.settings = i;
         };
+        const save = () => {
+            if (editor.saveSettings(root, settings)) done("Saved", ["clay.yaml"]);
+            settings = editor.loadSettings(root);
+        };
 
         if (key.name === "up" || key.name === "k") step(-1);
         else if (key.name === "down" || key.name === "j") step(1);
         else if (key.name === "return" && row.kind === "add-link") {
             editor.addLink(settings.doc);
+            save();
             selected.settings = settingRows().findIndex(r => r.kind === "add-link") - 3;
         } else if (key.name === "return") {
-            ask(row.label, editor.getSetting(settings.doc, row.path), "not set", value => editor.setSetting(settings.doc, row.path, value));
+            ask(row.label, editor.getSetting(settings.doc, row.path, edition.language), "not set", value => {
+                editor.setSetting(settings.doc, row.path, value, edition.language);
+                save();
+            });
         } else if ((key.name === "d" || key.name === "delete") && row.link !== undefined) {
             editor.removeLink(settings.doc, row.link);
+            save();
             const updated = settingRows();
             selected.settings = Math.min(selected.settings, updated.length - 1);
             while (selected.settings > 0 && !selectable(updated[selected.settings])) selected.settings--;
         }
     }
 
+    // v and l cycle through the versions and languages
+    function switchEdition(key) {
+        if (key.name === "v") {
+            if (versions.length < 2) return void (message = gray("There are no older versions (see clay version)"));
+            edition.version = versions[(versions.indexOf(edition.version) + 1) % versions.length];
+        } else {
+            if (languages.length < 2) return void (message = gray(`The site has one language; add more with "languages" in clay.yaml`));
+            edition.language = languages[(languages.indexOf(edition.language) + 1) % languages.length];
+        }
+        collapsed.clear();
+        tree = editor.loadDocsTree(root, edition);
+        selected.pages = 0;
+        message = sage(`Editing ${editionLabel()}`);
+    }
+
     function onKey(text, key = {}) {
         message = "";
         if (input) onInput(text, key);
-        else if (moving) onPages(key);
-        else if (confirmQuit) {
-            if (key.name === "s") {
-                save();
-                quit();
-            } else if (key.name === "d" || (key.ctrl && key.name === "c")) quit();
-            else if (key.name === "escape") confirmQuit = false;
-        } else if (key.name === "q" || key.name === "escape" || (key.ctrl && key.name === "c")) {
-            if (changeCount() > 0) confirmQuit = true;
-            else quit();
-        } else if (key.name === "s") save();
+        else if (confirm) {
+            const {yes} = confirm;
+            if (key.name === "y") {
+                confirm = null;
+                run(yes);
+            } else if (key.name === "n" || key.name === "escape") confirm = null;
+        } else if (mode === "details") run(() => onDetails(key));
+        else if (mode === "pick") run(() => onPick(key));
+        else if (mode === "moving") run(() => onPages(key));
+        else if (key.name === "q" || (key.ctrl && key.name === "c")) quit();
         else if (key.name === "tab") {
             tab = tab === "pages" ? "settings" : "pages";
             scroll = 0;
-        } else if (tab === "pages") onPages(key);
-        else onSettings(key);
+        } else if (key.name === "v" || key.name === "l") run(() => switchEdition(key));
+        else if (tab === "pages") run(() => onPages(key));
+        else run(() => onSettings(key));
         render();
     }
 
@@ -259,13 +460,6 @@ export async function edit(root) {
     process.stdout.on("resize", render);
     emitKeypressEvents(process.stdin);
     process.stdin.setRawMode(true);
-    process.stdin.on("keypress", (text, key) => {
-        try {
-            onKey(text, key);
-        } catch (error) {
-            message = paint("31", error.message);
-            render();
-        }
-    });
+    process.stdin.on("keypress", (text, key) => onKey(text, key));
     render();
 }

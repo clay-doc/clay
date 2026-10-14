@@ -25,7 +25,7 @@ export function useClaySeo(input: MaybeRefOrGetter<SeoInput>) {
         const {origin} = resolveOrigin(config.siteURL, basePath);
         const page = toValue(input);
         const title = pageTitle(page.title, config.title);
-        const description = truncate(page.description || config.index?.description || "");
+        const description = truncate(page.description || "");
         const url = absoluteUrl(origin, basePath, page.route);
         // An untranslated page repeats its original; search engines should show that one
         const canonical = absoluteUrl(origin, basePath, canonicalRoute.value ?? page.route);

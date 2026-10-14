@@ -10,8 +10,9 @@ const currentDocItem = inject('currentDocItem') as Ref<DocItem | undefined>;
 const edition = inject('edition') as Ref<Edition>;
 const t = useMessages();
 
-// Only for the page shown, not a directory the route stopped at
-const doc = computed(() => currentDocItem.value?.displayLink === props.url && !currentDocItem.value.children ? currentDocItem.value : undefined);
+// Only for the page shown (a page, or a folder's index.md), not a folder the route stopped at
+const doc = computed(() => currentDocItem.value?.displayLink === props.url && (!currentDocItem.value.children || currentDocItem.value.hasIndex)
+    ? currentDocItem.value : undefined);
 // The file the page is read from, which is the translation in other languages
 const edit = computed(() => doc.value?.source ? editLink(config.value, doc.value.source, edition.value.version.name) : undefined);
 const updated = computed(() => {

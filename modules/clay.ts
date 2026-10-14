@@ -128,7 +128,7 @@ export default defineNuxtModule({
             const watcher = watch(root, {recursive: true}, (_event, file) => {
                 const name = String(file ?? "");
                 if (!name || name.startsWith(".clay") || name.startsWith("publish") || name.startsWith("node_modules")) return;
-                if (!name.startsWith("docs") && !name.startsWith("versions") && name !== "clay.yaml" && name !== "dir-meta.yaml" && !name.match(/\.(svg|png|ico|jpe?g|webp)$/i)) return;
+                if (!name.startsWith("docs") && !name.startsWith("versions") && name !== "clay.yaml" && !name.match(/\.(svg|png|ico|jpe?g|webp)$/i)) return;
 
                 clearTimeout(timer);
                 timer = setTimeout(async () => {

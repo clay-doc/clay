@@ -268,3 +268,61 @@ test.describe("languages", () => {
         await expect(result).toHaveAttribute("href", /\/clay\/de\/getting-started/);
     });
 });
+
+test.describe("index pages", () => {
+    test("docs/index.md is the start page, with a large header and cards", async ({request}) => {
+        const html = await (await request.get("")).text();
+        expect(html).toContain("Welcome to the Clay playground</h1>");
+        expect(html).toContain("This playground shows every part of a Clay site.");
+        expect(html).toContain('href="/clay/guides"');
+        expect(await (await request.get("de/")).text()).toContain("Willkommen im Clay-Playground</h1>");
+    });
+
+    test("a folder's index.md is its page; without text, the folder shows its cards", async ({request}) => {
+        const guides = await (await request.get("guides/")).text();
+        expect(guides).toContain('<h1 id="guides">Guides</h1>');
+        expect(guides).toContain("Step-by-step guides for organizing");
+        // Relative links in index.md start from its folder
+        expect(guides).toContain('href="/clay/configuration"');
+        const advanced = await (await request.get("guides/advanced/")).text();
+        expect(advanced).toContain("Advanced Features");
+    });
+
+    test("folders open their page; the arrow shows and hides their entries", async ({page}) => {
+        await page.goto("configuration/");
+        await hydrated(page);
+        const sidebar = page.locator("ul.menu.bg-base-200");
+
+        await sidebar.getByRole("link", {name: /^\W*Guides$/}).click();
+        await expect(page).toHaveURL(/\/clay\/guides$/);
+        await expect(page.locator(".prose h1")).toHaveText("Guides");
+
+        const toggle = sidebar.getByRole("button", {name: "Show or hide Guides"});
+        await expect(toggle).toHaveAttribute("aria-expanded", "true");
+        await toggle.click();
+        await expect(sidebar.getByRole("link", {name: "Organizing Pages"})).toBeHidden();
+        await expect(page).toHaveURL(/\/clay\/guides$/);
+        await toggle.click();
+        await expect(sidebar.getByRole("link", {name: "Organizing Pages"})).toBeVisible();
+    });
+
+    test("navbar dropdowns close on a click elsewhere, Escape and another dropdown", async ({page}) => {
+        await page.goto("configuration/");
+        await hydrated(page);
+        const versions = page.locator("details", {has: page.getByLabel("Docs version")});
+        const languages = page.locator("details", {has: page.getByLabel("Language")});
+
+        await versions.locator("summary").click();
+        await expect(versions).toHaveAttribute("open");
+        await languages.locator("summary").click();
+        await expect(versions).not.toHaveAttribute("open");
+        await expect(languages).toHaveAttribute("open");
+
+        await page.locator(".prose h1").click();
+        await expect(languages).not.toHaveAttribute("open");
+
+        await versions.locator("summary").click();
+        await page.keyboard.press("Escape");
+        await expect(versions).not.toHaveAttribute("open");
+    });
+});

@@ -2,12 +2,14 @@
 import Error from "~/component/Error.vue";
 import TableOfContents from "~/component/TableOfContents.vue";
 import PageFooter from "~/component/PageFooter.vue";
+import DirectoryGrid from "~/component/DirectoryGrid.vue";
 import {clearHighlights, firstMarkInSection, highlightTerms} from "~/assets/highlight-dom";
 import {copyCodeBlock} from "#common/code-copy";
 import type {DocItem, LinkPart} from "#common/nav";
 import type {TocEntry} from "#common/toc";
 
-const props = defineProps<{ url: string }>();
+// start: the start page of the site or of an edition (docs/index.md)
+const props = defineProps<{ url: string, start?: boolean }>();
 
 const router = useRouter();
 const route = useRoute();
@@ -16,13 +18,16 @@ const currentDocItem = inject('currentDocItem') as Ref<DocItem | undefined>;
 const untranslatedNote = inject('untranslatedNote') as Ref<string>;
 const t = useMessages();
 
-type RenderedDoc = { html: string, toc: TocEntry[], description: string };
+type Hero = { title: string, icon?: string, description?: string };
+type RenderedDoc = { html: string, toc: TocEntry[], description: string, hero: Hero | null, cards: boolean };
 
-// Rendered on the server at build time; its data is part of the page payload
-const {data: doc, error} = await useAsyncData(`clay-page:${props.url}`, () => $fetch<RenderedDoc>(`/api/_clay/page${props.url}`));
+// Rendered on the server at build time; its data is part of the page payload.
+// The site's start page has the route "/", requested as "/_start".
+const apiPath = props.url === "/" ? "/_start" : props.url;
+const {data: doc, error} = await useAsyncData(`clay-page:${props.url}`, () => $fetch<RenderedDoc>(`/api/_clay/page${apiPath}`));
 
 useClaySeo(() => ({
-  title: currentDocItem.value?.title,
+  title: props.start ? undefined : currentDocItem.value?.title,
   description: doc.value?.description,
   route: props.url,
   type: "article",
@@ -79,12 +84,20 @@ function handleClicks(event: MouseEvent) {
   <div class="flex gap-10 p-6">
     <article class="prose prose-sm sm:prose max-w-none! min-w-0 flex-1">
       <template v-if="doc">
+        <header v-if="doc.hero" class="not-prose text-center py-12">
+          <h1 class="text-5xl font-bold">
+            <i v-if="doc.hero.icon" :class="doc.hero.icon"/>
+            {{doc.hero.title}}
+          </h1>
+          <p v-if="doc.hero.description" class="pt-6 text-lg opacity-80 max-w-2xl mx-auto">{{doc.hero.description}}</p>
+        </header>
         <div v-if="currentDocItem?.untranslated" role="note" class="not-prose alert alert-info alert-soft mb-6">
           <i class="fa-solid fa-language"></i>
           <span>{{untranslatedNote}}</span>
         </div>
         <div ref="contentEl" v-html="doc.html" @click="handleClicks" class="w-full"></div>
-        <PageFooter :url="url"/>
+        <DirectoryGrid v-if="doc.cards" class="not-prose"/>
+        <PageFooter v-if="!start" :url="url"/>
       </template>
       <Error v-else :code="error?.statusCode ?? 500" :message="error?.statusMessage ?? 'Error'"/>
     </article>

@@ -3,18 +3,13 @@ import {tmpdir} from "node:os";
 import {dirname, join} from "node:path";
 import {describe, expect, it} from "vitest";
 import {load} from "js-yaml";
-import {brokenLinks, configSchema, dirMetaSchema, unknownKeys} from "../lib/checks";
+import {brokenLinks, configSchema, unknownKeys} from "../lib/checks";
 import type {Page} from "../lib/site";
 
 describe("unknownKeys", () => {
     it("finds typos at any depth, including list items", () => {
         const config = load("title: Docs\ntitel: typo\nnavbar:\n  lgo: logo.svg\n  links:\n    - name: Home\n      link: /\n      icn: x\nindex:\n  title: Welcome\n");
         expect(unknownKeys(config, configSchema)).toEqual(["navbar.lgo", "navbar.links[0].icn", "titel"]);
-    });
-
-    it("follows nested directory metadata", () => {
-        const meta = load("- path: a\n  name: A\n  ordr: 1\n  children:\n    - path: b\n      icn: x\n");
-        expect(unknownKeys(meta, [dirMetaSchema])).toEqual(["[0].children[0].icn", "[0].ordr"]);
     });
 
     it("accepts every documented key", () => {

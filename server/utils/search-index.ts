@@ -59,11 +59,11 @@ export function createSearchIndex(sections: SearchSection[]): MiniSearch<SearchS
     return index;
 }
 
-// One page per site page: markdown pages are split into sections, directories
-// are found by their title
+// One entry per site page: pages, and folders with text in their index.md,
+// are split into sections; other folders are found by their title
 export function buildSearchIndex(pages: Page[]): MiniSearch<SearchSection> {
     return createSearchIndex(pages.flatMap(page => {
         const searchPage = {link: page.route, title: page.title, path: page.parents.map(p => p.title).join(" › ")};
-        return page.isDir ? [directorySection(searchPage)] : splitIntoSections(page.markdown ?? "", searchPage);
+        return page.markdown === undefined ? [directorySection(searchPage)] : splitIntoSections(page.markdown, searchPage);
     }));
 }

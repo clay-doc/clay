@@ -12,6 +12,7 @@ export default defineEventHandler(event => {
         {loc: absoluteUrl(origin, basePath, "/")!},
         ...site.editions.filter(edition => edition.prefix).map(edition => ({loc: absoluteUrl(origin, basePath, edition.prefix)!})),
         // Untranslated pages repeat their original, which is listed instead
-        ...site.pages.filter(page => !page.untranslated).map(page => ({loc: absoluteUrl(origin, basePath, page.route)!, lastmod: page.updated}))
+        // Start pages (docs/index.md) are listed above
+        ...site.pages.filter(page => !page.untranslated && page.route !== (page.prefix || "/")).map(page => ({loc: absoluteUrl(origin, basePath, page.route)!, lastmod: page.updated}))
     ]);
 });

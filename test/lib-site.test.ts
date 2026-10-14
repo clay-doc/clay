@@ -57,9 +57,10 @@ describe("sortTree", () => {
             file("beta.md", 2),
             {name: "guides", path: "guides", isDir: true, frontMatter: {}, children: [file("a.md"), file("z.md", 1)]},
             file("intro.md", 1),
-            {name: "zeta", path: "zeta", isDir: true, frontMatter: {}, children: [file("x.md")]},
+            // A folder's order comes from its index.md
+            {name: "zeta", path: "zeta", isDir: true, frontMatter: {}, children: [file("x.md")], index: file("zeta/index.md", 5)},
         ];
-        const sorted = sortTree(tree, [{path: "zeta", order: 5}]);
+        const sorted = sortTree(tree);
 
         expect(sorted.map(n => n.name)).toEqual(["intro.md", "beta.md", "zeta", "alpha.md", "guides"]);
         expect(sorted[4]!.children.map(n => n.name)).toEqual(["z.md", "a.md"]);
@@ -68,9 +69,10 @@ describe("sortTree", () => {
 
 describe("loadSite", () => {
     const root = project({
-        "clay.yaml": "title: Docs\nbaseURL: /repo/\ntitel: typo\nnavbar:\n  lgo: x\n",
-        "dir-meta.yaml": "- path: guides\n  name: Guides\n  order: 1\n  ordr: 2\n",
+        "clay.yaml": "title: Docs\nbaseURL: /repo/\ntitel: typo\nnavbar:\n  lgo: x\nindex:\n  title: Old\n",
+        "dir-meta.yaml": "- path: guides\n",
         "docs/index.md": "# Home\n\nWelcome.",
+        "docs/guides/index.md": "---\ntitle: User Guides\nicon: fa-solid fa-book\norder: 1\n---\n",
         "docs/guides/setup.md": "---\ntitle: Setup\n---\nInstall it.",
         "docs/guides/img/shot.png": "png",
         "docs/images/only.png": "png",
@@ -85,14 +87,24 @@ describe("loadSite", () => {
         expect(site.warnings).toEqual(expect.arrayContaining([
             'clay.yaml: unknown key "navbar.lgo" is ignored (typo?)',
             'clay.yaml: unknown key "titel" is ignored (typo?)',
-            'dir-meta.yaml: unknown key "[0].ordr" is ignored (typo?)',
+            'clay.yaml: "index" is no longer read since Clay 3; write the start page in docs/index.md',
+            "dir-meta.yaml is no longer read since Clay 3; give each folder an index.md with its title, icon and order",
         ]));
     });
 
     it("builds pages, skipping hidden files, other files and directories without pages", () => {
-        expect(site.pages.map(p => `${p.route}=${p.title}`)).toEqual(["/guides=Guides", "/guides/setup=Setup", "/index=Home"]);
-        expect(site.pages[1]!.parents).toEqual([{title: "Guides", route: "/guides"}]);
-        expect(site.nav.children?.map(c => c.title)).toEqual(["Guides", "Home"]);
+        expect(site.pages.map(p => `${p.route}=${p.title}`)).toEqual(["/=Home", "/guides=User Guides", "/guides/setup=Setup"]);
+        expect(site.pages[2]!.parents).toEqual([{title: "User Guides", route: "/guides"}]);
+        expect(site.nav.children?.map(c => c.title)).toEqual(["User Guides"]);
+    });
+
+    it("makes docs/index.md the start page and a folder's index.md its name, icon and order", () => {
+        expect(site.pages[0]).toMatchObject({route: "/", isDir: true, source: "index.md", markdown: "# Home\n\nWelcome."});
+        expect(site.nav).toMatchObject({hasIndex: true, source: "index.md"});
+        // Only front matter: names the folder, but is not a page of its own
+        expect(site.pages[1]).toMatchObject({route: "/guides", icon: "fa-solid fa-book", source: "guides"});
+        expect(site.pages[1]!.markdown).toBeUndefined();
+        expect(site.nav.children![0]!.hasIndex).toBeUndefined();
     });
 
     it("applies environment overrides", () => {
@@ -107,16 +119,16 @@ describe("loadSite", () => {
 });
 
 describe("collectPages", () => {
-    it("links directories to their children", () => {
-        const md = (name: string): DocNode => ({name, path: name, isDir: false, markdown: "", frontMatter: {}, children: []});
+    it("links folders to their children and gives folders with text in index.md a page", () => {
+        const md = (path: string, markdown = ""): DocNode => ({name: path.split("/").pop()!, path, isDir: false, markdown, frontMatter: {}, children: []});
         const tree: DocNode = {name: "", path: "", isDir: true, frontMatter: {}, children: [
             md("a.md"),
-            {name: "dir", path: "dir", isDir: true, frontMatter: {}, children: [{...md("b.md"), path: "dir/b.md"}]},
+            {name: "dir", path: "dir", isDir: true, frontMatter: {}, children: [md("dir/b.md")], index: {...md("dir/index.md", "# Directory\n\nAbout it."), heading: "Directory"}},
         ]};
-        const {pages, topLevel} = collectPages(tree, [{path: "dir", name: "Directory"}]);
+        const {pages, topLevel} = collectPages(tree);
 
         expect(pages.map(p => `${p.route}=${p.title}`)).toEqual(["/a=A", "/dir=Directory", "/dir/b=B"]);
         expect(topLevel.map(c => c.route)).toEqual(["/a", "/dir"]);
-        expect(pages[1]!.children).toEqual([{title: "B", route: "/dir/b"}]);
+        expect(pages[1]).toMatchObject({source: "dir/index.md", markdown: "# Directory\n\nAbout it.", children: [{title: "B", route: "/dir/b"}]});
     });
 });

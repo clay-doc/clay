@@ -42,7 +42,7 @@ describe("buildSearchIndex", () => {
     ]};
 
     it("indexes pages by section and directories by title, and survives a JSON round trip", () => {
-        const index = loadSearchIndex(JSON.stringify(buildSearchIndex(collectPages(tree, [{path: "guides", name: "Guides"}]).pages)));
+        const index = loadSearchIndex(JSON.stringify(buildSearchIndex(collectPages(tree).pages)));
 
         expect(searchSections(index, "installer")[0]).toMatchObject({link: "/guides/setup", anchor: "install", path: "Guides"});
         expect(searchSections(index, "guides").some(hit => hit.link === "/guides")).toBe(true);

@@ -1,10 +1,10 @@
-import {mkdirSync, mkdtempSync, readFileSync, writeFileSync} from "node:fs";
+import {existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync} from "node:fs";
 import {tmpdir} from "node:os";
 import {dirname, join} from "node:path";
 import {beforeEach, describe, expect, it} from "vitest";
 import {
-    addLink, docsChanges, getSetting, loadDocsTree, loadSettings, removeLink, saveDocs, saveSettings,
-    setSetting, settingRows, settingsChanged, type EditorNode,
+    addLink, createFolder, createPage, createTranslation, deleteEntry, getSetting, loadDocsTree, loadSettings, moveEntry,
+    removeLink, reorder, saveSettings, setFields, setSetting, settingRows, settingsChanged, slugify, type EditorNode,
 } from "../lib/editor";
 import {setFrontMatter} from "../lib/front-matter";
 
@@ -16,26 +16,31 @@ const write = (files: Record<string, string>) => {
     }
 };
 const read = (path: string) => readFileSync(join(root, path), "utf8");
-const titles = (nodes: EditorNode[]): unknown[] => nodes.map(node => node.isDir ? [node.name, titles(node.children)] : node.name);
+const names = (nodes: EditorNode[]): unknown[] => nodes.map(node => node.kind === "folder" ? [node.name, names(node.children)] : node.name);
+const en = {version: "", language: "en"};
+const de = {version: "", language: "de"};
 
 beforeEach(() => {
     root = mkdtempSync(join(tmpdir(), "clay-edit-"));
     write({
-        "clay.yaml": "# My site\ntitle: \"Docs\" # shown in the navbar\nnavbar:\n  logo: logo.svg\n",
-        "dir-meta.yaml": "# folders\n- path: \"guides\"\n  name: \"Guides\"\n  children:",
+        "clay.yaml": "# My site\ntitle: \"Docs\" # shown in the navbar\nlanguages: [en, de]\nnavbar:\n  logo: logo.svg\n  source:\n    name:\n      en: Source\n      de: Quelle\n",
+        "docs/index.md": "---\nhero: true\n---\n\nWelcome.\n",
         "docs/intro.md": "---\ntitle: Intro\norder: 1\n---\n\n# Introduction\n",
+        "docs/intro.de.md": "---\ntitle: Einführung\n---\n\n# Einführung\n",
         "docs/setup.md": "# Setup\n\nText\n",
+        "docs/guides/index.md": "---\ntitle: \"Guides\"\n# shown in the sidebar\n---\n",
         "docs/guides/first.md": "---\nicon: fa-solid fa-star # favourite\n---\n# First\n",
         "docs/guides/img/diagram.png": "",
         "docs/empty/notes.txt": "",
+        "versions/1.x/docs/old.md": "# Old\n",
     });
 });
 
 describe("setFrontMatter", () => {
     it("replaces, adds and removes keys and keeps other lines", () => {
         const doc = "---\ntitle: Old\n# a comment\nicon: fa-x\n---\nBody\n";
-        expect(setFrontMatter(doc, {title: "New: part 2", icon: null, order: 3}))
-            .toBe("---\ntitle: \"New: part 2\"\n# a comment\norder: 3\n---\nBody\n");
+        expect(setFrontMatter(doc, {title: "New: part 2", icon: null, order: 3, cards: true}))
+            .toBe("---\ntitle: \"New: part 2\"\n# a comment\norder: 3\ncards: true\n---\nBody\n");
     });
 
     it("adds front matter to a document without one, and drops it again when empty", () => {
@@ -49,65 +54,102 @@ describe("setFrontMatter", () => {
 });
 
 describe("docs tree", () => {
-    it("lists pages and folders with pages in navigation order", () => {
-        expect(titles(loadDocsTree(root))).toEqual(["intro.md", ["guides", ["first.md"]], "setup.md"]);
+    it("lists the start page, pages and folders in navigation order", () => {
+        const tree = loadDocsTree(root, en);
+        expect(names(tree)).toEqual(["index.md", "intro.md", ["guides", ["first.md"]], "setup.md"]);
+        expect(tree[0]).toMatchObject({kind: "start", file: "index.md", exists: true, frontMatter: {hero: true}});
+        expect(tree[2]).toMatchObject({kind: "folder", file: "guides/index.md", exists: true, frontMatter: {title: "Guides"}});
     });
 
-    it("saves nothing when nothing changed", () => {
-        const tree = loadDocsTree(root);
-        expect(docsChanges(tree, structuredClone(tree))).toEqual([]);
+    it("shows the files of another language, and which translations are missing", () => {
+        const tree = loadDocsTree(root, de);
+        expect(tree[1]).toMatchObject({file: "intro.de.md", exists: true, frontMatter: {title: "Einführung"}, order: 1});
+        expect(tree[3]).toMatchObject({file: "setup.de.md", exists: false, fallbackTitle: "Setup"});
     });
 
-    it("numbers all entries of a folder whose order changed", () => {
-        const original = loadDocsTree(root);
-        const tree = structuredClone(original);
-        tree.reverse(); // setup, guides, intro
-        const written = saveDocs(root, docsChanges(original, tree));
+    it("shows older versions", () => {
+        expect(names(loadDocsTree(root, {version: "1.x", language: "en"}))).toEqual(["index.md", "old.md"]);
+    });
+});
 
-        expect(written.sort()).toEqual(["dir-meta.yaml", "docs/intro.md", "docs/setup.md"]);
-        expect(read("docs/setup.md")).toBe("---\norder: 1\n---\n# Setup\n\nText\n");
-        expect(read("docs/intro.md")).toBe("---\ntitle: Intro\norder: 3\n---\n\n# Introduction\n");
-        expect(read("dir-meta.yaml")).toBe("# folders\n- path: \"guides\"\n  name: \"Guides\"\n  children:\n  order: 2");
-        expect(titles(loadDocsTree(root))).toEqual(["setup.md", ["guides", ["first.md"]], "intro.md"]);
+describe("editing", () => {
+    it("sets and removes front matter fields, keeping comments and quoting", () => {
+        const tree = loadDocsTree(root, en);
+        expect(setFields(root, en, tree[2]!.children[0]!, {title: "First steps", icon: null})).toBe("docs/guides/first.md");
+        expect(read("docs/guides/first.md")).toBe("---\ntitle: First steps\n---\n# First\n");
+        setFields(root, en, tree[2]!, {icon: "fa-solid fa-book", order: 2});
+        expect(read("docs/guides/index.md")).toBe("---\ntitle: \"Guides\"\n# shown in the sidebar\nicon: fa-solid fa-book\norder: 2\n---\n");
     });
 
-    it("writes titles and icons of pages and folders; empty values fall back again", () => {
-        const original = loadDocsTree(root);
-        const tree = structuredClone(original);
-        tree[0]!.title = undefined;
-        tree[1]!.icon = "fa-solid fa-book";
-        tree[1]!.children[0]!.title = "First steps";
-        saveDocs(root, docsChanges(original, tree));
-
-        expect(read("docs/intro.md")).toBe("---\norder: 1\n---\n\n# Introduction\n");
-        expect(read("docs/guides/first.md")).toBe("---\nicon: fa-solid fa-star # favourite\ntitle: First steps\n---\n# First\n");
-        expect(read("dir-meta.yaml")).toContain("  name: \"Guides\"\n  children:\n  icon: fa-solid fa-book");
-        expect(loadDocsTree(root)[0]!.fallbackTitle).toBe("Introduction");
+    it("creates a missing translation from the original when a field is set", () => {
+        const setup = loadDocsTree(root, de)[3]!;
+        expect(setFields(root, de, setup, {title: "Einrichtung"})).toBe("docs/setup.de.md");
+        expect(read("docs/setup.de.md")).toBe("---\ntitle: Einrichtung\n---\n# Setup\n\nText\n");
     });
 
-    it("creates dir-meta.yaml entries for nested folders", () => {
-        write({"dir-meta.yaml": "", "docs/guides/deep/page.md": "# Deep\n"});
-        const original = loadDocsTree(root);
-        const tree = structuredClone(original);
-        const guides = tree.find(node => node.name === "guides")!;
-        guides.children.find(node => node.name === "deep")!.title = "Deep dive";
-        saveDocs(root, docsChanges(original, tree));
-
-        // Without an entry for "guides", "deep" is looked up at the top level
-        expect(read("dir-meta.yaml")).toBe("- path: deep\n  name: Deep dive\n");
-        expect(loadDocsTree(root).find(node => node.name === "guides")!.children[0]!.title).toBe("Deep dive");
+    it("creates an index.md for a folder that has none", () => {
+        write({"docs/reference/api.md": "# API\n"});
+        const reference = loadDocsTree(root, en).find(node => node.name === "reference")!;
+        expect(reference).toMatchObject({exists: false, fallbackTitle: "Reference"});
+        setFields(root, en, reference, {title: "Reference", icon: "fa-solid fa-book"});
+        expect(read("docs/reference/index.md")).toBe("---\ntitle: Reference\nicon: fa-solid fa-book\n---\n");
     });
 
-    it("keeps subfolder entries working when a folder gets its first entry", () => {
-        write({"dir-meta.yaml": "- path: deep\n  name: Deep dive\n", "docs/guides/deep/page.md": "# Deep\n"});
-        const original = loadDocsTree(root);
-        const tree = structuredClone(original);
-        tree.find(node => node.name === "guides")!.title = "All guides";
-        saveDocs(root, docsChanges(original, tree));
+    it("numbers a folder's entries 1..n and writes only what changed", () => {
+        const tree = loadDocsTree(root, en);
+        const [, intro, guides, setup] = tree;
+        const written = reorder(root, "", [tree[0]!, setup!, intro!, guides!]);
+        expect(written.sort()).toEqual(["docs/guides/index.md", "docs/intro.md", "docs/setup.md"]);
+        expect(names(loadDocsTree(root, en))).toEqual(["index.md", "setup.md", "intro.md", ["guides", ["first.md"]]]);
+    });
+});
 
-        const guides = loadDocsTree(root).find(node => node.name === "guides")!;
-        expect(guides.title).toBe("All guides");
-        expect(guides.children.find(node => node.name === "deep")!.title).toBe("Deep dive");
+describe("creating", () => {
+    it("turns titles into file names", () => {
+        expect(slugify("Getting Started!")).toBe("getting-started");
+        expect(slugify("Über Größen")).toBe("uber-grossen");
+        expect(slugify("???")).toBe("page");
+    });
+
+    it("creates pages and folders after the ordered entries", () => {
+        const tree = loadDocsTree(root, en);
+        expect(createPage(root, "", "guides", "Deploying", "deploying", tree[2]!.children)).toBe("docs/guides/deploying.md");
+        expect(read("docs/guides/deploying.md")).toBe("---\ntitle: \"Deploying\"\n---\n\n# Deploying\n");
+        expect(createFolder(root, "", "", "Reference", "reference", tree)).toBe("docs/reference/index.md");
+        expect(read("docs/reference/index.md")).toBe("---\ntitle: \"Reference\"\norder: 2\ncards: true\n---\n\n# Reference\n");
+        expect(() => createPage(root, "", "", "Setup", "setup", tree)).toThrow(/already exists/);
+    });
+
+    it("starts a translation as a copy of the original", () => {
+        const setup = loadDocsTree(root, de)[3]!;
+        expect(createTranslation(root, de, setup)).toBe("docs/setup.de.md");
+        expect(read("docs/setup.de.md")).toBe(read("docs/setup.md"));
+        expect(() => createTranslation(root, de, loadDocsTree(root, de)[3]!)).toThrow(/already exists/);
+    });
+});
+
+describe("moving and deleting", () => {
+    it("renames a page with its translations and reports links that broke", () => {
+        write({"docs/setup.md": "# Setup\n\nSee the [intro](intro.md).\n"});
+        const intro = loadDocsTree(root, en)[1]!;
+        const {moved, broken} = moveEntry(root, "", intro, "guides", "welcome");
+        expect(moved).toEqual(["intro.md → guides/welcome.md", "intro.de.md → guides/welcome.de.md"]);
+        expect(existsSync(join(root, "docs/guides/welcome.de.md"))).toBe(true);
+        expect(broken).toEqual(['setup.md: "intro.md" points to a missing page (/intro)']);
+    });
+
+    it("moves folders, but not into themselves", () => {
+        const guides = loadDocsTree(root, en)[2]!;
+        expect(() => moveEntry(root, "", guides, "guides", "inner")).toThrow(/into itself/);
+        expect(moveEntry(root, "", guides, "", "tutorials").moved).toEqual(["guides/ → tutorials/"]);
+        expect(existsSync(join(root, "docs/tutorials/first.md"))).toBe(true);
+    });
+
+    it("deletes a page with its translations", () => {
+        const {deleted} = deleteEntry(root, "", loadDocsTree(root, en)[1]!);
+        expect(deleted).toEqual(["intro.md", "intro.de.md"]);
+        expect(existsSync(join(root, "docs/intro.de.md"))).toBe(false);
+        expect(() => deleteEntry(root, "", loadDocsTree(root, en)[0]!)).toThrow(/start page/);
     });
 });
 
@@ -116,17 +158,26 @@ describe("settings", () => {
         const settings = loadSettings(root);
         expect(settingsChanged(settings)).toBe(false);
         setSetting(settings.doc, ["title"], "Handbook");
-        setSetting(settings.doc, ["index", "title"], "Welcome");
+        setSetting(settings.doc, ["version"], "3.x");
         expect(saveSettings(root, settings)).toBe(true);
-        expect(read("clay.yaml")).toBe(
-            "# My site\ntitle: \"Handbook\" # shown in the navbar\nnavbar:\n  logo: logo.svg\nindex:\n  title: Welcome\n");
+        expect(read("clay.yaml")).toContain("title: \"Handbook\" # shown in the navbar\n");
+        expect(read("clay.yaml")).toContain("version: 3.x\n");
+    });
+
+    it("reads and writes values given per language in the chosen language", () => {
+        const settings = loadSettings(root);
+        expect(getSetting(settings.doc, ["navbar", "source", "name"], "de")).toBe("Quelle");
+        setSetting(settings.doc, ["navbar", "source", "name"], "Quelltext", "de");
+        expect(getSetting(settings.doc, ["navbar", "source", "name"], "de")).toBe("Quelltext");
+        expect(getSetting(settings.doc, ["navbar", "source", "name"], "en")).toBe("Source");
     });
 
     it("removes emptied values and the sections they leave empty", () => {
         const settings = loadSettings(root);
         setSetting(settings.doc, ["navbar", "logo"], "");
+        setSetting(settings.doc, ["navbar", "source", "name"], "");
         saveSettings(root, settings);
-        expect(read("clay.yaml")).toBe("# My site\ntitle: \"Docs\" # shown in the navbar\n");
+        expect(read("clay.yaml")).not.toContain("navbar:");
     });
 
     it("adds and removes navbar links", () => {

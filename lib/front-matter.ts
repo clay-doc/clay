@@ -5,6 +5,8 @@ export type FrontMatter = {
     icon?: string;
     description?: string;
     order?: number; // position in the navigation; unset pages follow ordered ones
+    cards?: boolean; // index.md: show the folder's pages as cards below the text
+    hero?: boolean; // index.md: show title, icon and description as a large centered header
 };
 
 // Front matter only counts when the very first line is "---", so a horizontal
@@ -28,7 +30,7 @@ export function stripFrontMatter(content: string): string {
 
 // Sets (or with null removes) front matter keys, leaving every other line as it
 // was; front matter is added at the top when a document has none.
-export function setFrontMatter(content: string, updates: Record<string, string | number | null>): string {
+export function setFrontMatter(content: string, updates: Record<string, string | number | boolean | null>): string {
     const {found} = splitFrontMatter(content);
     const bom = content.startsWith("﻿") ? "﻿" : "";
     const body = content.slice(bom.length).split(/(?<=\n)/);
@@ -72,6 +74,10 @@ export function parseFrontMatter(content: string): FrontMatter {
                 break;
             case "order":
                 if (/^-?\d+$/.test(value)) result.order = Number(value);
+                break;
+            case "cards":
+            case "hero":
+                if (value === "true" || value === "false") result[key] = value === "true";
                 break;
         }
     }

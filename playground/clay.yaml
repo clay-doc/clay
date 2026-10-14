@@ -16,11 +16,3 @@ navbar:
     - name: "Example"
       icon: "fa-solid fa-book"
       link: "https://clay-doc.github.io/clay-example-repo"
-index:
-  title:
-    en: "Welcome to the Clay playground"
-    de: "Willkommen im Clay-Playground"
-  description:
-    en: "A sample site for developing and testing Clay."
-    de: "Eine Beispielseite zum Entwickeln und Testen von Clay."
-  icon: "fa-solid fa-rocket"
