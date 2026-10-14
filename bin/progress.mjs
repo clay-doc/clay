@@ -12,7 +12,16 @@ export function createBuildParser() {
     const errors = new Set();
 
     return function parse(raw) {
-        const text = raw.replace(ANSI, "").replace(/^\[nitro\]/, "").trim();
+        let text = raw.replace(ANSI, "").trim();
+        // In CI, Nuxt's logger writes "[info] …", "[warn] [clay] …" and "[error] …"
+        // instead of icons and badges; turn them into the usual form
+        const level = text.match(/^\[(info|success|start|ready|log|debug|warn|error|fail|fatal)\]\s*/);
+        if (level) {
+            text = text.slice(level[0].length);
+            if (level[1] === "warn" && text.startsWith("[clay]")) text = text.replace(/^\[clay\]\s*/, "[clay] WARN ");
+            else if (["error", "fail", "fatal"].includes(level[1])) text = `ERROR ${text}`;
+        }
+        text = text.replace(/^\[nitro\]/, "").trim();
         let match;
 
         // Nitro lists each failed route again after "Errors prerendering:"
@@ -20,12 +29,14 @@ export function createBuildParser() {
         inErrors = false;
 
         // The cause of a failed page, reported once for all pages it breaks
-        if (failedRequest && text && !text.startsWith("at ") && !/^ERROR\s/.test(text)) {
+        // (in CI the cause carries an [error] prefix of its own)
+        if (failedRequest && text && !text.startsWith("at ") && !/^ERROR\s+\[request error\]/.test(text)) {
             const page = failedRequest;
+            const cause = text.replace(/^ERROR\s+/, "");
             failedRequest = null;
-            if (errors.has(text)) return [];
-            errors.add(text);
-            return [{type: "error", text: `${text} (rendering ${page})`}];
+            if (errors.has(cause)) return [];
+            errors.add(cause);
+            return [{type: "error", text: `${cause} (rendering ${page})`}];
         }
         if ((match = text.match(/^ERROR\s+\[request error\].*?\[GET\]\s+https?:\/\/[^/]+(\S*)/))) {
             failedRequest = match[1] || "/";

@@ -124,3 +124,25 @@ describe("build parser with failing pages", () => {
         ]);
     });
 });
+
+describe("build parser in CI", () => {
+    it("understands the level prefixes of Nuxt's logger without a terminal", () => {
+        const parse = createBuildParser();
+        const events = [
+            "[info] Building Nuxt for production...",
+            "[warn] [clay] Broken link in a.md: \"missing.md\" points to a missing page (/missing)",
+            "[warn] Browserslist: browsers data (caniuse-lite) is 10 months old.",
+            "[info] [clay] 10 pages in docs; languages de (1/7 translated)",
+            "[error] [request error] [unhandled] [GET] http://localhost/de",
+            "[error] [nuxt] instance unavailable",
+            "[error] clay build --strict: 1 problem(s) found, see the warnings above",
+        ].flatMap(line => parse(line));
+        expect(events).toEqual([
+            {type: "step", label: "Loading docs"},
+            {type: "warn", text: "Broken link in a.md: \"missing.md\" points to a missing page (/missing)"},
+            {type: "done", label: "Loaded 10 pages from docs", detail: "languages de (1/7 translated)"},
+            {type: "error", text: "[nuxt] instance unavailable (rendering /de)"},
+            {type: "error", text: "clay build --strict: 1 problem(s) found, see the warnings above"},
+        ]);
+    });
+});
