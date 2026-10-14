@@ -4,6 +4,7 @@ favicon: "logo.svg"
 baseURL: "/"
 siteURL: "https://clay-doc.github.io"
 editURL: "https://github.com/clay-doc/clay/edit/main/playground/docs/"
+version: "2.x"
 navbar:
   logo: "logo.svg"
   source:

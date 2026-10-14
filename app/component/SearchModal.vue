@@ -3,8 +3,10 @@ import type MiniSearch from "minisearch";
 import {highlight, searchSections, type SearchHit, type SearchSection, type SearchTarget} from "#common/search";
 import {getSearchIndex, useSearchOpen} from "~/composables/use-search";
 import SearchHighlight from "~/component/SearchHighlight.vue";
+import type {VersionInfo} from "#common/versions";
 
 const baseUrl = inject('baseUrl') as Ref<string>;
+const version = inject('version') as Ref<VersionInfo>;
 const open = useSearchOpen();
 const router = useRouter();
 
@@ -21,6 +23,8 @@ const hasQuery = computed(() => query.value.trim() !== "");
 const items = computed<(SearchTarget | SearchHit)[]>(() => hasQuery.value ? hits.value : recent.value);
 
 watch(items, () => selected.value = 0);
+// Results come from the version shown
+watch(() => version.value.name, () => index.value = undefined);
 watch(selected, i => document.getElementById(`search-item-${i}`)?.scrollIntoView({block: "nearest"}));
 
 watch(open, async isOpen => {
@@ -40,7 +44,7 @@ async function loadIndex() {
   if (index.value) return;
   status.value = "loading";
   try {
-    index.value = await getSearchIndex(baseUrl.value);
+    index.value = await getSearchIndex(baseUrl.value, version.value.name);
     status.value = "ready";
   } catch {
     status.value = "error";

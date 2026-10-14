@@ -5,7 +5,6 @@ impact.
 
 ## Features
 
-- Versioned docs (docs per release, version switcher).
 - Translations (i18n) with a language switcher.
 - Custom components in Markdown (e.g. tabs, cards), diagrams (Mermaid) and math (KaTeX).
 - A plugin system and analytics integration.

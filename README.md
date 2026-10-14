@@ -75,6 +75,7 @@ siteURL: "https://my-org.github.io" # origin, for canonical URLs and the sitemap
 lang: "en"
 editURL: "https://github.com/my-org/my-project/edit/main/docs/"
 fontawesomeKit: "abc123"            # optional; without it the free Font Awesome icons are used
+version: "2.x"                      # label of docs/ in the version switcher (default: "Latest")
 navbar:
   logo: "logo.svg"
   source:
@@ -123,6 +124,20 @@ Folders get their name, icon and order from `dir-meta.yaml`:
 Links between docs work like on GitHub: `[Setup](./guides/setup.md)` is resolved relative to the page.
 Images and other files next to your docs (`![Diagram](img/diagram.png)`) are published with the site.
 
+### Versions
+
+`docs/` is always the latest version, at the site root. Before a release changes the docs, save the current state
+as an older version:
+
+```bash
+npx clay version 1.x   # copies docs/ and dir-meta.yaml to versions/1.x/
+```
+
+Each folder in `versions/` becomes a version under its own path (`/1.x/guides/setup`), with its own navigation and
+search. A switcher in the navbar keeps the page when the other version has it, and older versions show a banner
+that links to the latest one. Older versions stay editable; edit links point into `versions/<name>/docs/` when
+`editURL` ends in `docs/`.
+
 ## Command Line
 
 | Command        | Description                                       |
@@ -131,6 +146,7 @@ Images and other files next to your docs (`![Diagram](img/diagram.png)`) are pub
 | `clay build`   | Build the static site into `<out>/public`         |
 | `clay preview` | Serve the build under its base URL, like GitHub Pages |
 | `clay edit`    | Edit page order, titles and icons, and the settings in `clay.yaml` |
+| `clay version <name>` | Save the current docs as an older version in `versions/<name>/` |
 
 `clay edit` opens an editor in the terminal: move pages and folders (`m` picks one up, ↑↓ moves it, ⏎ drops it),
 set titles and icons, and switch to the site settings with Tab. Saving writes `order`, `title` and `icon` to the

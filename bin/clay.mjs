@@ -2,9 +2,9 @@
 // Clay command line: build, preview and develop a documentation site from the
 // docs project in the current directory (clay.yaml, dir-meta.yaml, docs/).
 import {spawn} from "node:child_process";
-import {existsSync, readFileSync} from "node:fs";
+import {cpSync, existsSync, readFileSync} from "node:fs";
 import {createRequire} from "node:module";
-import {dirname, join, resolve} from "node:path";
+import {basename, dirname, join, resolve} from "node:path";
 import {fileURLToPath} from "node:url";
 import {createInterface} from "node:readline";
 import {parseArgs} from "node:util";
@@ -24,6 +24,7 @@ Commands:
   build     Build the static site into <out>/public
   preview   Serve the built site like a static host would
   edit      Edit page order, titles and icons, and the settings in clay.yaml
+  version   Save the current docs as an older version: clay version <name>
 
 Options:
   --root <dir>   Docs project with clay.yaml and docs/ (default: current directory)
@@ -94,6 +95,26 @@ function nuxt(args, {onLine, onClose} = {}) {
     });
 }
 
+// Copies docs/ and dir-meta.yaml into versions/<name>; docs/ stays the latest version
+function saveVersion(name) {
+    const fail = message => {
+        console.error(message);
+        process.exit(1);
+    };
+    if (!name) fail('Name the version, e.g. "clay version 1.x".');
+    // The same rule as lib/site.ts: the name becomes the first segment of the version's URLs
+    if (!/^[A-Za-z0-9][\w.-]*$/.test(name) || ["docs", "api", "_clay", "_nuxt"].includes(name)) {
+        fail(`"${name}" can't be used in URLs; use letters, digits, ".", "-" and "_".`);
+    }
+    const target = join(root, "versions", name);
+    if (existsSync(target)) fail(`versions/${name} already exists.`);
+
+    cpSync(join(root, "docs"), join(target, "docs"), {recursive: true, filter: source => !basename(source).startsWith(".")});
+    if (existsSync(join(root, "dir-meta.yaml"))) cpSync(join(root, "dir-meta.yaml"), join(target, "dir-meta.yaml"));
+    console.log(`Saved the current docs as version ${name} in versions/${name}.`);
+    console.log(`docs/ stays the latest version; the switcher calls it "Latest" unless clay.yaml sets "version".`);
+}
+
 switch (command) {
     case "dev":
         nuxt(["dev", "--port", options.port ?? "3000", ...(options.host ? ["--host"] : [])]);
@@ -109,6 +130,9 @@ switch (command) {
         break;
     case "preview":
         await preview({root, out, port: Number(options.port ?? 4173), host: options.host ? "0.0.0.0" : "127.0.0.1"});
+        break;
+    case "version":
+        saveVersion(positionals[1]);
         break;
     case "edit":
         try {

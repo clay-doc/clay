@@ -7,6 +7,7 @@ export type Configuration = {
     lang?: string,
     editURL?: string, // e.g. "https://github.com/org/repo/edit/main/docs/"
     fontawesomeKit?: string,
+    version?: string, // label of the current docs in the version switcher, e.g. "2.x"
     navbar?: NavbarConfiguration,
     index?: IndexConfiguration,
     langs?: string[], // obsolete: code languages are detected automatically
@@ -32,10 +33,17 @@ export type IndexConfiguration = {
     icon?: string,
 }
 
-// Link to edit a doc in its repository, e.g. editURL + "guides/setup.md"
-export function editLink(config: Configuration | undefined, docLink: string): string | undefined {
+// Link to edit a doc in its repository, e.g. editURL + "guides/setup.md". Docs
+// of an older version are in versions/<name>/docs/, next to docs/, so editURL
+// has to end in "docs/" to find them.
+export function editLink(config: Configuration | undefined, docLink: string, version = ""): string | undefined {
     if (!config?.editURL) return undefined;
-    return config.editURL.replace(/\/*$/, "/") + docLink.replace(/^\/+/, "");
+    let base = config.editURL.replace(/\/*$/, "/");
+    if (version) {
+        if (!base.endsWith("/docs/")) return undefined;
+        base = base.replace(/docs\/$/, `versions/${version}/docs/`);
+    }
+    return base + docLink.replace(/^\/+/, "");
 }
 
 // Icons come from a Font Awesome kit when one is configured, otherwise from the

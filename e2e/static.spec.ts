@@ -144,3 +144,65 @@ test.describe("in the browser", () => {
         expect(await pane.evaluate(el => el.scrollTop)).toBe(0);
     });
 });
+
+test.describe("versions", () => {
+    test("older versions are pre-rendered under their prefix with their own assets", async ({request}) => {
+        const html = await (await request.get("1.x/guides/legacy-setup/")).text();
+        expect(html).toContain("This page only exists in version 1.x.");
+        expect(html).toContain('src="/clay/docs/1.x/guides/build-steps.svg"');
+        expect((await request.get("docs/1.x/guides/build-steps.svg")).ok()).toBe(true);
+        expect((await request.get("1.x/")).status()).toBe(200);
+        expect((await request.get("_clay/versions/1.x/search.json")).ok()).toBe(true);
+    });
+
+    test("an older version shows its own navigation, a banner and version edit links", async ({page}) => {
+        const messages = watchConsole(page);
+        await page.goto("1.x/getting-started/");
+        await hydrated(page);
+
+        await expect(page.locator(".prose h1")).toHaveText("Getting Started with Clay 1.x");
+        await expect(page.locator("ul.menu.bg-base-200 > li")).toHaveText([/Getting Started/, /Guides/]);
+        await expect(page.getByRole("status")).toContainText("These are the docs for version 1.x.");
+        await expect(page.getByRole("status").getByRole("link")).toHaveAttribute("href", "/clay/getting-started");
+        await expect(page.locator("footer a", {hasText: "Edit this page"}))
+            .toHaveAttribute("href", "https://github.com/clay-doc/clay/edit/main/playground/versions/1.x/docs/getting-started.md");
+
+        await page.locator(".prose a:not(footer a)", {hasText: "legacy setup"}).click();
+        await expect(page).toHaveURL(/\/clay\/1\.x\/guides\/legacy-setup$/);
+        expect(messages).toEqual([]);
+    });
+
+    test("the switcher keeps the page when the other version has it", async ({page}) => {
+        await page.goto("getting-started/");
+        await hydrated(page);
+        const switcher = page.locator("details", {has: page.getByLabel("Docs version")});
+
+        await expect(switcher.locator("summary")).toHaveText("2.x");
+        await switcher.locator("summary").click();
+        await switcher.getByRole("link", {name: "1.x"}).click();
+        await expect(page).toHaveURL(/\/clay\/1\.x\/getting-started$/);
+        await expect(switcher).not.toHaveAttribute("open");
+
+        await page.goto("configuration/");
+        await hydrated(page);
+        await switcher.locator("summary").click();
+        await switcher.getByRole("link", {name: "1.x"}).click();
+        await expect(page).toHaveURL(/\/clay\/1\.x$/);
+        await expect(page.locator("main, body").getByRole("link", {name: "Guides"}).first()).toBeVisible();
+    });
+
+    test("search stays within the version shown", async ({page}) => {
+        await page.goto("1.x/");
+        await hydrated(page);
+        await openSearch(page);
+        await page.keyboard.type("legacy");
+        await expect(page.locator("dialog[open] ul.menu a").first()).toContainText("Legacy Setup");
+        await page.keyboard.press("Escape");
+
+        await page.goto("");
+        await hydrated(page);
+        await openSearch(page);
+        await page.keyboard.type("legacy setup");
+        await expect(page.locator("dialog[open]")).toContainText("No results");
+    });
+});

@@ -4,6 +4,7 @@ import {addTemplate, defineNuxtModule, updateTemplates, useLogger} from "@nuxt/k
 import {isMarkdown, loadSite, type Site} from "../lib/site";
 import {brokenLinks} from "../lib/checks";
 import {resolveOrigin} from "../common/seo";
+import {versionPrefix} from "../common/versions";
 import type {ViteDevServer} from "vite";
 
 const SITE_TEMPLATE = "clay-site.mjs";
@@ -25,7 +26,8 @@ function copyAssets(site: Site, target: string) {
             }
         }
     };
-    copyDir(site.docsDir, join(target, "docs"));
+    // Older versions next to the current docs, the way their pages link to them
+    for (const version of site.versions) copyDir(version.docsDir, join(target, "docs", version.name));
 
     for (const asset of new Set([site.config.favicon, site.config.navbar?.logo])) {
         if (!asset || /^[a-z]+:\/\//i.test(asset)) continue;
@@ -50,19 +52,26 @@ export default defineNuxtModule({
 
         // Problems are reported once per build; with --strict they fail it
         // (missing git history only limits last-updated dates, so it never fails a build)
-        const broken = brokenLinks(site.pages, site.docsDir);
+        const broken = brokenLinks(site.pages, Object.fromEntries(site.versions.map(v => [v.name, v.docsDir])));
         const problems = [...site.warnings.filter(w => !w.includes("last-updated")), ...broken];
         for (const warning of site.warnings) logger.warn(warning);
         for (const link of broken) logger.warn(`Broken link in ${link}`);
         if (strict && problems.length > 0) {
             throw new Error(`clay build --strict: ${problems.length} problem(s) found, see the warnings above`);
         }
-        logger.info(`${site.pages.length} pages in ${relative(process.cwd(), site.docsDir) || site.docsDir}`);
+        const count = (name: string) => site.pages.filter(page => page.version === name).length;
+        const older = site.versions.slice(1).map(version => `${version.name} (${count(version.name)} pages)`);
+        logger.info(`${count("")} pages in ${relative(process.cwd(), site.docsDir) || site.docsDir}${older.length ? `; versions ${older.join(", ")}` : ""}`);
 
         // Config and navigation for the app, bundled instead of fetched
         addTemplate({
             filename: SITE_TEMPLATE,
-            getContents: () => `export const config = ${JSON.stringify(site.config)};\nexport const nav = ${JSON.stringify(site.nav)};\n`,
+            getContents: () => [
+                `export const config = ${JSON.stringify(site.config)};`,
+                `export const nav = ${JSON.stringify(site.nav)};`,
+                `export const versions = ${JSON.stringify(site.versions.map(({name, label}) => ({name, label})))};`,
+                `export const navs = ${JSON.stringify(Object.fromEntries(site.versions.map(v => [v.name, v.nav])))};`,
+            ].join("\n") + "\n",
             write: true
         });
         addTemplate({
@@ -70,8 +79,11 @@ export default defineNuxtModule({
             getContents: () => [
                 `import type {Configuration} from ${JSON.stringify(resolve(__dirname, "../common/configuration"))};`,
                 `import type {DocItem} from ${JSON.stringify(resolve(__dirname, "../common/nav"))};`,
+                `import type {VersionInfo} from ${JSON.stringify(resolve(__dirname, "../common/versions"))};`,
                 "export declare const config: Configuration;",
-                "export declare const nav: DocItem;"
+                "export declare const nav: DocItem;",
+                "export declare const versions: VersionInfo[];",
+                "export declare const navs: Record<string, DocItem>;"
             ].join("\n"),
             write: true
         });
@@ -88,8 +100,10 @@ export default defineNuxtModule({
             nitro.prerender.routes = [
                 ...(nitro.prerender.routes ?? []),
                 "/",
+                ...site.versions.slice(1).map(versionPrefix),
                 ...site.pages.map(page => page.route),
                 "/_clay/search.json",
+                ...site.versions.slice(1).map(version => `/_clay/versions/${version.name}/search.json`),
                 "/robots.txt",
                 ...(origin ? ["/sitemap.xml"] : [])
             ];
@@ -106,7 +120,7 @@ export default defineNuxtModule({
             const watcher = watch(root, {recursive: true}, (_event, file) => {
                 const name = String(file ?? "");
                 if (!name || name.startsWith(".clay") || name.startsWith("publish") || name.startsWith("node_modules")) return;
-                if (!name.startsWith("docs") && name !== "clay.yaml" && name !== "dir-meta.yaml" && !name.match(/\.(svg|png|ico|jpe?g|webp)$/i)) return;
+                if (!name.startsWith("docs") && !name.startsWith("versions") && name !== "clay.yaml" && name !== "dir-meta.yaml" && !name.match(/\.(svg|png|ico|jpe?g|webp)$/i)) return;
 
                 clearTimeout(timer);
                 timer = setTimeout(async () => {

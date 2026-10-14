@@ -162,6 +162,7 @@ const FIELDS: [string, [string, string[]][]][] = [
     ["Site", [
         ["Title", ["title"]], ["Favicon", ["favicon"]], ["Base URL", ["baseURL"]], ["Site URL", ["siteURL"]],
         ["Language", ["lang"]], ["Edit URL", ["editURL"]], ["Font Awesome kit", ["fontawesomeKit"]],
+        ["Version label", ["version"]],
     ]],
     ["Navbar", [
         ["Logo", ["navbar", "logo"]], ["Source name", ["navbar", "source", "name"]],

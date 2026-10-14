@@ -1,15 +1,17 @@
 <script setup lang="ts">
 import {editLink, type Configuration} from "#common/configuration";
 import {adjacentPages, type DocItem} from "#common/nav";
+import {stripVersion, type VersionInfo} from "#common/versions";
 
 const props = defineProps<{ url: string }>();
 const config = inject('config') as Ref<Configuration | undefined>;
 const structure = inject('structure') as Ref<DocItem | undefined>;
 const currentDocItem = inject('currentDocItem') as Ref<DocItem | undefined>;
+const version = inject('version') as Ref<VersionInfo>;
 
 // Only for the page shown, not a directory the route stopped at
 const doc = computed(() => currentDocItem.value?.displayLink === props.url && !currentDocItem.value.children ? currentDocItem.value : undefined);
-const edit = computed(() => doc.value ? editLink(config.value, doc.value.link) : undefined);
+const edit = computed(() => doc.value ? editLink(config.value, stripVersion(doc.value.link, version.value), version.value.name) : undefined);
 const updated = computed(() => {
   const date = doc.value?.updated ? new Date(doc.value.updated) : undefined;
   if (!date || isNaN(date.getTime())) return undefined;

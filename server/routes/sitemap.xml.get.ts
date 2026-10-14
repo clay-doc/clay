@@ -10,6 +10,7 @@ export default defineEventHandler(event => {
     setHeader(event, "content-type", "application/xml");
     return sitemapXml([
         {loc: absoluteUrl(origin, basePath, "/")!},
+        ...site.versions.slice(1).map(version => ({loc: absoluteUrl(origin, basePath, `/${version.name}`)!})),
         ...site.pages.map(page => ({loc: absoluteUrl(origin, basePath, page.route)!, lastmod: page.updated}))
     ]);
 });

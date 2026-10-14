@@ -1,6 +1,7 @@
 <script setup lang="ts">
 
-import {type LinkPart} from "#common/nav";
+import {type DocItem, type LinkPart} from "#common/nav";
+import {switchVersion, type VersionInfo} from "#common/versions";
 import type {Configuration} from "#common/configuration";
 import linkConcat from "#common/link-concat";
 import {useSearchOpen} from "~/composables/use-search";
@@ -9,6 +10,15 @@ import {useTheme} from "~/composables/use-theme";
 const config = inject('config') as Ref<Configuration>;
 const linkParts = inject("delimitedLinkParts") as Ref<LinkPart[]>;
 const baseUrl = inject('baseUrl') as Ref<string>;
+const versions = inject('versions') as Ref<VersionInfo[]>;
+const version = inject('version') as Ref<VersionInfo>;
+const navs = inject('navs') as Ref<Record<string, DocItem>>;
+const route = useRoute();
+
+// A dropdown stays open after following one of its links otherwise
+function closeMenu(event: MouseEvent) {
+  (event.target as HTMLElement).closest("details")?.removeAttribute("open");
+}
 
 
 // On keyboard shortcut cmd+k or ctrl+k toggle the search, "/" opens it
@@ -76,6 +86,17 @@ onUnmounted(() => {
 
     <div class="navbar-end gap-2">
       <ul class="menu menu-horizontal flex-nowrap px-1">
+        <li v-if="versions.length > 1">
+          <details>
+            <summary aria-label="Docs version"><i class="fa-solid fa-code-branch text-xs"></i>{{version.label}}</summary>
+            <ul class="bg-base-100 p-2 end-0 sm:end-auto z-10">
+              <li v-for="v in versions" :key="v.name">
+                <NuxtLink :to="switchVersion(route.path, version, v, navs)" :class="{'menu-active': v.name === version.name}"
+                          @click="closeMenu">{{v.label}}</NuxtLink>
+              </li>
+            </ul>
+          </details>
+        </li>
         <li v-if="config.navbar?.source?.link">
           <NuxtLink :to="config.navbar.source.link" target="_blank">
             <i :class="config.navbar.source.icon"></i>

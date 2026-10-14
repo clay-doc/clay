@@ -29,8 +29,8 @@ export function createBuildParser() {
             return [];
         }
         if ((match = text.match(/^\[clay\]\s+(?:WARN|⚠)\s+(.*)$/))) return [{type: "warn", text: match[1]}];
-        if ((match = text.match(/^\[clay\].*?(\d+) pages? in (.+)$/))) {
-            return [{type: "done", label: `Loaded ${match[1]} ${match[1] === "1" ? "page" : "pages"} from ${match[2]}`}];
+        if ((match = text.match(/^\[clay\].*?(\d+) pages? in (.+?)(?:; (.+))?$/))) {
+            return [{type: "done", label: `Loaded ${match[1]} ${match[1] === "1" ? "page" : "pages"} from ${match[2]}`, detail: match[3]}];
         }
         if (/Building Nuxt for production/.test(text)) return [{type: "step", label: "Loading docs"}];
         if ((match = text.match(/Building (client|server)\.\.\./))) return [{type: "step", label: `Building ${match[1]}`}];

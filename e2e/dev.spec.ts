@@ -4,13 +4,14 @@ import {hydrated, watchConsole} from "./helpers";
 // The dev server renders every request on the server, which a static build
 // never does for doc pages; browser-only code breaks here first.
 test("the dev server renders pages on the server and in the browser", async ({page, request}) => {
-    for (const path of ["", "configuration", "reference/feature-tour", "guides"]) {
+    for (const path of ["", "configuration", "reference/feature-tour", "guides", "1.x", "1.x/guides/legacy-setup"]) {
         const res = await request.get(path);
         expect(res.status(), path).toBe(200);
     }
     expect((await request.get("reference/feature-tour")).ok()).toBe(true);
     expect(await (await request.get("reference/feature-tour")).text()).toContain('<h1 id="feature-tour">Feature Tour</h1>');
     expect((await request.get("does-not-exist")).status()).toBe(404);
+    expect((await request.get("1.x/does-not-exist")).status()).toBe(404);
 
     const messages = watchConsole(page);
     await page.goto("reference/feature-tour");

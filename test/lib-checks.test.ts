@@ -29,8 +29,8 @@ describe("brokenLinks", () => {
         writeFileSync(join(docs, path), "x");
     }
 
-    const page = (route: string, source: string, markdown?: string, isDir = false): Page =>
-        ({route, source, title: route, icon: "", isDir, parents: [], children: [], markdown, frontMatter: {}});
+    const page = (route: string, source: string, markdown?: string, isDir = false, version = ""): Page =>
+        ({route, source, title: route, icon: "", isDir, parents: [], children: [], markdown, frontMatter: {}, version});
 
     it("reports missing pages and files, resolved relative to the page", () => {
         const pages = [
@@ -44,6 +44,21 @@ describe("brokenLinks", () => {
             'index.md: "files/b.pdf" points to a missing file',
             'guides/setup.md: "img/gone.png" points to a missing file',
             'guides/setup.md: "my%20page.md" points to a missing page (/guides/my page)',
+        ]);
+    });
+
+    it("checks pages of older versions against their own docs folder", () => {
+        const old = mkdtempSync(join(tmpdir(), "clay-links-old-"));
+        mkdirSync(join(old, "guides"), {recursive: true});
+        writeFileSync(join(old, "guides/diagram.svg"), "x");
+        const pages = [
+            page("/1.x/guides/setup", "guides/setup.md", "![ok](diagram.svg) ![gone](shot.png) [latest](/guides) [root](/1.x) [missing](old.md)", false, "1.x"),
+            page("/guides", "guides", undefined, true),
+        ];
+
+        expect(brokenLinks(pages, {"": docs, "1.x": old})).toEqual([
+            'versions/1.x/docs/guides/setup.md: "shot.png" points to a missing file',
+            'versions/1.x/docs/guides/setup.md: "old.md" points to a missing page (/1.x/guides/old)',
         ]);
     });
 });
