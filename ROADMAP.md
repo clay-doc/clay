@@ -3,12 +3,6 @@
 Open work for Clay and the [example repo](https://github.com/clay-doc/clay-example-repo), roughly in order of
 impact.
 
-## Clay 2 rollout
-
-- **First npm release.** Configure publishing for `clay-doc` (an `NPM_TOKEN` secret for the first release, then
-  npm trusted publishing for this repository), then merge the release pull request.
-- **Example repo.** Switch its deployment to `npm ci` and `npx clay build --strict` once the package is published.
-
 ## Features
 
 - Versioned docs (docs per release, version switcher).
