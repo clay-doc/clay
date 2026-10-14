@@ -24,6 +24,9 @@ jobs:
         - name: Install Dependencies
           run: npm install
 
+        - name: Run Unit Tests
+          run: npm test
+
         - name: Build Distribution Package
           run: npm run generate
           env:
