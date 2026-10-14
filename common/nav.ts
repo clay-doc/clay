@@ -5,6 +5,8 @@ export type DocItem = {
     displayLink: string;
     children: DocItem[] | undefined;
     updated?: string; // last-updated date (ISO 8601), when the docs have git history
+    source?: string; // file of a page, relative to docs/, e.g. "guides/setup.de.md"
+    untranslated?: boolean; // shown in the default language, no translation exists
 }
 
 export type LinkPart = {

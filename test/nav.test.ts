@@ -26,15 +26,15 @@ const root = buildNav(tree, [{path: "products", name: "Products", icon: "fa-soli
 describe("buildNav", () => {
     it("builds the navigation tree with titles, icons, links and dates", () => {
         expect(root.children).toEqual([
-            {title: "Overview", icon: "fa-solid fa-home", link: "/index.md", displayLink: "/index", children: undefined, updated: "2026-03-04T05:06:07Z"},
+            {title: "Overview", icon: "fa-solid fa-home", link: "/index.md", displayLink: "/index", children: undefined, updated: "2026-03-04T05:06:07Z", source: "index.md"},
             {
                 title: "Products",
                 icon: "fa-solid fa-boxes",
                 link: "/products",
                 displayLink: "/products",
                 children: [
-                    {title: "Product 1", icon: "fa-solid fa-box", link: "/products/product1.md", displayLink: "/products/product1", children: undefined},
-                    {title: "Product 2", icon: "fa-solid fa-file", link: "/products/product2.md", displayLink: "/products/product2", children: undefined},
+                    {title: "Product 1", icon: "fa-solid fa-box", link: "/products/product1.md", displayLink: "/products/product1", children: undefined, source: "products/product1.md"},
+                    {title: "Product 2", icon: "fa-solid fa-file", link: "/products/product2.md", displayLink: "/products/product2", children: undefined, source: "products/product2.md"},
                 ]
             }
         ]);

@@ -60,3 +60,16 @@ describe("renderDoc", async () => {
         expect((await renderDoc("# Only a heading", "/a", "/", "Site fallback")).description).toBe("Site fallback");
     });
 });
+
+describe("renderDoc in parallel", () => {
+    it("numbers heading ids per document", async () => {
+        const markdown = "## Links\n\n```ts\nconst a = 1;\n```\n\n## Links\n";
+        const docs = await Promise.all([1, 2, 3].map(() => renderDoc(markdown, "/page", "/")));
+        for (const rendered of docs) expect(rendered.toc.map(entry => entry.id)).toEqual(["links", "links-1"]);
+    });
+
+    it("resolves files against the asset path, e.g. without a language prefix", async () => {
+        const {html} = await renderDoc("![A](img/a.png)", "/1.x/de/guides/page", "/base/", "", "/1.x/guides/page");
+        expect(html).toContain('src="/base/docs/1.x/guides/img/a.png"');
+    });
+});

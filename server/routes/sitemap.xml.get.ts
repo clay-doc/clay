@@ -10,7 +10,8 @@ export default defineEventHandler(event => {
     setHeader(event, "content-type", "application/xml");
     return sitemapXml([
         {loc: absoluteUrl(origin, basePath, "/")!},
-        ...site.versions.slice(1).map(version => ({loc: absoluteUrl(origin, basePath, `/${version.name}`)!})),
-        ...site.pages.map(page => ({loc: absoluteUrl(origin, basePath, page.route)!, lastmod: page.updated}))
+        ...site.editions.filter(edition => edition.prefix).map(edition => ({loc: absoluteUrl(origin, basePath, edition.prefix)!})),
+        // Untranslated pages repeat their original, which is listed instead
+        ...site.pages.filter(page => !page.untranslated).map(page => ({loc: absoluteUrl(origin, basePath, page.route)!, lastmod: page.updated}))
     ]);
 });

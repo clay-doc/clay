@@ -3,10 +3,12 @@ import type MiniSearch from "minisearch";
 import {highlight, searchSections, type SearchHit, type SearchSection, type SearchTarget} from "#common/search";
 import {getSearchIndex, useSearchOpen} from "~/composables/use-search";
 import SearchHighlight from "~/component/SearchHighlight.vue";
-import type {VersionInfo} from "#common/versions";
+import type {Edition} from "#common/editions";
+import {format} from "#common/i18n";
 
 const baseUrl = inject('baseUrl') as Ref<string>;
-const version = inject('version') as Ref<VersionInfo>;
+const edition = inject('edition') as Ref<Edition>;
+const t = useMessages();
 const open = useSearchOpen();
 const router = useRouter();
 
@@ -23,8 +25,8 @@ const hasQuery = computed(() => query.value.trim() !== "");
 const items = computed<(SearchTarget | SearchHit)[]>(() => hasQuery.value ? hits.value : recent.value);
 
 watch(items, () => selected.value = 0);
-// Results come from the version shown
-watch(() => version.value.name, () => index.value = undefined);
+// Results come from the version and language shown
+watch(() => edition.value.prefix, () => index.value = undefined);
 watch(selected, i => document.getElementById(`search-item-${i}`)?.scrollIntoView({block: "nearest"}));
 
 watch(open, async isOpen => {
@@ -44,7 +46,7 @@ async function loadIndex() {
   if (index.value) return;
   status.value = "loading";
   try {
-    index.value = await getSearchIndex(baseUrl.value, version.value.name);
+    index.value = await getSearchIndex(baseUrl.value, edition.value.prefix);
     status.value = "ready";
   } catch {
     status.value = "error";
@@ -118,22 +120,22 @@ function saveRecent(target: SearchTarget) {
     <div class="modal-box p-0 sm:max-w-2xl flex flex-col max-h-[80vh]">
       <label class="input input-lg w-full rounded-none border-0 border-b border-base-300 shadow-none outline-none! shrink-0">
         <i class="fa-solid fa-magnifying-glass opacity-60"></i>
-        <input ref="input" v-model="query" type="search" placeholder="Search documentation"
-               aria-label="Search documentation" autocomplete="off" @keydown="onKeydown"/>
+        <input ref="input" v-model="query" type="search" :placeholder="t.searchDocs"
+               :aria-label="t.searchDocs" autocomplete="off" @keydown="onKeydown"/>
         <kbd class="kbd kbd-sm">Esc</kbd>
       </label>
 
       <div class="overflow-y-auto p-2">
         <p v-if="status === 'error'" class="p-4 text-error">
-          <i class="fa-solid fa-triangle-exclamation mr-2"></i>The search index could not be loaded.
+          <i class="fa-solid fa-triangle-exclamation mr-2"></i>{{t.searchError}}
         </p>
         <div v-else-if="hasQuery && status === 'loading'" class="flex flex-col gap-3 p-3">
           <div v-for="i in 3" :key="i" class="skeleton h-12 w-full"></div>
         </div>
-        <p v-else-if="hasQuery && hits.length === 0" class="p-4 opacity-70">No results for “{{query}}”</p>
-        <p v-else-if="!hasQuery && recent.length === 0" class="p-4 opacity-70">Type to search all pages.</p>
+        <p v-else-if="hasQuery && hits.length === 0" class="p-4 opacity-70">{{format(t.noResults, {query})}}</p>
+        <p v-else-if="!hasQuery && recent.length === 0" class="p-4 opacity-70">{{t.typeToSearch}}</p>
 
-        <p v-if="!hasQuery && recent.length" class="px-3 pt-1 pb-2 text-xs uppercase tracking-wide opacity-60">Recent</p>
+        <p v-if="!hasQuery && recent.length" class="px-3 pt-1 pb-2 text-xs uppercase tracking-wide opacity-60">{{t.recent}}</p>
         <ul v-if="items.length" class="menu w-full p-0">
           <li v-for="(item, i) in items" :key="href(item)">
             <a :id="`search-item-${i}`" :href="router.resolve(resultLocation(item)).href" :class="{'menu-active': i === selected}"
@@ -155,7 +157,7 @@ function saveRecent(target: SearchTarget) {
       </div>
     </div>
     <form method="dialog" class="modal-backdrop">
-      <button aria-label="Close search">close</button>
+      <button :aria-label="t.closeSearch">close</button>
     </form>
   </dialog>
 </template>

@@ -38,14 +38,17 @@ export function isAssetLink(href: string): boolean {
 // (data-route) and a real href that also works in new tabs, relative images and
 // files point into docs/, and external links open in a new tab. Done on a
 // <template> so the browser never requests the unresolved image URLs. On the
-// server, pass a DOM implementation's document (jsdom).
-export function rewriteDocHtml(html: string, docPath: string, baseUrl: string, routeHref: (route: string) => string, doc: Document = document): string {
+// server, pass a DOM implementation's document (jsdom). Files resolve against
+// assetPath: translations share the files of their version, so their path has
+// no language prefix.
+export function rewriteDocHtml(html: string, docPath: string, baseUrl: string, routeHref: (route: string) => string,
+                               doc: Document = document, assetPath = docPath): string {
     const template = doc.createElement("template");
     template.innerHTML = html;
     const root = template.content;
 
     for (const img of root.querySelectorAll("img[src]")) {
-        const src = resolveDocAsset(img.getAttribute("src")!, docPath);
+        const src = resolveDocAsset(img.getAttribute("src")!, assetPath);
         if (src) img.setAttribute("src", linkConcat(baseUrl, src));
     }
 
@@ -53,7 +56,7 @@ export function rewriteDocHtml(html: string, docPath: string, baseUrl: string, r
         const href = link.getAttribute("href")!;
 
         if (isAssetLink(href) && !hasScheme(href)) {
-            const asset = resolveDocAsset(href, docPath);
+            const asset = resolveDocAsset(href, assetPath);
             if (asset) link.setAttribute("href", linkConcat(baseUrl, asset));
             continue;
         }

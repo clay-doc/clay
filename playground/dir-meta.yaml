@@ -1,5 +1,7 @@
 - path: "guides"
-  name: "Guides"
+  name:
+    en: "Guides"
+    de: "Anleitungen"
   icon: "fa-solid fa-book-open"
   children:
     - path: "advanced"

@@ -5,7 +5,6 @@ impact.
 
 ## Features
 
-- Translations (i18n) with a language switcher.
 - Custom components in Markdown (e.g. tabs, cards), diagrams (Mermaid) and math (KaTeX).
 - A plugin system and analytics integration.
 - "On this page" on small screens (it is shown on wide screens only).

@@ -1,3 +1,5 @@
+import type {Messages} from "./i18n";
+
 // clay.yaml; only the title is required
 export type Configuration = {
     title: string,
@@ -8,6 +10,8 @@ export type Configuration = {
     editURL?: string, // e.g. "https://github.com/org/repo/edit/main/docs/"
     fontawesomeKit?: string,
     version?: string, // label of the current docs in the version switcher, e.g. "2.x"
+    languages?: string[], // language codes; the first is the default language
+    messages?: Record<string, Partial<Messages>>, // interface texts by language
     navbar?: NavbarConfiguration,
     index?: IndexConfiguration,
     langs?: string[], // obsolete: code languages are detected automatically

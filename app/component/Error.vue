@@ -3,6 +3,7 @@ const props = defineProps(["message", "code"])
 const route = useRoute()
 const slashIdx = route.fullPath.endsWith('/') ? route.fullPath.lastIndexOf('/', route.fullPath.length - 2) : route.fullPath.lastIndexOf('/')
 const backTarget = route.fullPath.substring(0, slashIdx) || '/'
+const t = useMessages()
 </script>
 
 <template>
@@ -13,13 +14,13 @@ const backTarget = route.fullPath.substring(0, slashIdx) || '/'
           <i class="fa-solid fa-bolt-lightning"/>
           {{props.code}}</h1>
         <p class="py-6">
-          <span>There was a problem while fetching your resource:</span>
+          <span>{{t.errorIntro}}</span>
           <br>
           <span class="font-bold">{{props.message}}</span>
         </p>
         <NuxtLink :to="backTarget" class="btn btn-primary no-underline!">
           <i class="fa-solid fa-arrow-left mr-2"/>
-          Go back
+          {{t.goBack}}
         </NuxtLink>
       </div>
     </div>

@@ -4,7 +4,6 @@ import {addTemplate, defineNuxtModule, updateTemplates, useLogger} from "@nuxt/k
 import {isMarkdown, loadSite, type Site} from "../lib/site";
 import {brokenLinks} from "../lib/checks";
 import {resolveOrigin} from "../common/seo";
-import {versionPrefix} from "../common/versions";
 import type {ViteDevServer} from "vite";
 
 const SITE_TEMPLATE = "clay-site.mjs";
@@ -59,9 +58,15 @@ export default defineNuxtModule({
         if (strict && problems.length > 0) {
             throw new Error(`clay build --strict: ${problems.length} problem(s) found, see the warnings above`);
         }
-        const count = (name: string) => site.pages.filter(page => page.version === name).length;
+        const docPages = (prefix: string) => site.pages.filter(page => page.prefix === prefix && !page.isDir);
+        const count = (name: string) => site.pages.filter(page => page.version === name && page.language === site.languages[0]!.code).length;
         const older = site.versions.slice(1).map(version => `${version.name} (${count(version.name)} pages)`);
-        logger.info(`${count("")} pages in ${relative(process.cwd(), site.docsDir) || site.docsDir}${older.length ? `; versions ${older.join(", ")}` : ""}`);
+        const translated = site.editions.filter(edition => !edition.version && edition.prefix).map(edition => {
+            const pages = docPages(edition.prefix);
+            return `${edition.language} (${pages.filter(page => !page.untranslated).length}/${pages.length} translated)`;
+        });
+        const details = [older.length ? `versions ${older.join(", ")}` : "", translated.length ? `languages ${translated.join(", ")}` : ""].filter(Boolean);
+        logger.info(`${count("")} pages in ${relative(process.cwd(), site.docsDir) || site.docsDir}${details.length ? `; ${details.join("; ")}` : ""}`);
 
         // Config and navigation for the app, bundled instead of fetched
         addTemplate({
@@ -70,7 +75,9 @@ export default defineNuxtModule({
                 `export const config = ${JSON.stringify(site.config)};`,
                 `export const nav = ${JSON.stringify(site.nav)};`,
                 `export const versions = ${JSON.stringify(site.versions.map(({name, label}) => ({name, label})))};`,
-                `export const navs = ${JSON.stringify(Object.fromEntries(site.versions.map(v => [v.name, v.nav])))};`,
+                `export const languages = ${JSON.stringify(site.languages)};`,
+                `export const navs = ${JSON.stringify(Object.fromEntries(site.editions.map(e => [e.prefix, e.nav])))};`,
+                `export const configs = ${JSON.stringify(site.configs)};`,
             ].join("\n") + "\n",
             write: true
         });
@@ -79,11 +86,13 @@ export default defineNuxtModule({
             getContents: () => [
                 `import type {Configuration} from ${JSON.stringify(resolve(__dirname, "../common/configuration"))};`,
                 `import type {DocItem} from ${JSON.stringify(resolve(__dirname, "../common/nav"))};`,
-                `import type {VersionInfo} from ${JSON.stringify(resolve(__dirname, "../common/versions"))};`,
+                `import type {LanguageInfo, VersionInfo} from ${JSON.stringify(resolve(__dirname, "../common/editions"))};`,
                 "export declare const config: Configuration;",
                 "export declare const nav: DocItem;",
                 "export declare const versions: VersionInfo[];",
-                "export declare const navs: Record<string, DocItem>;"
+                "export declare const languages: LanguageInfo[];",
+                "export declare const navs: Record<string, DocItem>;",
+                "export declare const configs: Record<string, Configuration>;"
             ].join("\n"),
             write: true
         });
@@ -100,10 +109,9 @@ export default defineNuxtModule({
             nitro.prerender.routes = [
                 ...(nitro.prerender.routes ?? []),
                 "/",
-                ...site.versions.slice(1).map(versionPrefix),
+                ...site.editions.map(edition => edition.prefix).filter(Boolean),
                 ...site.pages.map(page => page.route),
-                "/_clay/search.json",
-                ...site.versions.slice(1).map(version => `/_clay/versions/${version.name}/search.json`),
+                ...site.editions.map(edition => `/_clay${edition.prefix}/search.json`),
                 "/robots.txt",
                 ...(origin ? ["/sitemap.xml"] : [])
             ];

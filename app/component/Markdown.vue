@@ -13,6 +13,7 @@ const router = useRouter();
 const route = useRoute();
 const linkParts = inject('linkParts') as Ref<LinkPart[]>;
 const currentDocItem = inject('currentDocItem') as Ref<DocItem | undefined>;
+const untranslatedNote = inject('untranslatedNote') as Ref<string>;
 
 type RenderedDoc = { html: string, toc: TocEntry[], description: string };
 
@@ -77,6 +78,10 @@ function handleClicks(event: MouseEvent) {
   <div class="flex gap-10 p-6">
     <article class="prose prose-sm sm:prose max-w-none! min-w-0 flex-1">
       <template v-if="doc">
+        <div v-if="currentDocItem?.untranslated" role="note" class="not-prose alert alert-info alert-soft mb-6">
+          <i class="fa-solid fa-language"></i>
+          <span>{{untranslatedNote}}</span>
+        </div>
         <div ref="contentEl" v-html="doc.html" @click="handleClicks" class="w-full"></div>
         <PageFooter :url="url"/>
       </template>

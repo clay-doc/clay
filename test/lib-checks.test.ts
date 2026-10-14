@@ -30,7 +30,7 @@ describe("brokenLinks", () => {
     }
 
     const page = (route: string, source: string, markdown?: string, isDir = false, version = ""): Page =>
-        ({route, source, title: route, icon: "", isDir, parents: [], children: [], markdown, frontMatter: {}, version});
+        ({route, source, title: route, icon: "", isDir, parents: [], children: [], markdown, frontMatter: {}, version, language: "en", prefix: version ? `/${version}` : ""});
 
     it("reports missing pages and files, resolved relative to the page", () => {
         const pages = [

@@ -76,6 +76,7 @@ lang: "en"
 editURL: "https://github.com/my-org/my-project/edit/main/docs/"
 fontawesomeKit: "abc123"            # optional; without it the free Font Awesome icons are used
 version: "2.x"                      # label of docs/ in the version switcher (default: "Latest")
+languages: ["en", "de"]             # optional; the first is the default language
 navbar:
   logo: "logo.svg"
   source:
@@ -137,6 +138,21 @@ Each folder in `versions/` becomes a version under its own path (`/1.x/guides/se
 search. A switcher in the navbar keeps the page when the other version has it, and older versions show a banner
 that links to the latest one. Older versions stay editable; edit links point into `versions/<name>/docs/` when
 `editURL` ends in `docs/`.
+
+### Translations
+
+List the languages in `clay.yaml` (`languages: ["en", "de"]`, the first is the default) and put each translation next
+to its page: `setup.de.md` translates `setup.md`. The default language stays at the site root, others get their
+prefix (`/de/setup`, `/1.x/de/setup`), and a switcher in the navbar keeps the page and version.
+
+- A page without a translation is shown in the default language, with a note, and search engines are pointed to the
+  original. Navigation, search and links work the same in every language.
+- The position in the navigation comes from the original; the translation sets its own title, icon and description.
+- Values in `clay.yaml` and folder names in `dir-meta.yaml` can be given per language:
+  `title: {en: "Guides", de: "Anleitungen"}`.
+- The interface comes in English, German, French, Spanish, Italian, Portuguese, Dutch, Polish, Russian, Japanese,
+  Chinese and Korean. `messages` in `clay.yaml` changes single texts, or adds a language:
+  `messages: {de: {search: "Finden"}}`.
 
 ## Command Line
 

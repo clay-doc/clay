@@ -152,7 +152,7 @@ test.describe("versions", () => {
         expect(html).toContain('src="/clay/docs/1.x/guides/build-steps.svg"');
         expect((await request.get("docs/1.x/guides/build-steps.svg")).ok()).toBe(true);
         expect((await request.get("1.x/")).status()).toBe(200);
-        expect((await request.get("_clay/versions/1.x/search.json")).ok()).toBe(true);
+        expect((await request.get("_clay/1.x/search.json")).ok()).toBe(true);
     });
 
     test("an older version shows its own navigation, a banner and version edit links", async ({page}) => {
@@ -204,5 +204,67 @@ test.describe("versions", () => {
         await openSearch(page);
         await page.keyboard.type("legacy setup");
         await expect(page.locator("dialog[open]")).toContainText("No results");
+    });
+});
+
+test.describe("languages", () => {
+    test("translated pages are pre-rendered under /de with German interface texts", async ({request}) => {
+        const html = await (await request.get("de/getting-started/")).text();
+        expect(html).toMatch(/<html\s+lang="de"/);
+        expect(html).toContain('<h1 id="erste-schritte-mit-clay">Erste Schritte mit Clay</h1>');
+        expect(html).toContain("<title>Erste Schritte · Clay</title>");
+        expect(html).toContain("Auf dieser Seite");
+        expect(html).toContain('<link rel="canonical" href="https://clay-doc.github.io/clay/de/getting-started/">');
+        expect(html).toContain('<link rel="alternate" hreflang="en" href="https://clay-doc.github.io/clay/getting-started/">');
+        expect(html).toContain('<link rel="alternate" hreflang="x-default" href="https://clay-doc.github.io/clay/getting-started/">');
+
+        const start = await (await request.get("de/")).text();
+        expect(start).toContain("Willkommen im Clay-Playground");
+        expect(start).toContain("Anleitungen");
+        expect((await request.get("_clay/de/search.json")).ok()).toBe(true);
+        expect((await request.get("_clay/1.x/de/search.json")).ok()).toBe(true);
+    });
+
+    test("untranslated pages show the original with a note and point search engines to it", async ({page, request}) => {
+        const html = await (await request.get("de/configuration/")).text();
+        expect(html).toContain('<link rel="canonical" href="https://clay-doc.github.io/clay/configuration/">');
+        expect(html).not.toContain('<link rel="alternate" hreflang="de"');
+        expect(await (await request.get("sitemap.xml")).text()).not.toContain("/clay/de/configuration/");
+
+        await page.goto("de/configuration/");
+        await expect(page.getByRole("note")).toHaveText("Diese Seite ist noch nicht übersetzt und wird auf Englisch angezeigt.");
+        await expect(page.locator(".prose h1")).toHaveText("Configuration Reference");
+    });
+
+    test("the language switcher keeps the version and the page", async ({page}) => {
+        const messages = watchConsole(page);
+        await page.goto("1.x/getting-started/");
+        await hydrated(page);
+        const switcher = page.locator("details", {has: page.getByLabel("Language")});
+
+        await switcher.locator("summary").click();
+        await switcher.getByRole("link", {name: "Deutsch"}).click();
+        await expect(page).toHaveURL(/\/clay\/1\.x\/de\/getting-started$/);
+        await expect(page.locator(".prose h1")).toHaveText("Erste Schritte mit Clay 1.x");
+        await expect(page.locator("html")).toHaveAttribute("lang", "de");
+        await expect(page.getByRole("status")).toContainText("Dies ist die Dokumentation für Version 1.x.");
+        await expect(page.getByRole("status").getByRole("link")).toHaveAttribute("href", "/clay/de/getting-started");
+
+        // Links inside a translation stay in its language
+        await page.locator(".prose a:not(footer a)", {hasText: "alte Einrichtung"}).click();
+        await expect(page).toHaveURL(/\/clay\/1\.x\/de\/guides\/legacy-setup$/);
+        await expect(page.locator(".prose img")).toHaveAttribute("src", "/clay/docs/1.x/guides/build-steps.svg");
+        expect(messages).toEqual([]);
+    });
+
+    test("search stays within the language shown", async ({page}) => {
+        await page.goto("de/");
+        await hydrated(page);
+        await openSearch(page);
+        await expect(page.locator("dialog[open] input")).toHaveAttribute("placeholder", "Dokumentation durchsuchen");
+        await page.keyboard.type("voraussetzungen");
+        const result = page.locator("dialog[open] ul.menu a").first();
+        await expect(result).toContainText("Voraussetzungen");
+        await expect(result).toHaveAttribute("href", /\/clay\/de\/getting-started/);
     });
 });

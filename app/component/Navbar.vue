@@ -1,7 +1,6 @@
 <script setup lang="ts">
 
-import {type DocItem, type LinkPart} from "#common/nav";
-import {switchVersion, type VersionInfo} from "#common/versions";
+import {type LinkPart} from "#common/nav";
 import type {Configuration} from "#common/configuration";
 import linkConcat from "#common/link-concat";
 import {useSearchOpen} from "~/composables/use-search";
@@ -10,10 +9,8 @@ import {useTheme} from "~/composables/use-theme";
 const config = inject('config') as Ref<Configuration>;
 const linkParts = inject("delimitedLinkParts") as Ref<LinkPart[]>;
 const baseUrl = inject('baseUrl') as Ref<string>;
-const versions = inject('versions') as Ref<VersionInfo[]>;
-const version = inject('version') as Ref<VersionInfo>;
-const navs = inject('navs') as Ref<Record<string, DocItem>>;
-const route = useRoute();
+const t = useMessages();
+const {versions, languages, edition, versionLink, languageLink, home} = useEditionLinks();
 
 // A dropdown stays open after following one of its links otherwise
 function closeMenu(event: MouseEvent) {
@@ -62,11 +59,11 @@ onUnmounted(() => {
 <template>
   <div class="navbar bg-base-200 pr-4">
     <div class="navbar-start">
-      <button id="nav-toggle" class="btn btn-ghost btn-square lg:hidden" aria-label="Open navigation"
+      <button id="nav-toggle" class="btn btn-ghost btn-square lg:hidden" :aria-label="t.openNav"
               aria-controls="mobile-nav" :aria-expanded="navOpen" @click="navOpen = true">
         <i class="fa-solid fa-bars"></i>
       </button>
-      <NuxtLink to="/" class="btn btn-ghost text-xl h-10">
+      <NuxtLink :to="home" class="btn btn-ghost text-xl h-10">
         <img v-if="config.navbar?.logo" :src="linkConcat(baseUrl, config.navbar.logo)" alt="logo" class="max-h-8 pl-2"/>
         <span class="pr-2">{{config.title}}</span>
       </NuxtLink>
@@ -86,13 +83,25 @@ onUnmounted(() => {
 
     <div class="navbar-end gap-2">
       <ul class="menu menu-horizontal flex-nowrap px-1">
-        <li v-if="versions.length > 1">
+        <!-- On narrow screens the switchers are in the navigation drawer (MobileNav.vue) -->
+        <li v-if="versions.length > 1" class="hidden lg:block">
           <details>
-            <summary aria-label="Docs version"><i class="fa-solid fa-code-branch text-xs"></i>{{version.label}}</summary>
+            <summary :aria-label="t.docsVersion" :title="t.docsVersion"><i class="fa-solid fa-code-branch text-xs"></i>{{edition.version.label}}</summary>
             <ul class="bg-base-100 p-2 end-0 sm:end-auto z-10">
               <li v-for="v in versions" :key="v.name">
-                <NuxtLink :to="switchVersion(route.path, version, v, navs)" :class="{'menu-active': v.name === version.name}"
+                <NuxtLink :to="versionLink(v)" :class="{'menu-active': v.name === edition.version.name}"
                           @click="closeMenu">{{v.label}}</NuxtLink>
+              </li>
+            </ul>
+          </details>
+        </li>
+        <li v-if="languages.length > 1" class="hidden lg:block">
+          <details>
+            <summary :aria-label="t.language" :title="t.language"><i class="fa-solid fa-language"></i>{{edition.language.label}}</summary>
+            <ul class="bg-base-100 p-2 end-0 sm:end-auto z-10">
+              <li v-for="l in languages" :key="l.code">
+                <NuxtLink :to="languageLink(l)" :lang="l.code" :hreflang="l.code" :class="{'menu-active': l.code === edition.language.code}"
+                          @click="closeMenu">{{l.label}}</NuxtLink>
               </li>
             </ul>
           </details>
@@ -105,7 +114,7 @@ onUnmounted(() => {
         </li>
         <li v-if="config.navbar?.links?.length">
           <details>
-            <summary>More</summary>
+            <summary>{{t.more}}</summary>
             <ul class="bg-base-100 p-2 end-0 sm:end-auto z-10">
               <li v-for="l in config.navbar.links">
                 <NuxtLink :to="l.link" target="_blank">
@@ -118,7 +127,7 @@ onUnmounted(() => {
         </li>
         <li>
           <!-- Pages are rendered before the theme is known, so CSS picks the icon (tailwind.css) -->
-          <button aria-label="Toggle light and dark theme" title="Toggle theme" @click="toggleTheme">
+          <button :aria-label="t.toggleTheme" :title="t.toggleTheme" @click="toggleTheme">
             <!-- As tall as a line of text, so it matches the neighbouring menu items -->
             <span class="flex h-lh items-center">
               <i class="fa-solid fa-sun theme-to-light"></i>
@@ -127,12 +136,12 @@ onUnmounted(() => {
           </button>
         </li>
       </ul>
-      <button class="btn btn-ghost btn-square sm:hidden" aria-label="Search" @click="searchOpen = true">
+      <button class="btn btn-ghost btn-square sm:hidden" :aria-label="t.search" @click="searchOpen = true">
         <i class="fa-solid fa-magnifying-glass"></i>
       </button>
       <button class="input h-10 hidden sm:flex cursor-pointer" @click="searchOpen = true">
         <i class="fa-solid fa-magnifying-glass"></i>
-        <span class="grow text-left opacity-60">Search</span>
+        <span class="grow text-left opacity-60">{{t.search}}</span>
         <kbd class="kbd kbd-sm">{{superKey}} K</kbd>
       </button>
     </div>

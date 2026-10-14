@@ -7,32 +7,37 @@ import MobileNav from "~/component/MobileNav.vue";
 
 import {hasFontawesomeKit} from "#common/configuration";
 import {delimitLinkParts, getCurrentDocItemFromRoute, getLinkPartsFromCurrentRoute} from "#common/nav";
-import {normalizePath} from "#common/route-path";
 import linkConcat from "#common/link-concat";
-import {stripVersion, switchVersion, versionOf} from "#common/versions";
+import {editionOf, editionPrefix, samePage, stripPrefix, switchEdition} from "#common/editions";
+import {format, languageName, messagesFor} from "#common/i18n";
 
 // Config and navigation (see app/composables/use-site.ts)
 const site = await useSite();
-const configuration = computed(() => site.value.config);
 const versions = computed(() => site.value.versions);
+const languages = computed(() => site.value.languages);
+const defaultLanguage = computed(() => languages.value[0]!.code);
 const route = useRoute();
-// Older versions live under /<name>, each with its own navigation
-const version = computed(() => versionOf(route.path, versions.value));
-const structure = computed(() => site.value.navs[version.value.name] ?? site.value.nav);
-const siteConfig = configuration.value;
+// The version and language of the page shown, e.g. "/1.x/de"; each has its own navigation
+const edition = computed(() => editionOf(route.path, versions.value, languages.value));
+const version = computed(() => edition.value.version);
+const configuration = computed(() => site.value.configs[edition.value.language.code] ?? site.value.config);
+const structure = computed(() => site.value.navs[edition.value.prefix] ?? site.value.nav);
+const messages = computed(() => messagesFor(edition.value.language.code, configuration.value.messages?.[edition.value.language.code]));
+const siteConfig = site.value.config;
 
 const baseUrl = computed(() => useRuntimeConfig().app.baseURL);
 
 const FONTAWESOME_FREE_CSS = "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css";
 const FONTAWESOME_FREE_SRI = "sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg==";
 
-useHead({
+useHead(() => ({
+  htmlAttrs: {lang: edition.value.language.code},
   link: [
     ...(siteConfig.favicon ? [{rel: 'icon', href: linkConcat(baseUrl.value, siteConfig.favicon)}] : []),
     // Without a kit, the free Font Awesome icons are used
     ...(hasFontawesomeKit(siteConfig) ? [] : [{rel: 'stylesheet', href: FONTAWESOME_FREE_CSS, integrity: FONTAWESOME_FREE_SRI, crossorigin: 'anonymous' as const}]),
   ],
-});
+}));
 
 // A kit replaces icons in the DOM, so it only loads after hydration
 onMounted(() => {
@@ -41,13 +46,34 @@ onMounted(() => {
   }
 });
 
-const pathInVersion = computed(() => stripVersion(route.path, version.value));
-const linkParts = computed(() => getLinkPartsFromCurrentRoute(pathInVersion.value, structure.value));
-const currentItem = computed(() => getCurrentDocItemFromRoute(pathInVersion.value, structure.value));
-// The same page in the current docs, for the banner on older versions
-const latest = computed(() => versions.value[0]!);
-const latestLink = computed(() => switchVersion(route.path, version.value, latest.value, site.value.navs));
+const pathInEdition = computed(() => stripPrefix(route.path, edition.value.prefix));
+const linkParts = computed(() => getLinkPartsFromCurrentRoute(pathInEdition.value, structure.value));
+const currentItem = computed(() => getCurrentDocItemFromRoute(pathInEdition.value, structure.value));
 const delimitedLinkParts = computed(() => delimitLinkParts(linkParts.value, 3))
+
+// The prefix of the same version in another language, and of the latest version in this language
+const prefixFor = (versionName: string, language: string) => editionPrefix(versionName, language, defaultLanguage.value);
+const latest = computed(() => versions.value[0]!);
+const latestLink = computed(() => switchEdition(route.path, edition.value.prefix, prefixFor("", edition.value.language.code), site.value.navs));
+
+// Translations of the page for search engines (hreflang); untranslated pages
+// point them to their original instead
+const alternates = computed(() => {
+  if (languages.value.length < 2) return [];
+  const isStart = pathInEdition.value === "/";
+  return languages.value.flatMap(language => {
+    const prefix = prefixFor(version.value.name, language.code);
+    if (isStart) return [{language: language.code, route: prefix || "/"}];
+    const item = samePage(route.path, edition.value.prefix, prefix, site.value.navs);
+    return item && !item.untranslated ? [{language: language.code, route: item.displayLink}] : [];
+  });
+});
+const canonicalRoute = computed(() => currentItem.value?.untranslated
+    ? switchEdition(route.path, edition.value.prefix, prefixFor(version.value.name, defaultLanguage.value), site.value.navs)
+    : undefined);
+const untranslatedNote = computed(() => format(messages.value.untranslated, {
+  language: languageName(defaultLanguage.value, edition.value.language.code),
+}));
 
 provide('baseUrl', baseUrl);
 provide('config', configuration);
@@ -55,9 +81,14 @@ provide('structure', structure);
 provide('linkParts', linkParts)
 provide('currentDocItem', currentItem)
 provide('delimitedLinkParts', delimitedLinkParts)
-provide('version', version)
+provide('edition', edition)
 provide('versions', versions)
+provide('languages', languages)
 provide('navs', computed(() => site.value.navs))
+provide('messages', messages)
+provide('alternates', alternates)
+provide('canonicalRoute', canonicalRoute)
+provide('untranslatedNote', untranslatedNote)
 </script>
 
 <template>
@@ -68,8 +99,8 @@ provide('navs', computed(() => site.value.navs))
       <div v-if="version.name" role="status" class="alert alert-warning alert-soft rounded-none sm:rounded-tl-2xl">
         <i class="fa-solid fa-clock-rotate-left"></i>
         <span>
-          These are the docs for version {{version.label}}.
-          <NuxtLink :to="latestLink" class="link font-semibold">Go to the latest version ({{latest.label}})</NuxtLink>
+          {{format(messages.olderVersion, {version: version.label})}}
+          <NuxtLink :to="latestLink" class="link font-semibold">{{format(messages.latestVersion, {version: latest.label})}}</NuxtLink>
         </span>
       </div>
       <slot />

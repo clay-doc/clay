@@ -32,7 +32,8 @@ export default defineNuxtConfig({
   app: {
     baseURL,
     head: {
-      htmlAttrs: {lang: config.lang || "en"},
+      // The default language; pages in other languages set theirs (app/layouts/default.vue)
+      htmlAttrs: {lang: config.languages?.[0] || config.lang || "en"},
       // Apply a stored theme choice before the first paint (see use-theme.ts)
       script: [{innerHTML: "try{var t=localStorage.getItem('clay-theme');if(t==='clay-light'||t==='clay-dark')document.documentElement.dataset.theme=t}catch(e){}"}],
     },

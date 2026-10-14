@@ -1,4 +1,5 @@
 import type {Configuration} from "#common/configuration";
+import type {LanguageInfo} from "#common/editions";
 import {absoluteUrl, breadcrumbs, pageTitle, resolveOrigin, truncate} from "#common/seo";
 
 export type SeoInput = {
@@ -10,10 +11,14 @@ export type SeoInput = {
     trail?: { title: string, route: string }[]; // breadcrumb trail, including the page
 };
 
-// Title, description, canonical URL, Open Graph tags and breadcrumbs of a page
+// Title, description, canonical URL, translations (hreflang), Open Graph tags and
+// breadcrumbs of a page
 export function useClaySeo(input: MaybeRefOrGetter<SeoInput>) {
     const basePath = useRuntimeConfig().app.baseURL;
     const configRef = inject("config") as Ref<Configuration>;
+    const alternates = inject("alternates") as Ref<{ language: string, route: string }[]>;
+    const canonicalRoute = inject("canonicalRoute") as Ref<string | undefined>;
+    const languages = inject("languages") as Ref<LanguageInfo[]>;
 
     useHead(() => {
         const config = configRef.value;
@@ -22,6 +27,12 @@ export function useClaySeo(input: MaybeRefOrGetter<SeoInput>) {
         const title = pageTitle(page.title, config.title);
         const description = truncate(page.description || config.index?.description || "");
         const url = absoluteUrl(origin, basePath, page.route);
+        // An untranslated page repeats its original; search engines should show that one
+        const canonical = absoluteUrl(origin, basePath, canonicalRoute.value ?? page.route);
+        const translations = origin ? alternates.value.map(alternate => ({
+            rel: "alternate", hreflang: alternate.language, href: absoluteUrl(origin, basePath, alternate.route)!,
+        })) : [];
+        const defaultTranslation = translations.find(t => t.hreflang === languages.value[0]?.code);
         const jsonLd = page.trail ? breadcrumbs(page.trail, origin, basePath) : undefined;
 
         return {
@@ -36,7 +47,11 @@ export function useClaySeo(input: MaybeRefOrGetter<SeoInput>) {
                 ...(url ? [{property: "og:url", content: url}] : []),
                 ...(page.updated ? [{property: "article:modified_time", content: page.updated}] : []),
             ],
-            link: url ? [{rel: "canonical", href: url}] : [],
+            link: [
+                ...(canonical ? [{rel: "canonical", href: canonical}] : []),
+                ...translations,
+                ...(defaultTranslation ? [{rel: "alternate", hreflang: "x-default", href: defaultTranslation.href}] : []),
+            ],
             script: jsonLd ? [{type: "application/ld+json", innerHTML: jsonLd}] : [],
         };
     });

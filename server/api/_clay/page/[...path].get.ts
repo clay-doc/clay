@@ -13,5 +13,7 @@ export default defineEventHandler(async event => {
     }
 
     const baseURL = useRuntimeConfig().app.baseURL;
-    return await renderDoc(page.markdown, page.route, baseURL, site.config.index?.description);
+    // Files are in docs/<version>/..., the same for every language
+    const assetPath = (page.version ? `/${page.version}` : "") + page.route.slice(page.prefix.length);
+    return await renderDoc(page.markdown, page.route, baseURL, site.configs[page.language]?.index?.description, assetPath);
 });

@@ -5,6 +5,7 @@ const props = defineProps<{ entries: TocEntry[], scrollContainer: HTMLElement | 
 const route = useRoute();
 const router = useRouter();
 const active = ref<string | undefined>();
+const t = useMessages();
 
 // The last heading scrolled past the top of the content pane is the current one
 function updateActive() {
@@ -33,8 +34,8 @@ function go(id: string) {
 </script>
 
 <template>
-  <nav aria-label="On this page" class="text-sm">
-    <p class="font-semibold mb-2">On this page</p>
+  <nav :aria-label="t.onThisPage" class="text-sm">
+    <p class="font-semibold mb-2">{{t.onThisPage}}</p>
     <ul class="border-l border-base-300">
       <li v-for="entry in entries" :key="entry.id">
         <a :href="'#' + entry.id" @click.prevent="go(entry.id)"

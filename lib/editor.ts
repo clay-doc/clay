@@ -2,7 +2,15 @@ import {existsSync, readFileSync, writeFileSync} from "node:fs";
 import {join} from "node:path";
 import {Document, isMap, isScalar, isSeq, parseDocument, type YAMLMap, type YAMLSeq} from "yaml";
 import {setFrontMatter} from "./front-matter";
-import {hasPages, isMarkdown, loadDirMeta, loadTree, prettyName, resolveDir, sortTree, type DirMeta, type DocNode} from "./site";
+import {
+    hasPages, isMarkdown, loadConfig, loadDirMeta, loadTree, localize, prettyName, resolveDir, siteLanguages, sortTree, translationOf,
+    type DirMeta, type DocNode,
+} from "./site";
+
+// Codes of the site's languages, the default first; the editor edits the default language
+function languageCodes(root: string): string[] {
+    return siteLanguages(loadConfig(root, {}).config).languages.map(language => language.code);
+}
 
 // Model of "clay edit". Edits are made on a copy of what was loaded and compared
 // with it on save, so only changed values are written and comments, quoting and
@@ -32,24 +40,28 @@ export function loadDocsTree(root: string): EditorNode[] {
     const docsDir = join(root, "docs");
     if (!existsSync(docsDir)) throw new Error(`No docs/ directory found in ${root}`);
     const {meta} = loadDirMeta(root);
+    const codes = languageCodes(root);
+    // Folder names given per language show (and are edited) in the default language
+    const localMeta = localize(meta, codes[0]!, codes);
 
     const convert = (nodes: DocNode[], meta: DirMeta[] | undefined): EditorNode[] => nodes.flatMap(node => {
         if (node.isDir) {
             if (!hasPages(node)) return [];
             const entry = meta?.find(m => m.path === node.name);
             return [{
-                path: node.path, name: node.name, isDir: true, title: entry?.name, icon: entry?.icon, order: entry?.order,
+                path: node.path, name: node.name, isDir: true, title: entry?.name as string | undefined, icon: entry?.icon, order: entry?.order,
                 fallbackTitle: prettyName(node.name), children: convert(node.children, resolveDir(node, meta).childMeta),
             }];
         }
-        if (!isMarkdown(node.name)) return [];
+        // Translations ("setup.de.md") follow their original
+        if (!isMarkdown(node.name) || translationOf(node.name, codes.slice(1))) return [];
         return [{
             path: node.path, name: node.name, isDir: false, title: node.frontMatter.title || undefined,
             icon: node.frontMatter.icon || undefined, order: node.frontMatter.order,
             fallbackTitle: node.heading || prettyName(node.name), children: [],
         }];
     });
-    return convert(sortTree(loadTree(docsDir), meta), meta);
+    return convert(sortTree(loadTree(docsDir), localMeta), localMeta);
 }
 
 // Differences between the loaded tree and the edited one. A folder whose
@@ -100,9 +112,15 @@ export function saveDocs(root: string, changes: DocChange[]): string[] {
         const text = existsSync(file) ? readFileSync(file, "utf8") : "";
         const doc = text.trim() ? parseDocument(text) : new Document([]);
         if (!isSeq(doc.contents)) throw new Error("dir-meta.yaml must be a list of folders");
+        const defaultLanguage = languageCodes(root)[0]!;
         for (const change of dirChanges) {
             const entry = metaEntry(doc, change.path, change.subdirs);
-            for (const [key, value] of Object.entries(change.updates)) setValue(entry, key, value);
+            for (const [key, value] of Object.entries(change.updates)) {
+                // A name given per language only changes in the default language
+                const node = entry.get(key, true);
+                if (isMap(node)) setValue(node, defaultLanguage, value);
+                else setValue(entry, key, value);
+            }
         }
         writeYaml(file, doc, text);
         written.push("dir-meta.yaml");

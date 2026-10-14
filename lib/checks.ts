@@ -11,7 +11,7 @@ export type Schema = true | { [key: string]: Schema } | [Schema];
 const link: Schema = {name: true, icon: true, link: true};
 
 export const configSchema: Schema = {
-    title: true, favicon: true, baseURL: true, siteURL: true, lang: true, editURL: true, fontawesomeKit: true, version: true,
+    title: true, favicon: true, baseURL: true, siteURL: true, lang: true, editURL: true, fontawesomeKit: true, version: true, languages: true, messages: true,
     langs: true, // obsolete, reported separately
     navbar: {logo: true, source: link, links: [link]},
     index: {title: true, description: true, icon: true},
@@ -57,17 +57,18 @@ const isAssetPath = (path: string) => {
 // Links and images in the docs that point to pages or files that do not exist,
 // resolved like the app resolves them: relative to the page, ".md" dropped.
 // Links to other sites and #anchors are not checked. docsDirs maps version
-// names to their docs folder ("" for the current docs).
+// names to their docs folder ("" for the current docs). Untranslated pages
+// repeat their original, so they are checked once, there.
 export function brokenLinks(pages: Page[], docsDirs: string | Record<string, string>): string[] {
     const dirs = typeof docsDirs === "string" ? {"": docsDirs} : docsDirs;
-    const routes = new Set(["/", ...Object.keys(dirs).filter(Boolean).map(name => `/${name}`), ...pages.map(page => page.route)]);
+    const routes = new Set(["/", ...pages.map(page => page.prefix).filter(Boolean), ...pages.map(page => page.route)]);
     const broken: string[] = [];
 
     for (const page of pages) {
-        if (page.isDir || !page.markdown) continue;
+        if (page.isDir || !page.markdown || page.untranslated) continue;
         const version = page.version ?? "";
         for (const ref of markdownRefs(page.markdown)) {
-            const reason = checkRef(ref, page.route, routes, dirs[version]!, version);
+            const reason = checkRef(ref, page.route, routes, dirs[version]!, page.prefix ?? "");
             const source = version ? `versions/${version}/docs/${page.source}` : page.source;
             if (reason) broken.push(`${source}: "${ref.href}" ${reason}`);
         }
@@ -75,7 +76,7 @@ export function brokenLinks(pages: Page[], docsDirs: string | Record<string, str
     return broken;
 }
 
-function checkRef(ref: { href: string, isImage: boolean }, route: string, routes: Set<string>, docsDir: string, version: string): string | undefined {
+function checkRef(ref: { href: string, isImage: boolean }, route: string, routes: Set<string>, docsDir: string, prefix: string): string | undefined {
     const href = ref.href;
     if (!href || href.startsWith("#") || href.startsWith("//") || /^[a-z][a-z\d+.-]*:/i.test(href)) return undefined;
 
@@ -91,8 +92,9 @@ function checkRef(ref: { href: string, isImage: boolean }, route: string, routes
     // Images and other files are served from docs/
     if (ref.isImage || isAssetPath(target)) {
         if (target.startsWith("/")) return undefined; // relative to the site root, outside the docs
-        const inVersion = version && resolved.startsWith(`/${version}/`) ? resolved.slice(version.length + 1) : resolved;
-        return existsSync(join(docsDir, inVersion)) ? undefined : "points to a missing file";
+        // Files are shared by all languages of a version
+        const inDocs = prefix && resolved.startsWith(`${prefix}/`) ? resolved.slice(prefix.length) : resolved;
+        return existsSync(join(docsDir, inDocs)) ? undefined : "points to a missing file";
     }
 
     const page = posix.normalize("/" + resolved.replace(/\.md$/i, "")).replace(/\/$/, "") || "/";
