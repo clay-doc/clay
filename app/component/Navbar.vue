@@ -12,10 +12,27 @@ const baseUrl = inject('baseUrl') as Ref<string>;
 const t = useMessages();
 const {versions, languages, edition, versionLink, languageLink, home} = useEditionLinks();
 
-// A dropdown stays open after following one of its links otherwise
+// Dropdowns (<details>) close after following one of their links, on a click
+// elsewhere, on Escape, when another dropdown opens and after navigating
+const navbar = ref<HTMLElement | null>(null);
+const route = useRoute();
+
+function closeMenus(except?: Element | null) {
+  navbar.value?.querySelectorAll("details[open]").forEach(menu => {
+    if (menu !== except) menu.removeAttribute("open");
+  });
+}
+
 function closeMenu(event: MouseEvent) {
   (event.target as HTMLElement).closest("details")?.removeAttribute("open");
 }
+
+function onPointerDown(event: PointerEvent) {
+  const target = event.target as Element;
+  closeMenus(navbar.value?.contains(target) ? target.closest("details") : null);
+}
+
+watch(() => route.path, () => closeMenus());
 
 
 // On keyboard shortcut cmd+k or ctrl+k toggle the search, "/" opens it
@@ -39,10 +56,13 @@ onMounted(() => {
     } else if (e.key === "/" && !searchOpen.value && !isTyping(e.target)) {
       e.preventDefault();
       searchOpen.value = true;
+    } else if (e.key === "Escape") {
+      closeMenus();
     }
   };
 
   window.addEventListener("keydown", keydownHandler);
+  document.addEventListener("pointerdown", onPointerDown);
 
   superKey.value = navigator.userAgent.includes("Mac") ? "⌘" : "Ctrl";
 });
@@ -51,13 +71,14 @@ onUnmounted(() => {
   if (keydownHandler) {
     window.removeEventListener("keydown", keydownHandler);
   }
+  document.removeEventListener("pointerdown", onPointerDown);
 });
 
 </script>
 
 
 <template>
-  <div class="navbar bg-base-200 pr-4">
+  <div ref="navbar" class="navbar bg-base-200 pr-4">
     <div class="navbar-start">
       <button id="nav-toggle" class="btn btn-ghost btn-square lg:hidden" :aria-label="t.openNav"
               aria-controls="mobile-nav" :aria-expanded="navOpen" @click="navOpen = true">
@@ -117,7 +138,7 @@ onUnmounted(() => {
             <summary>{{t.more}}</summary>
             <ul class="bg-base-100 p-2 end-0 sm:end-auto z-10">
               <li v-for="l in config.navbar.links">
-                <NuxtLink :to="l.link" target="_blank">
+                <NuxtLink :to="l.link" target="_blank" @click="closeMenu">
                   <i :class="l.icon + ' text-xs'"></i>
                   {{l.name}}
                 </NuxtLink>
