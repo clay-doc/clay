@@ -41,6 +41,8 @@ jobs:
             mkdir -p dist
             cd .output
             zip -r ../dist/dist.zip ./public/
+            # Clay Oven verifies downloads against this file
+            cd ../dist && sha256sum dist.zip > dist.zip.sha256
 
         - name: Create Release
           uses: softprops/action-gh-release@v3
@@ -50,7 +52,9 @@ jobs:
             body: | 
               Automated distribution package release v${{ steps.get_version.outputs.version }}
               Commit: ${{ github.sha }} - ${{ github.event.head_commit.message }}
-            files: ./dist/dist.zip
+            files: |
+              ./dist/dist.zip
+              ./dist/dist.zip.sha256
             draft: false
             prerelease: false
           env:
