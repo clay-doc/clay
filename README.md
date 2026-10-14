@@ -107,8 +107,8 @@ order: 1                  # position in the navigation
 ---
 ```
 
-Pages and folders are sorted alphabetically; entries with an `order` come first. Folders get their name, icon and
-order from `dir-meta.yaml`:
+Pages and folders are sorted alphabetically; entries with an `order` come first (`clay edit` sets these for you).
+Folders get their name, icon and order from `dir-meta.yaml`:
 
 ```yaml
 - path: "guides"
@@ -130,6 +130,12 @@ Images and other files next to your docs (`![Diagram](img/diagram.png)`) are pub
 | `clay dev`     | Development server with live reload               |
 | `clay build`   | Build the static site into `<out>/public`         |
 | `clay preview` | Serve the build under its base URL, like GitHub Pages |
+| `clay edit`    | Edit page order, titles and icons, and the settings in `clay.yaml` |
+
+`clay edit` opens an editor in the terminal: move pages and folders (`m` picks one up, ↑↓ moves it, ⏎ drops it),
+set titles and icons, and switch to the site settings with Tab. Saving writes `order`, `title` and `icon` to the
+front matter and `dir-meta.yaml`, and keeps comments and formatting of these files. With `clay dev` running, the
+site updates on every save.
 
 | Option         | Description                                                  | Default             |
 |----------------|--------------------------------------------------------------|---------------------|
@@ -137,6 +143,7 @@ Images and other files next to your docs (`![Diagram](img/diagram.png)`) are pub
 | `--out <dir>`  | Output directory                                             | `<root>/publish`    |
 | `--port <n>`   | Port for `dev` and `preview`                                 | `3000`, `4173`      |
 | `--strict`     | `build`: fail on broken links and unknown config keys        |                     |
+| `--verbose`    | `build`: show the full Nuxt output instead of the progress   |                     |
 
 ## Deploying to GitHub Pages
 

@@ -1,3 +1,5 @@
+import {stringify} from "yaml";
+
 export type FrontMatter = {
     title?: string;
     icon?: string;
@@ -22,6 +24,29 @@ export function splitFrontMatter(content: string): { frontMatter: string, body: 
 
 export function stripFrontMatter(content: string): string {
     return splitFrontMatter(content).body;
+}
+
+// Sets (or with null removes) front matter keys, leaving every other line as it
+// was; front matter is added at the top when a document has none.
+export function setFrontMatter(content: string, updates: Record<string, string | number | null>): string {
+    const {found} = splitFrontMatter(content);
+    const bom = content.startsWith("﻿") ? "﻿" : "";
+    const body = content.slice(bom.length).split(/(?<=\n)/);
+    const lines = found ? body : ["---\n", "---\n", ...body];
+    const keyOf = (line: string) => line.match(/^([\w-]+)\s*:/)?.[1];
+
+    for (const [key, value] of Object.entries(updates)) {
+        const end = lines.findIndex((line, i) => i > 0 && line.trim() === "---");
+        const index = lines.findIndex((line, i) => i > 0 && i < end && keyOf(line) === key);
+        const newline = (lines[index] ?? lines[0]!).endsWith("\r\n") ? "\r\n" : "\n";
+        const line = value === null ? [] : [`${key}: ${stringify(value, {lineWidth: 0}).trimEnd()}${newline}`];
+        if (index >= 0) lines.splice(index, 1, ...line);
+        else lines.splice(end, 0, ...line);
+    }
+
+    // Front matter added here but left empty is dropped again
+    if (!found && lines[1]?.trim() === "---") lines.splice(0, 2);
+    return bom + lines.join("");
 }
 
 const unquote = (value: string) =>
