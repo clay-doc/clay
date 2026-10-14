@@ -6,6 +6,7 @@ import { useMarkdownCache } from "~/composables/use-markdown-cache";
 import {dropFrontMatterIfExists} from "~/assets/front-matter-extractor";
 import linkConcat from "~/assets/link-concat";
 import {clearHighlights, firstMarkInSection, highlightTerms} from "~/assets/highlight-dom";
+import {copyCodeBlock} from "~/assets/code-copy";
 const props = defineProps(["url"])
 
 const baseUrl = inject('baseUrl') as Ref<string>;
@@ -75,6 +76,12 @@ const router = useRouter();
 
 function handleClicks(event: MouseEvent) {
   const target = event.target as HTMLElement;
+
+  const copyButton = target?.closest<HTMLElement>('button.copy-code');
+  if (copyButton) {
+    copyCodeBlock(copyButton);
+    return;
+  }
 
   if (target && target.tagName === 'A') {
     const href = target.getAttribute('href');

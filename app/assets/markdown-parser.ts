@@ -13,6 +13,7 @@ import {
 import markedShiki from "marked-shiki";
 import markedAlert from "marked-alert";
 import {headingIds} from "~/assets/markdown-text";
+import {transformerCopyButton} from "~/assets/code-copy";
 
 export const shikiHighlighter = await createHighlighter({
     langs: [],
@@ -90,7 +91,8 @@ export const shikiMark = new Marked()
                                 matchAlgorithm: 'v3'
                             }),
                             transformerMetaHighlight(),
-                            transformerMetaWordHighlight()
+                            transformerMetaWordHighlight(),
+                            transformerCopyButton()
                         ]
                     });
                 }
@@ -116,7 +118,8 @@ export const shikiMark = new Marked()
                             matchAlgorithm: 'v3'
                         }),
                         transformerMetaHighlight(),
-                        transformerMetaWordHighlight()
+                        transformerMetaWordHighlight(),
+                        transformerCopyButton()
                     ]
                 });
             }

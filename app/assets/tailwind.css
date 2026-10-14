@@ -82,3 +82,23 @@
 .search-hit-active {
     @apply bg-primary/60;
 }
+
+.code-block {
+    @apply relative;
+}
+
+.copy-code {
+    @apply absolute top-2 right-2 opacity-0 transition-opacity bg-base-200/80;
+}
+
+.code-block:hover .copy-code,
+.copy-code:focus-visible {
+    @apply opacity-100;
+}
+
+/* Touch screens have no hover, keep the button visible */
+@media (hover: none) {
+    .copy-code {
+        @apply opacity-100;
+    }
+}
