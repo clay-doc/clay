@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.1.2](https://github.com/clay-doc/clay/compare/v2.1.1...v2.1.2) (2026-10-14)
+
+
+### Bug Fixes
+
+* **cli:** show build warnings and errors in CI ([c97bf90](https://github.com/clay-doc/clay/commit/c97bf9042217be79903c367a3e03c7a509345cfb))
+
 ## [2.1.1](https://github.com/clay-doc/clay/compare/v2.1.0...v2.1.1) (2026-10-14)
 
 
