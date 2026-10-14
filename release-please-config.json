@@ -1,0 +1,12 @@
+{
+  "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
+  "bootstrap-sha": "02cebdf99bfcf2c0c1fe24afddeb6de4d5b42ad3",
+  "include-component-in-tag": false,
+  "packages": {
+    ".": {
+      "release-type": "node",
+      "package-name": "clay-doc",
+      "changelog-path": "CHANGELOG.md"
+    }
+  }
+}

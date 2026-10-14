@@ -1,0 +1,65 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # Full history, so the playground build shows last-updated dates
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: lts/*
+          cache: npm
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Type Check
+        run: npm run typecheck
+
+      - name: Unit Tests
+        run: npm test
+
+      - name: Install Playwright Browser
+        run: npx playwright install --with-deps chromium
+
+      # Builds the playground strictly (broken links fail), then tests the
+      # static site under a base path, on mobile, and the dev server
+      - name: Browser Tests
+        run: npm run test:e2e
+
+      # What npm publishes must work on its own: install the packed package
+      # into an empty docs project and build it
+      - name: Packaged Build
+        run: |
+          npm pack --pack-destination "$RUNNER_TEMP"
+          mkdir "$RUNNER_TEMP/site"
+          cp -R playground/clay.yaml playground/dir-meta.yaml playground/logo.svg playground/docs "$RUNNER_TEMP/site/"
+          cd "$RUNNER_TEMP/site"
+          npm init -y > /dev/null
+          npm install --no-audit --no-fund "$RUNNER_TEMP"/clay-doc-*.tgz
+          npx clay build --strict
+          test -f publish/public/reference/feature-tour/index.html
+
+      - name: Upload Test Results
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: playwright-results
+          path: test-results/
+          retention-days: 7
