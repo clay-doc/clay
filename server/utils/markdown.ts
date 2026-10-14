@@ -75,18 +75,19 @@ function createRenderer(highlighter: Highlighter) {
 }
 
 // Created on first use (top-level await is not available in the server build)
-let renderer: Promise<{ highlighter: Highlighter, marked: Marked }> | undefined;
+let highlighterPromise: Promise<Highlighter> | undefined;
 
-function getRenderer() {
-    renderer ??= createHighlighter({langs: ["text"], themes: ["dark-plus", "light-plus"]})
-        .then(highlighter => ({highlighter, marked: createRenderer(highlighter)}));
-    return renderer;
+function getHighlighter() {
+    highlighterPromise ??= createHighlighter({langs: ["text"], themes: ["dark-plus", "light-plus"]});
+    return highlighterPromise;
 }
 
 // Markdown to HTML with headings ids, alerts and highlighted code blocks
 export async function renderMarkdown(markdown: string): Promise<string> {
-    const {highlighter, marked} = await getRenderer();
+    const highlighter = await getHighlighter();
     const lexer = new Marked({gfm: true});
     await loadLanguages(highlighter, lexer.lexer(markdown), lexer);
-    return marked.parse(markdown, {gfm: true, breaks: true});
+    // A renderer per document: heading ids are numbered per document, and
+    // documents are rendered concurrently during the build
+    return createRenderer(highlighter).parse(markdown, {gfm: true, breaks: true});
 }
