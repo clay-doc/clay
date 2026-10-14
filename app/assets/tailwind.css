@@ -165,6 +165,66 @@
     }
 }
 
+/* Line notations of the Shiki transformers (server/utils/markdown.ts): ```ts {1,3},
+   // [!code highlight], [!code ++] / [!code --], [!code focus], [!code error] /
+   // [!code warning] and [!code word:...]. Lines span the whole block. */
+pre.shiki code {
+    @apply block w-fit min-w-full;
+}
+
+pre.shiki .line.highlighted,
+pre.shiki .line.diff {
+    @apply relative inline-block w-full;
+}
+
+pre.shiki .line.highlighted {
+    background: color-mix(in oklab, var(--color-base-content) 10%, transparent);
+}
+
+pre.shiki .line.highlighted.error {
+    background: color-mix(in oklab, var(--color-error) 25%, transparent);
+}
+
+pre.shiki .line.highlighted.warning {
+    background: color-mix(in oklab, var(--color-warning) 30%, transparent);
+}
+
+pre.shiki .line.diff.add {
+    background: color-mix(in oklab, var(--color-success) 22%, transparent);
+}
+
+pre.shiki .line.diff.remove {
+    background: color-mix(in oklab, var(--color-error) 22%, transparent);
+    @apply opacity-70;
+}
+
+/* The + and - sit in the padding left of the line */
+pre.shiki .line.diff::before {
+    @apply absolute -left-3.5 opacity-70;
+}
+
+pre.shiki .line.diff.add::before {
+    content: "+";
+}
+
+pre.shiki .line.diff.remove::before {
+    content: "-";
+}
+
+/* Focus dims the other lines until the block is hovered */
+pre.shiki.has-focused .line:not(.focused) {
+    @apply opacity-40 blur-[0.5px] transition;
+}
+
+pre.shiki.has-focused:hover .line:not(.focused) {
+    @apply opacity-100 blur-none;
+}
+
+pre.shiki .highlighted-word {
+    @apply rounded-sm px-0.5 -mx-0.5;
+    background: color-mix(in oklab, var(--color-primary) 30%, transparent);
+}
+
 /* Theme toggle: show the theme it switches to (the moon in light mode, the sun in dark mode) */
 :root .theme-to-light {
     display: none;

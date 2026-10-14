@@ -32,6 +32,22 @@ fmt.Println("hello")
 plain text for an unknown language
 ```
 
+Line notations:
+
+```ts {1}
+const config = loadConfig();
+const site = buildSite(config); // [!code --]
+const site = await buildSite(config); // [!code ++]
+validate(site); // [!code warning]
+publish(site); // [!code error]
+```
+
+```js
+// [!code word:answer]
+const answer = 42;
+console.log(answer); // [!code focus]
+```
+
 ## Alerts
 
 > [!TIP]
