@@ -4,6 +4,7 @@ import {type LinkPart} from "~/assets/structure-loader";
 import type {Configuration} from "~/assets/configuration";
 import NavbarLoader from "~/component/NavbarLoader.vue";
 import linkConcat from "~/assets/link-concat";
+import {useSearchOpen} from "~/composables/use-search";
 
 const config = inject('config') as Ref<Configuration>;
 const linkParts = inject("delimitedLinkParts") as Ref<LinkPart[]>;
@@ -12,19 +13,25 @@ const configReady = inject('configReady') as Ref<boolean>;
 const baseUrl = inject('baseUrl') as Ref<string>;
 
 
-// On keyboard shortcut cmd+k or ctrl+k, focus the search input
+// On keyboard shortcut cmd+k or ctrl+k toggle the search, "/" opens it
 let keydownHandler: ((e: KeyboardEvent) => void) | null = null;
 let superKey = useState<string>("superKey", () => "");
 
-let searchRef = ref<HTMLInputElement | null>(null);
+const searchOpen = useSearchOpen();
+
+function isTyping(target: EventTarget | null) {
+  const el = target as HTMLElement | null;
+  return !!el && (el.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(el.tagName));
+}
 
 onMounted(() => {
   keydownHandler = (e: KeyboardEvent) => {
     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
       e.preventDefault();
-      if (searchRef.value) {
-        searchRef.value.focus();
-      }
+      searchOpen.value = !searchOpen.value;
+    } else if (e.key === "/" && !searchOpen.value && !isTyping(e.target)) {
+      e.preventDefault();
+      searchOpen.value = true;
     }
   };
 
@@ -91,11 +98,14 @@ onUnmounted(() => {
           </details>
         </li>
       </ul>
-      <label class="input h-10 hidden sm:flex">
+      <button class="btn btn-ghost btn-square sm:hidden" aria-label="Search" @click="searchOpen = true">
         <i class="fa-solid fa-magnifying-glass"></i>
-        <input ref="searchRef" type="search" class="h-12" placeholder="Search" />
+      </button>
+      <button class="input h-10 hidden sm:flex cursor-pointer" @click="searchOpen = true">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <span class="grow text-left opacity-60">Search</span>
         <kbd class="kbd kbd-sm">{{superKey}} K</kbd>
-      </label>
+      </button>
     </div>
     <NuxtLoadingIndicator color="var(--color-primary)" :height="2" :throttle="0" />
 

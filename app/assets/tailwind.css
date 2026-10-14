@@ -75,3 +75,10 @@
 .markdown-alert-danger {
     @apply border-error;
 }
+.search-hit {
+    @apply bg-primary/30 text-inherit rounded-sm;
+}
+
+.search-hit-active {
+    @apply bg-primary/60;
+}

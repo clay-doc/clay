@@ -14,7 +14,7 @@ const isDirectory = computed(() => linkParts.value[linkParts.value.length - 1]?.
 <template>
   <Directory v-if="isDirectory"/>
   <MarkdownLoader v-else-if="!shikiReady" />
-  <Markdown v-else :url="route.fullPath" class="min-w-full"/>
+  <Markdown v-else :url="route.path" class="min-w-full"/>
 </template>
 
 <style scoped>

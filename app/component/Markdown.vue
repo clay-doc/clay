@@ -5,6 +5,7 @@ import Error from "~/component/Error.vue";
 import { useMarkdownCache } from "~/composables/use-markdown-cache";
 import {dropFrontMatterIfExists} from "~/assets/front-matter-extractor";
 import linkConcat from "~/assets/link-concat";
+import {clearHighlights, firstMarkInSection, highlightTerms} from "~/assets/highlight-dom";
 const props = defineProps(["url"])
 
 const baseUrl = inject('baseUrl') as Ref<string>;
@@ -42,7 +43,34 @@ async function loadContent() {
   }
 }
 
-onMounted(loadContent);
+const route = useRoute();
+
+const contentEl = ref<HTMLElement | null>(null);
+
+// Content renders after navigation, so once it exists: mark the words from a
+// search result (?highlight=) and jump to the first one in the #section
+async function revealResult() {
+  await nextTick();
+  const root = contentEl.value;
+  if (!root) return;
+
+  clearHighlights(root);
+  const highlight = route.query.highlight;
+  const terms = typeof highlight === "string" ? highlight.split(" ").filter(Boolean) : [];
+  const marks = highlightTerms(root, terms);
+
+  const anchor = route.hash ? document.getElementById(decodeURIComponent(route.hash.slice(1))) : null;
+  const mark = firstMarkInSection(root, marks, anchor);
+  mark?.classList.add("search-hit-active");
+  (mark ?? anchor)?.scrollIntoView({block: mark ? "center" : "start"});
+}
+
+onMounted(async () => {
+  await loadContent();
+  await revealResult();
+});
+watch(() => [route.hash, route.query.highlight], revealResult);
+
 const router = useRouter();
 
 function handleClicks(event: MouseEvent) {
@@ -66,7 +94,7 @@ function handleClicks(event: MouseEvent) {
   <div class="prose prose-sm sm:prose p-6">
     <!-- begin content -->
     <MarkdownLoader v-if="!markdownReady" />
-    <div v-else-if="content" v-html="content" @click="handleClicks" class="w-full"></div>
+    <div v-else-if="content" ref="contentEl" v-html="content" @click="handleClicks" class="w-full"></div>
     <Error v-else :code="errorCode" :message="error"/>
     <!-- end content -->
   </div>

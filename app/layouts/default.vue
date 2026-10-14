@@ -13,6 +13,7 @@ import {
   loadFromYamlStructure
 } from "~/assets/structure-loader";
 import LoadingFailed from "~/component/LoadingFailed.vue";
+import SearchModal from "~/component/SearchModal.vue";
 import linkConcat from "~/assets/link-concat";
 
 const configuration = ref<Configuration | undefined>(undefined)
@@ -77,8 +78,8 @@ onMounted(async () => {
   shikiReady.value = true
 })
 
-const linkParts = computed(() => getLinkPartsFromCurrentRoute(route.fullPath, structure.value!!));
-const currentItem = computed(() => getCurrentDocItemFromRoute(route.fullPath, structure.value!!));
+const linkParts = computed(() => getLinkPartsFromCurrentRoute(route.path, structure.value!!));
+const currentItem = computed(() => getCurrentDocItemFromRoute(route.path, structure.value!!));
 const delimitedLinkParts = computed(() => delimitLinkParts(linkParts.value, 3))
 
 provide('baseUrl', baseUrl);
@@ -100,5 +101,6 @@ provide('configReady', configReady)
     <Content class="h-full w-full col-span-2 lg:col-span-1 overflow-scroll">
       <slot />
     </Content>
+    <SearchModal/>
   </div>
 </template>

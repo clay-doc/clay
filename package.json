@@ -16,10 +16,12 @@
     "@tailwindcss/typography": "^0.5.19",
     "@tailwindcss/vite": "^4.1.18",
     "daisyui": "^5.5.14",
+    "github-slugger": "^2.0.0",
     "js-yaml": "^4.1.1",
     "marked": "^17.0.1",
     "marked-alert": "^2.1.2",
     "marked-shiki": "^1.2.1",
+    "minisearch": "^7.2.0",
     "nuxt": "^4.2.2",
     "shiki": "^3.21.0",
     "tailwindcss": "^4.1.18",
@@ -29,6 +31,7 @@
   "devDependencies": {
     "@types/js-yaml": "^4.0.9",
     "@types/node": "^25.0.9",
+    "happy-dom": "^21.0.1",
     "vitest": "^4.1.11"
   }
 }

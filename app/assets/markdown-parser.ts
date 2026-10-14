@@ -12,6 +12,7 @@ import {
 } from '@shikijs/transformers'
 import markedShiki from "marked-shiki";
 import markedAlert from "marked-alert";
+import {headingIds} from "~/assets/markdown-text";
 
 export const shikiHighlighter = await createHighlighter({
     langs: [],
@@ -23,6 +24,7 @@ export function hasLang(lang: string) {
 }
 
 export const shikiMark = new Marked()
+    .use(headingIds())
     .use(markedAlert({
         variants: [
             {

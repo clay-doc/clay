@@ -27,6 +27,7 @@ Clay is a documentation framework designed to help developers speed up their dev
 - User-friendly and modern UI via **[daisyUI](https://daisyui.com/)** and **[Tailwind CSS](https://tailwindcss.com/)**.
 - Rich Markdown parsing and rendering via **[marked.js](https://marked.js.org/)**.
 - Syntax highlighting for code blocks using **[Shiki](https://shiki.matsu.io/)**.
+- Full-text search across all pages via **[MiniSearch](https://lucaong.github.io/minisearch/)**: open it with <kbd>⌘ K</kbd> / <kbd>Ctrl K</kbd> or <kbd>/</kbd>. Results link to the matching section, tolerate typos and match as you type.
 - Customizable configuration via `clay.yaml`.
 - Easy integration into existing projects with minimal setup.
 
