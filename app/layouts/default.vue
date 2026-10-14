@@ -25,7 +25,8 @@ const structure = computed(() => site.value.navs[edition.value.prefix] ?? site.v
 const messages = computed(() => messagesFor(edition.value.language.code, configuration.value.messages?.[edition.value.language.code]));
 const siteConfig = site.value.config;
 
-const baseUrl = computed(() => useRuntimeConfig().app.baseURL);
+// Read during setup: the head below is resolved later, where Nuxt composables are unavailable
+const baseUrl = ref(useRuntimeConfig().app.baseURL);
 
 const FONTAWESOME_FREE_CSS = "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css";
 const FONTAWESOME_FREE_SRI = "sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg==";
