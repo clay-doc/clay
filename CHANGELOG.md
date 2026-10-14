@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.1.1](https://github.com/clay-doc/clay/compare/v2.1.0...v2.1.1) (2026-10-14)
+
+
+### Bug Fixes
+
+* **code:** style highlighted, diff and focused lines ([939f8f6](https://github.com/clay-doc/clay/commit/939f8f6eb6b6b8d13ff496b1f86b6d16e3cd2697))
+* **i18n:** translate alert titles and copy button labels ([497ed09](https://github.com/clay-doc/clay/commit/497ed09c732b5dec08e428d75c683398a79f7d5e))
+
 ## [2.1.0](https://github.com/clay-doc/clay/compare/v2.0.0...v2.1.0) (2026-10-14)
 
 
