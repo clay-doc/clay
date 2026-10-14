@@ -66,7 +66,7 @@ The `clay.yaml` file is used to configure the main settings of Clay:
 title: "Demo"
 favicon: "logo.svg"
 baseURL: "/"
-fontawesomeKit: "0a7e2ccef9"
+fontawesomeKit: "my-kit"
 navbar:
   logo: "logo.svg"
   source:
