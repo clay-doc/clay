@@ -31,22 +31,20 @@ const baseUrl = ref(useRuntimeConfig().app.baseURL);
 const FONTAWESOME_FREE_CSS = "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css";
 const FONTAWESOME_FREE_SRI = "sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg==";
 
-// Icons are a stylesheet in the head, so they render with the page: a kit's
-// web font CSS, or the free Font Awesome icons without a kit. (A kit's script
-// would replace icons in the DOM after hydration, so they would pop in late.)
-const iconStyles = hasFontawesomeKit(siteConfig)
-  ? [
-      {rel: 'preconnect', href: 'https://ka-f.fontawesome.com', crossorigin: 'anonymous' as const},
-      {rel: 'stylesheet', href: `https://kit.fontawesome.com/${siteConfig.fontawesomeKit}.css`, crossorigin: 'anonymous' as const},
-    ]
-  : [{rel: 'stylesheet', href: FONTAWESOME_FREE_CSS, integrity: FONTAWESOME_FREE_SRI, crossorigin: 'anonymous' as const}];
-
+// Icons load in the head, so they render with the page: the free Font Awesome
+// icons as a stylesheet, or a kit's script, which adds its web font stylesheets.
+// (Kits have no stylesheet of their own; kits set to SVG replace the icons in
+// the page, which Vue does not expect, so web font kits work best.)
+const kit = hasFontawesomeKit(siteConfig);
 useHead(() => ({
   htmlAttrs: {lang: edition.value.language.code},
   link: [
     ...(siteConfig.favicon ? [{rel: 'icon', href: linkConcat(baseUrl.value, siteConfig.favicon)}] : []),
-    ...iconStyles,
+    ...(kit
+      ? [{rel: 'preconnect', href: 'https://ka-f.fontawesome.com', crossorigin: 'anonymous' as const}]
+      : [{rel: 'stylesheet', href: FONTAWESOME_FREE_CSS, integrity: FONTAWESOME_FREE_SRI, crossorigin: 'anonymous' as const}]),
   ],
+  script: kit ? [{src: `https://kit.fontawesome.com/${siteConfig.fontawesomeKit}.js`, crossorigin: 'anonymous' as const, async: true}] : [],
 }));
 
 const pathInEdition = computed(() => stripPrefix(route.path, edition.value.prefix));
