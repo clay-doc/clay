@@ -7,8 +7,9 @@ watch(() => route.path, () => pane.value?.scrollTo({top: 0}));
 </script>
 <template>
 <div class="bg-base-200">
-  <div ref="pane" class="bg-base-100 sm:rounded-tl-2xl h-full w-full overflow-scroll">
+  <!-- Focusable, so the skip link can move the keyboard here -->
+  <main id="content" ref="pane" tabindex="-1" class="bg-base-100 sm:rounded-tl-2xl h-full w-full overflow-scroll outline-none">
     <slot/>
-  </div>
+  </main>
 </div>
 </template>

@@ -68,6 +68,7 @@ function createRenderer(highlighter: Highlighter, messages: Messages) {
                 lang: lang && isLoaded(highlighter, lang) ? lang : "text",
                 // Both themes as CSS variables; tailwind.css picks one per site theme
                 themes: {light: "light-plus", dark: "dark-plus"},
+                colorReplacements: {"light-plus": LIGHT_PLUS_CONTRAST},
                 defaultColor: false,
                 meta: {__raw: props.join(" ")},
                 transformers: transformers(messages)
@@ -75,6 +76,13 @@ function createRenderer(highlighter: Highlighter, messages: Messages) {
         }
     }));
 }
+
+// Colors of light-plus that are too faint on the lighter backgrounds (highlighted
+// and diff lines), each darkened just enough for a contrast of 4.5:1 on all of them
+const LIGHT_PLUS_CONTRAST: Record<string, string> = {
+    "#008000": "#006400", "#098658": "#076240", "#e50000": "#ae0000", "#cd3131": "#a02626", "#795e26": "#695221",
+    "#267f99": "#1b5b6e", "#af00db": "#8f00b4", "#0070c1": "#005797", "#d16969": "#844242", "#ee0000": "#ae0000",
+};
 
 // Created on first use (top-level await is not available in the server build)
 let highlighterPromise: Promise<Highlighter> | undefined;

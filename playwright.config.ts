@@ -25,6 +25,11 @@ export default defineConfig({
             use: {...devices["Pixel 7"], baseURL: `http://127.0.0.1:4173${BASE}`},
         },
         {
+            name: "accessibility",
+            testMatch: /accessibility\.spec\.ts/,
+            use: {...devices["Desktop Chrome"], viewport: {width: 1440, height: 900}, baseURL: `http://127.0.0.1:4173${BASE}`},
+        },
+        {
             name: "dev",
             testMatch: /dev\.spec\.ts/,
             use: {...devices["Desktop Chrome"], baseURL: `http://localhost:3100${BASE}`},

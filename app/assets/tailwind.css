@@ -192,8 +192,9 @@ pre.shiki .line.diff {
     @apply relative inline-block w-full;
 }
 
+/* Light backgrounds, so the colors of the code keep their contrast */
 pre.shiki .line.highlighted {
-    background: color-mix(in oklab, var(--color-base-content) 10%, transparent);
+    background: color-mix(in oklab, var(--color-base-content) 6%, transparent);
 }
 
 pre.shiki .line.highlighted.error {
@@ -205,12 +206,11 @@ pre.shiki .line.highlighted.warning {
 }
 
 pre.shiki .line.diff.add {
-    background: color-mix(in oklab, var(--color-success) 22%, transparent);
+    background: color-mix(in oklab, var(--color-success) 15%, transparent);
 }
 
 pre.shiki .line.diff.remove {
-    background: color-mix(in oklab, var(--color-error) 22%, transparent);
-    @apply opacity-70;
+    background: color-mix(in oklab, var(--color-error) 15%, transparent);
 }
 
 /* The + and - sit in the padding left of the line */
@@ -226,12 +226,13 @@ pre.shiki .line.diff.remove::before {
     content: "-";
 }
 
-/* Focus dims the other lines until the block is hovered */
+/* Focus dims the other lines until the block is hovered, or its copy button focused */
 pre.shiki.has-focused .line:not(.focused) {
     @apply opacity-40 blur-[0.5px] transition;
 }
 
-pre.shiki.has-focused:hover .line:not(.focused) {
+pre.shiki.has-focused:hover .line:not(.focused),
+.code-block:focus-within pre.shiki.has-focused .line:not(.focused) {
     @apply opacity-100 blur-none;
 }
 
@@ -332,6 +333,13 @@ pre.shiki .highlighted-word {
     .menu > .sidebar-marker {
         transition: none;
     }
+}
+
+/* Keyboard focus in menus (navbar, sidebar) shows as a ring, not only as the
+   light background that hovering gives too */
+.menu :where(li > a, li > button, li > details > summary):focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: -2px;
 }
 
 /* The logo leads to the start page; there it is the current page, which

@@ -140,8 +140,7 @@ test.describe("in the browser", () => {
         await expect(toc.getByRole("link", {name: "Links"})).toHaveClass(/text-primary/);
         await expect(toc.getByRole("link", {name: "Tables"})).not.toHaveClass(/text-primary/);
 
-        await page.locator(".prose").locator("xpath=ancestor::div[contains(@class, 'overflow-scroll')][1]")
-            .evaluate(pane => pane.scrollTop = pane.scrollHeight);
+        await page.locator("main#content").evaluate(pane => pane.scrollTop = pane.scrollHeight);
         await expect(toc.getByRole("link", {name: "Tables"})).toHaveClass(/text-primary/);
         await expect(toc.getByRole("link", {name: "Links"})).not.toHaveClass(/text-primary/);
     });
@@ -157,7 +156,7 @@ test.describe("in the browser", () => {
     test("a new page starts at the top", async ({page}) => {
         await page.goto("configuration/");
         await hydrated(page);
-        const pane = page.locator(".overflow-scroll").first();
+        const pane = page.locator("main#content");
         await pane.evaluate(el => el.scrollTop = 1500);
 
         await page.locator("ul.menu.bg-base-200 a", {hasText: "Getting Started"}).click();

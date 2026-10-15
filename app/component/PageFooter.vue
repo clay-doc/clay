@@ -26,7 +26,7 @@ const adjacent = computed(() => structure.value ? adjacentPages(structure.value,
 
 <template>
   <footer class="not-prose mt-12 flex flex-col gap-6 text-sm">
-    <div v-if="edit || updated" class="flex flex-wrap justify-between gap-2 opacity-70">
+    <div v-if="edit || updated" class="flex flex-wrap justify-between gap-2 opacity-80">
       <a v-if="edit" :href="edit" target="_blank" rel="noopener noreferrer" class="link link-hover">
         <i class="fa-solid fa-pen-to-square mr-1"></i>{{t.editPage}}
       </a>
@@ -35,12 +35,12 @@ const adjacent = computed(() => structure.value ? adjacentPages(structure.value,
     <nav v-if="adjacent.previous || adjacent.next" :aria-label="t.previousNext" class="grid grid-cols-2 gap-4">
       <NuxtLink v-if="adjacent.previous" :to="adjacent.previous.displayLink" rel="prev"
                 class="card card-border hover:border-primary p-4 col-start-1">
-        <span class="opacity-60 text-xs">{{t.previous}}</span>
+        <span class="opacity-80 text-xs">{{t.previous}}</span>
         <span class="font-semibold"><i class="fa-solid fa-arrow-left mr-1"></i>{{adjacent.previous.title}}</span>
       </NuxtLink>
       <NuxtLink v-if="adjacent.next" :to="adjacent.next.displayLink" rel="next"
                 class="card card-border hover:border-primary p-4 col-start-2 text-right">
-        <span class="opacity-60 text-xs">{{t.next}}</span>
+        <span class="opacity-80 text-xs">{{t.next}}</span>
         <span class="font-semibold">{{adjacent.next.title}}<i class="fa-solid fa-arrow-right ml-1"></i></span>
       </NuxtLink>
     </nav>

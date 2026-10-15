@@ -86,6 +86,10 @@ const untranslatedNote = computed(() => format(messages.value.untranslated, {
   language: languageName(defaultLanguage.value, edition.value.language.code),
 }));
 
+function skipToContent() {
+  document.getElementById("content")?.focus();
+}
+
 provide('baseUrl', baseUrl);
 provide('config', configuration);
 provide('structure', structure);
@@ -105,6 +109,11 @@ provide('untranslatedNote', untranslatedNote)
 
 <template>
   <div class="grid grid-rows-[4.5rem_1fr] grid-cols-[20rem_1fr] row-end-auto w-screen h-screen">
+    <!-- The first stop for the keyboard: past the navbar and sidebar to the page. It
+         waits above the window rather than in "sr-only", which Font Awesome's
+         stylesheet defines too, out of reach of Tailwind's "focus:not-sr-only" -->
+    <a href="#content" class="btn btn-sm btn-primary absolute top-4 left-4 z-50 -translate-y-24 focus:translate-y-0"
+       @click.prevent="skipToContent">{{messages.skipToContent}}</a>
     <Navbar class="col-span-2"/>
     <Sidebar class="hidden lg:block w-full"/>
     <Content class="h-full w-full col-span-2 lg:col-span-1 overflow-scroll">
