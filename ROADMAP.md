@@ -5,10 +5,6 @@ impact.
 
 ## Features
 
-- Agent-ready `clay edit`: every action of the editor as a non-interactive subcommand with flags and `--json`
-  output (e.g. moving a page, setting a title), so AI agents and scripts can change the docs.
-- Agent-ready sites: `/llms.txt` (an index) and `/llms-full.txt` (all docs) at build time, the Markdown of
-  every page next to it, and "Copy as Markdown" / "Open in ChatGPT or Claude" on each page.
 - A plugin system and analytics integration.
 
 ## Smaller issues
