@@ -129,3 +129,7 @@ my-project/
   clay.yaml  # settings
   package.json
 ```
+
+## Snippets
+
+<!--@include: ../_snippets/note.md-->

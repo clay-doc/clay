@@ -16,3 +16,6 @@ navbar:
     - name: "Example"
       icon: "fa-solid fa-book"
       link: "https://clay-doc.github.io/clay-example-repo"
+# {{version}} in the docs
+variables:
+  version: "4.0"

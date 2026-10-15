@@ -480,6 +480,14 @@ test.describe("components", () => {
     });
 });
 
+test.describe("snippets, variables, head and social images", () => {
+    test("snippets and variables are filled in; snippet files are no pages", async ({page, request}) => {
+        await page.goto("reference/components/");
+        await expect(page.locator("#snippets + .markdown-alert")).toContainText("Included from a snippet, for Clay 4.0.");
+        expect((await request.get("_snippets/note/")).status()).toBe(404);
+    });
+});
+
 test.describe("for language models and agents", () => {
     test("every page is published as Markdown, with an index in llms.txt", async ({request}) => {
         const markdown = await request.get("reference/feature-tour.md");

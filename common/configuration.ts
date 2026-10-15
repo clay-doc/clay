@@ -13,6 +13,7 @@ export type Configuration = {
     languages?: string[], // language codes; the first is the default language
     messages?: Record<string, Partial<Messages>>, // interface texts by language
     navbar?: NavbarConfiguration,
+    variables?: Record<string, string | number | boolean>, // {{name}} in the docs, e.g. version: "4.0.0"
     langs?: string[], // obsolete: code languages are detected automatically
 }
 

@@ -1,5 +1,5 @@
 import {existsSync, readdirSync, readFileSync} from "node:fs";
-import {join} from "node:path";
+import {basename, join} from "node:path";
 import {load} from "js-yaml";
 import {Marked} from "marked";
 import {componentSyntax} from "../common/markdown-components";
@@ -11,6 +11,10 @@ import {languageName} from "../common/i18n";
 import {parseFrontMatter, splitFrontMatter, stripFrontMatter, type FrontMatter} from "./front-matter";
 import {lastUpdated} from "./git-dates";
 import {configSchema, unknownKeys} from "./checks";
+import {createExpander} from "./expand";
+
+// Fills in snippets and variables of a docs file (expand.ts) for a language
+type Expand = (markdown: string, file: string, language: string) => string;
 
 // A file or directory below docs/
 export type DocNode = {
@@ -74,12 +78,14 @@ export type Site = {
     languages: LanguageInfo[]; // the default language first
     editions: SiteEdition[];
     pages: Page[]; // of all editions; routes start with their prefix, e.g. "/1.x/de"
+    included: string[]; // files included into pages (expand.ts), relative to root
     warnings: string[];
 };
 
 export const isMarkdown = (name: string) => name.toLowerCase().endsWith(".md");
 export const isIndex = (name: string) => name.toLowerCase() === "index.md";
-const isHidden = (name: string) => name.startsWith(".");
+// Hidden files, and files and folders starting with "_" (snippets to include, see expand.ts), are no pages
+const isHidden = (name: string) => name.startsWith(".") || name.startsWith("_");
 
 const marked = new Marked({gfm: true}, componentSyntax());
 
@@ -98,19 +104,21 @@ export function prettyName(name: string): string {
     return words ? words[0]!.toUpperCase() + words.slice(1) : words;
 }
 
-export function loadTree(docsDir: string, path = ""): DocNode[] {
+// expand fills in snippets and variables of a markdown file (expand.ts), by its path in docsDir
+export function loadTree(docsDir: string, path = "", expand?: (markdown: string, path: string) => string): DocNode[] {
     return readdirSync(join(docsDir, path), {withFileTypes: true})
         .filter(entry => !isHidden(entry.name))
         .sort((a, b) => a.name < b.name ? -1 : a.name > b.name ? 1 : 0)
         .map(entry => {
             const rel = path ? `${path}/${entry.name}` : entry.name;
             if (entry.isDirectory()) {
-                return {name: entry.name, path: rel, isDir: true, frontMatter: {}, children: loadTree(docsDir, rel)};
+                return {name: entry.name, path: rel, isDir: true, frontMatter: {}, children: loadTree(docsDir, rel, expand)};
             }
             if (!isMarkdown(entry.name)) {
                 return {name: entry.name, path: rel, isDir: false, frontMatter: {}, children: []};
             }
-            const markdown = readFileSync(join(docsDir, rel), "utf8");
+            const text = readFileSync(join(docsDir, rel), "utf8");
+            const markdown = expand ? expand(text, rel) : text;
             return {
                 name: entry.name, path: rel, isDir: false, markdown,
                 frontMatter: parseFrontMatter(markdown), heading: firstHeading(markdown), children: []
@@ -356,7 +364,7 @@ export function listVersions(root: string): { names: string[], warnings: string[
 // The docs of one version in every language: docs/, or docs-archive/<name>/.
 // Translations ("setup.de.md") replace their original in their language;
 // pages without one show the original there.
-function loadVersion(docsDir: string, info: VersionInfo, gitDates: boolean, languages: LanguageInfo[]): {
+function loadVersion(docsDir: string, info: VersionInfo, gitDates: boolean, languages: LanguageInfo[], expand: Expand): {
     version: SiteVersion, editions: SiteEdition[], pages: Page[], warnings: string[]
 } {
     const codes = languages.map(language => language.code);
@@ -375,7 +383,10 @@ function loadVersion(docsDir: string, info: VersionInfo, gitDates: boolean, lang
         if (isMarkdown(node.name)) originals.add(node.path.toLowerCase());
         return [node];
     });
-    const tree = attachIndexes({name: "docs", path: "", isDir: true, frontMatter: {}, children: split(loadTree(docsDir))});
+    // Each file gets the variables of its language: a translation those of its own
+    const expandFile = (markdown: string, path: string) =>
+        expand(markdown, join(docsDir, path), translationOf(basename(path), codes.slice(1)) ?? codes[0]!);
+    const tree = attachIndexes({name: "docs", path: "", isDir: true, frontMatter: {}, children: split(loadTree(docsDir, "", expandFile))});
     tree.children = sortTree(tree.children);
     for (const path of translations.keys()) {
         const original = path.replace(/\.[^.]+\.md$/i, ".md");
@@ -431,7 +442,9 @@ export function loadSite(root: string, {env = process.env, gitDates = true}: Loa
     if (existsSync(join(root, "dir-meta.yaml"))) {
         warnings.push(`dir-meta.yaml is no longer read since Clay 3; give each folder an index.md with its title, icon and order`);
     }
-    const current = loadVersion(join(root, "docs"), {name: "", label: config.version || "Latest"}, gitDates, languages);
+    const expander = createExpander(root, warnings);
+    const expand: Expand = (markdown, file, language) => expander.expand(markdown, file, configs[language]?.variables ?? {});
+    const current = loadVersion(join(root, "docs"), {name: "", label: config.version || "Latest"}, gitDates, languages, expand);
     warnings.push(...current.warnings);
 
     const {names, warnings: versionWarnings} = listVersions(root);
@@ -442,7 +455,7 @@ export function loadSite(root: string, {env = process.env, gitDates = true}: Loa
     }
     const older = names.map(name => {
         if (topLevel.has(name)) warnings.push(`docs-archive/${name}: docs/${name} has the same URL as this version; rename one of them`);
-        const loaded = loadVersion(join(root, "docs-archive", name), {name, label: name}, gitDates, languages);
+        const loaded = loadVersion(join(root, "docs-archive", name), {name, label: name}, gitDates, languages, expand);
         // Git history is reported once, for the current docs
         warnings.push(...loaded.warnings.filter(w => !w.includes("last-updated")).map(w => `docs-archive/${name}/${w}`));
         return loaded;
@@ -454,6 +467,7 @@ export function loadSite(root: string, {env = process.env, gitDates = true}: Loa
         versions: [current.version, ...older.map(o => o.version)],
         editions: [current.editions, ...older.map(o => o.editions)].flat(),
         pages: [current.pages, ...older.map(o => o.pages)].flat(),
+        included: [...expander.included],
         warnings,
     };
 }
