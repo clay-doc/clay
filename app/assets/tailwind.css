@@ -288,3 +288,47 @@ pre.shiki .highlighted-word {
     inset: var(--tt-off) 0 auto auto;
     transform: translateY(var(--tt-pos, -0.25rem));
 }
+
+/* The highlight of the active sidebar entry (Sidebar.vue): a tint with a short
+   rule at its left edge, which slides to the next active entry. Once it is in
+   place, the entry itself only takes the active text color. */
+.menu > .sidebar-marker {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: -1;
+    margin: 0;
+    padding: 0;
+    border-radius: var(--radius-field);
+    background-color: var(--menu-active-bg);
+    pointer-events: none;
+    opacity: 0;
+    transition: translate 0.15s cubic-bezier(0.32, 0.72, 0, 1), width 0.15s cubic-bezier(0.32, 0.72, 0, 1),
+        height 0.15s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.15s ease-out;
+}
+
+.menu > .sidebar-marker::before {
+    content: "";
+    position: absolute;
+    inset-block: 0.35rem;
+    left: 0;
+    width: 3px;
+    border-radius: var(--radius-field);
+    background-color: var(--color-primary);
+}
+
+.menu:has(> .sidebar-marker.placed) a.menu-active {
+    background-color: transparent;
+}
+
+/* daisyUI tints a pressed entry like the active one, which showed a second
+   highlight next to the travelling one; pressed entries keep the hover tint */
+.menu:has(> .sidebar-marker) li > a:not(.menu-active):active {
+    background-color: color-mix(in oklab, var(--color-base-content) 10%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .menu > .sidebar-marker {
+        transition: none;
+    }
+}

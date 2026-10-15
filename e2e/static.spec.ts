@@ -182,7 +182,7 @@ test.describe("versions", () => {
         await hydrated(page);
 
         await expect(page.locator(".prose h1")).toHaveText("Getting Started with Clay 1.x");
-        await expect(page.locator("ul.menu.bg-base-200 > li")).toHaveText([/Getting Started/, /Guides/]);
+        await expect(page.locator("ul.menu.bg-base-200 > li:not(.sidebar-marker)")).toHaveText([/Getting Started/, /Guides/]);
         await expect(page.getByRole("status")).toContainText("These are the docs for version 1.x.");
         await expect(page.getByRole("status").getByRole("link")).toHaveAttribute("href", "/clay/getting-started");
         await expect(page.locator("footer a", {hasText: "Edit this page"}))
@@ -331,6 +331,24 @@ test.describe("index pages", () => {
         await expect(page).toHaveURL(/\/clay\/guides$/);
         await toggle.click();
         await expect(sidebar.getByRole("link", {name: "Organizing Pages"})).toBeVisible();
+    });
+
+    test("a mark in the sidebar follows the active entry", async ({page}) => {
+        await page.goto("guides/advanced/advanced-features");
+        await hydrated(page);
+        const sidebar = page.locator("ul.menu.bg-base-200");
+        const marker = sidebar.locator(".sidebar-marker");
+        const top = (locator: typeof marker) => locator.evaluate(el => Math.round(el.getBoundingClientRect().top));
+
+        await expect(marker).toHaveCSS("opacity", "1");
+        expect(await top(marker)).toBe(await top(sidebar.locator("a.menu-active")));
+        await sidebar.getByRole("link", {name: "Feature Tour"}).click();
+        await expect(page.locator(".prose h1")).toHaveText("Feature Tour");
+        await expect.poll(async () => await top(marker) - await top(sidebar.locator("a.menu-active"))).toBe(0);
+
+        // Hidden with its folder
+        await sidebar.getByRole("button", {name: "Show or hide Reference"}).click();
+        await expect(marker).toHaveCSS("opacity", "0");
     });
 
     test("a page stays on screen until the next one has loaded, without a 404 in between", async ({page}) => {
