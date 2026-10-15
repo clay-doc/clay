@@ -1,7 +1,7 @@
 import MiniSearch from "minisearch";
 import GithubSlugger from "github-slugger";
 import {Marked, type Token} from "marked";
-import {inlineText, plainText} from "../../common/markdown-text";
+import {headingText, plainText} from "../../common/markdown-text";
 import {componentSyntax} from "../../common/markdown-components";
 import {SEARCH_OPTIONS, type SearchSection} from "../../common/search";
 import {stripFrontMatter} from "../../lib/front-matter";
@@ -23,7 +23,7 @@ export function splitIntoSections(markdown: string, page: SearchPage): SearchSec
     const slugger = new GithubSlugger();
     const anchors = new Map<Token, string>();
     marked.walkTokens(tokens, token => {
-        if (token.type === "heading") anchors.set(token, slugger.slug(inlineText(token.tokens ?? [])));
+        if (token.type === "heading") anchors.set(token, slugger.slug(headingText(token.tokens ?? [])));
     });
 
     const base = {link: page.link, pageTitle: page.title, path: page.path};
@@ -33,7 +33,7 @@ export function splitIntoSections(markdown: string, page: SearchPage): SearchSec
     const add = (token: Token) => {
         if (token.type === "heading" && (token.depth === 2 || token.depth === 3)) {
             const anchor = anchors.get(token)!;
-            current = {...base, id: `${page.link}#${anchor}`, anchor, heading: inlineText(token.tokens ?? []), text: "", code: ""};
+            current = {...base, id: `${page.link}#${anchor}`, anchor, heading: headingText(token.tokens ?? []), text: "", code: ""};
             sections.push(current);
         } else if (token.type === "code") {
             current.code += token.text + "\n";

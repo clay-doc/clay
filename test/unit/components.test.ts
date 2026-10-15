@@ -165,7 +165,8 @@ describe("badges", () => {
         expect(badges[0]!.className).toContain("badge-primary");
         expect(badges[1]!.className).toContain("badge-warning");
         expect(badges[2]!.className).toContain("badge-primary");
-        expect(root.querySelector("h2")!.id).toBe("api-new");
+        // A badge is a label next to the heading, not part of its #link
+        expect(root.querySelector("h2")!.id).toBe("api");
     });
 });
 

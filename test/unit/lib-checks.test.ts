@@ -48,11 +48,12 @@ describe("brokenLinks", () => {
             page("/guides/setup", "guides/setup.md", '<video src="img/clip.mp4" poster="img/shot.png" controls></video>\n\n'
                 + '<img src="img/shot.png"> <a href="../index.md">home</a> <a href="gone.md">x</a>\n\n'
                 + "<iframe src=\"https://www.youtube.com/embed/x\"></iframe>\n\n```html\n<img src=\"in-code.png\">\n```"),
-            page("/index", "index.md", "Text"),
+            page("/index", "index.md", "## Setup :badge[New]{tip}\n\n[ok](#setup) [old](#setup-new)"),
         ];
         expect(brokenLinks(pages, docs)).toEqual([
             'guides/setup.md: "img/clip.mp4" points to a missing file',
             'guides/setup.md: "gone.md" points to a missing page (/guides/gone)',
+            'index.md: "#setup-new" points to a missing section (#setup-new on /index)',
         ]);
     });
 

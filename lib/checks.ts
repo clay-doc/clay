@@ -3,7 +3,7 @@ import {join, posix} from "node:path";
 import GithubSlugger from "github-slugger";
 import {Marked, type Token} from "marked";
 import {stripFrontMatter} from "./front-matter";
-import {inlineText} from "../common/markdown-text";
+import {headingText} from "../common/markdown-text";
 import {componentSyntax} from "../common/markdown-components";
 import {docPath} from "../common/route-path";
 import type {Page} from "./site";
@@ -70,7 +70,7 @@ function anchors(markdown: string): Set<string> {
     const slugger = new GithubSlugger();
     const ids = new Set<string>();
     marked.walkTokens(marked.lexer(stripFrontMatter(markdown)), (token: Token) => {
-        if (token.type === "heading") ids.add(slugger.slug(inlineText(token.tokens ?? [])));
+        if (token.type === "heading") ids.add(slugger.slug(headingText(token.tokens ?? [])));
         if (token.type === "html") for (const match of token.raw.matchAll(/\bid=["']([^"']+)["']/g)) ids.add(match[1]!);
     });
     return ids;
