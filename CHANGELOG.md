@@ -1,5 +1,25 @@
 # Changelog
 
+## [3.1.0](https://github.com/clay-doc/clay/compare/v3.0.0...v3.1.0) (2026-10-15)
+
+
+### Features
+
+* **cli:** show dev and preview output like the build progress ([746d855](https://github.com/clay-doc/clay/commit/746d8556152febb115be37e9593c8e1a51691043))
+* **index:** list a folder's pages with "list: true" ([8e2a046](https://github.com/clay-doc/clay/commit/8e2a046bfdc0d9f0f4b80973d9fe7df88c2e3d47))
+* **navbar:** show links, theme and search as icons with tooltips ([b4e8e98](https://github.com/clay-doc/clay/commit/b4e8e98dcb1df1caa5f124ab104326b96988f5ff))
+* **sidebar:** animate folders opening and closing ([c19fffe](https://github.com/clay-doc/clay/commit/c19fffeedb17833d81b452259b9fcafcfca88b4f))
+* **sidebar:** highlight the active entry with a mark that travels ([75a777f](https://github.com/clay-doc/clay/commit/75a777f68fe0bd17edb53b80667988c6d667f469))
+* **toc:** mark every section on screen with an animated rail ([851f375](https://github.com/clay-doc/clay/commit/851f3759c9fdb6151ec1350f9c471095cc7dc531))
+
+
+### Bug Fixes
+
+* **icons:** load the Font Awesome kit's script in the head ([ecc422b](https://github.com/clay-doc/clay/commit/ecc422b0d02a5538e3703fa4f7ce29724529b162))
+* **markdown:** show "#" heading links left of the heading with room for them ([55ccd93](https://github.com/clay-doc/clay/commit/55ccd93334f654f07c71feccf2a512e0267ade8f))
+* **navbar:** keep the logo small while the stylesheet loads ([35be1c0](https://github.com/clay-doc/clay/commit/35be1c0642a240e1748dad963a26fd85a5d3c855))
+* **pages:** keep a page on screen until the next one has loaded ([75f98b2](https://github.com/clay-doc/clay/commit/75f98b2da8f608106046bcd89e16051c40baf57d))
+
 ## [3.0.0](https://github.com/clay-doc/clay/compare/v2.1.2...v3.0.0) (2026-10-15)
 
 
