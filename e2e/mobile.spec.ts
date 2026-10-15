@@ -20,11 +20,13 @@ test("the menu drawer opens, navigates and closes", async ({page}) => {
     await page.keyboard.press("Escape");
     await expect(drawer).toBeHidden();
 
-    // The version and language switchers move from the navbar into the drawer
+    // The version and language switchers and the links move from the navbar into the drawer
     await toggle.click();
+    await expect(drawer.getByRole("link", {name: "Github"})).toHaveAttribute("href", "https://github.com/clay-doc/clay");
     await drawer.getByRole("navigation", {name: "Language"}).getByRole("link", {name: "Deutsch"}).click();
     await expect(page).toHaveURL(/\/clay\/de\/reference\/feature-tour$/);
     await expect(drawer).toBeHidden();
+
 });
 
 test("pages fit the screen without sideways scrolling", async ({page}) => {

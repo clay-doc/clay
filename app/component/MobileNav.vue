@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import Sidebar from "~/component/Sidebar.vue";
+import type {Configuration} from "#common/configuration";
 
 // Navigation drawer for screens too narrow for the sidebar
 const open = useState<boolean>("navOpen", () => false);
@@ -7,6 +8,9 @@ const route = useRoute();
 const panel = ref<HTMLElement | null>(null);
 const t = useMessages();
 const {versions, languages, edition, versionLink, languageLink} = useEditionLinks();
+const config = inject('config') as Ref<Configuration>;
+// The navbar's links, which it leaves out on phones
+const links = computed(() => [config.value.navbar?.source, ...(config.value.navbar?.links ?? [])].filter(link => link?.link));
 
 watch(() => route.path, () => open.value = false);
 watch(open, async isOpen => {
@@ -44,6 +48,11 @@ function onKeydown(e: KeyboardEvent) {
             <NuxtLink v-for="l in languages" :key="l.code" :to="languageLink(l)" :lang="l.code" :hreflang="l.code" class="join-item btn btn-sm"
                       :class="{'btn-active': l.code === edition.language.code}">{{l.label}}</NuxtLink>
           </nav>
+        </div>
+        <div v-if="links.length" class="flex flex-wrap gap-2 px-4 pb-2 sm:hidden">
+          <NuxtLink v-for="l in links" :key="l!.link" :to="l!.link" target="_blank" class="btn btn-sm">
+            <i v-if="l!.icon" :class="l!.icon"></i>{{l!.name}}
+          </NuxtLink>
         </div>
         <Sidebar class="w-full grow flex-nowrap"/>
       </nav>

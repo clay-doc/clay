@@ -240,25 +240,51 @@ pre.shiki .highlighted-word {
     background: color-mix(in oklab, var(--color-primary) 30%, transparent);
 }
 
-/* Theme toggle: show the theme it switches to (the moon in light mode, the sun in dark mode) */
-:root .theme-to-light {
-    display: none;
+/* Theme toggle: show the theme it switches to (the moon in light mode, the sun in
+   dark mode); the icons share one place and turn into each other */
+.theme-to-light, .theme-to-dark {
+    grid-area: 1 / 1;
+    transition: opacity 0.3s, transform 0.3s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .theme-to-light, .theme-to-dark {
+        transition: none;
+    }
+}
+
+:root .theme-to-light,
+:root[data-theme="clay-dark"] .theme-to-dark {
+    opacity: 0;
+    transform: rotate(-90deg) scale(0.5);
 }
 
 :root[data-theme="clay-dark"] .theme-to-light {
-    display: inline-block;
-}
-
-:root[data-theme="clay-dark"] .theme-to-dark {
-    display: none;
+    opacity: 1;
+    transform: none;
 }
 
 @media (prefers-color-scheme: dark) {
     :root:not([data-theme="clay-light"]) .theme-to-light {
-        display: inline-block;
+        opacity: 1;
+        transform: none;
     }
 
     :root:not([data-theme="clay-light"]) .theme-to-dark {
-        display: none;
+        opacity: 0;
+        transform: rotate(-90deg) scale(0.5);
     }
+}
+
+/* Navbar tooltips stay out of the way of an open dropdown */
+.navbar .tooltip:has(details[open])::before,
+.navbar .tooltip:has(details[open])::after {
+    display: none;
+}
+
+/* Tooltips of the last navbar items end at their item, inside the window */
+.navbar .tooltip-end[data-tip]::before,
+.navbar .tooltip-end > .tooltip-content {
+    inset: var(--tt-off) 0 auto auto;
+    transform: translateY(var(--tt-pos, -0.25rem));
 }

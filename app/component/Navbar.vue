@@ -39,6 +39,9 @@ watch(() => route.path, () => closeMenus());
 let keydownHandler: ((e: KeyboardEvent) => void) | null = null;
 let superKey = useState<string>("superKey", () => "");
 
+// The source link and the other links of clay.yaml, side by side as icons
+const links = computed(() => [config.value.navbar?.source, ...(config.value.navbar?.links ?? [])].filter(link => link?.link));
+
 const searchOpen = useSearchOpen();
 const navOpen = useState<boolean>("navOpen", () => false);
 const {toggle: toggleTheme} = useTheme();
@@ -103,12 +106,13 @@ onUnmounted(() => {
       </div>
     </div>
 
-    <div class="navbar-end gap-2">
-      <ul class="menu menu-horizontal flex-nowrap px-1">
-        <!-- On narrow screens the switchers are in the navigation drawer (MobileNav.vue) -->
-        <li v-if="versions.length > 1" class="hidden lg:block">
+    <div class="navbar-end">
+      <!-- Every item shows what it does in a tooltip; dropdowns hide theirs while open (tailwind.css) -->
+      <ul class="menu menu-horizontal flex-nowrap items-center px-1">
+        <!-- On narrow screens the switchers and links are in the navigation drawer (MobileNav.vue) -->
+        <li v-if="versions.length > 1" class="hidden lg:block tooltip tooltip-bottom" :data-tip="t.docsVersion">
           <details>
-            <summary :aria-label="t.docsVersion" :title="t.docsVersion"><i class="fa-solid fa-code-branch text-xs"></i>{{edition.version.label}}</summary>
+            <summary :aria-label="t.docsVersion"><i class="fa-solid fa-code-branch text-xs"></i>{{edition.version.label}}</summary>
             <ul class="bg-base-100 p-2 end-0 sm:end-auto z-10">
               <li v-for="v in versions" :key="v.name">
                 <NuxtLink :to="versionLink(v)" :class="{'menu-active': v.name === edition.version.name}"
@@ -117,9 +121,9 @@ onUnmounted(() => {
             </ul>
           </details>
         </li>
-        <li v-if="languages.length > 1" class="hidden lg:block">
+        <li v-if="languages.length > 1" class="hidden lg:block tooltip tooltip-bottom" :data-tip="t.language">
           <details>
-            <summary :aria-label="t.language" :title="t.language"><i class="fa-solid fa-language"></i>{{edition.language.label}}</summary>
+            <summary :aria-label="t.language"><i class="fa-solid fa-language"></i>{{edition.language.label}}</summary>
             <ul class="bg-base-100 p-2 end-0 sm:end-auto z-10">
               <li v-for="l in languages" :key="l.code">
                 <NuxtLink :to="languageLink(l)" :lang="l.code" :hreflang="l.code" :class="{'menu-active': l.code === edition.language.code}"
@@ -128,44 +132,34 @@ onUnmounted(() => {
             </ul>
           </details>
         </li>
-        <li v-if="config.navbar?.source?.link">
-          <NuxtLink :to="config.navbar.source.link" target="_blank">
-            <i :class="config.navbar.source.icon"></i>
-            {{config.navbar.source.name}}
+        <li v-for="l in links" :key="l!.link" class="hidden sm:block tooltip tooltip-bottom" :data-tip="l!.name">
+          <NuxtLink :to="l!.link" target="_blank" :aria-label="l!.name">
+            <span class="flex h-lh items-center">
+              <i v-if="l!.icon" :class="l!.icon"></i>
+              <template v-else>{{l!.name}}</template>
+            </span>
           </NuxtLink>
         </li>
-        <li v-if="config.navbar?.links?.length">
-          <details>
-            <summary>{{t.more}}</summary>
-            <ul class="bg-base-100 p-2 end-0 sm:end-auto z-10">
-              <li v-for="l in config.navbar.links">
-                <NuxtLink :to="l.link" target="_blank" @click="closeMenu">
-                  <i :class="l.icon + ' text-xs'"></i>
-                  {{l.name}}
-                </NuxtLink>
-              </li>
-            </ul>
-          </details>
-        </li>
-        <li>
-          <!-- Pages are rendered before the theme is known, so CSS picks the icon (tailwind.css) -->
-          <button :aria-label="t.toggleTheme" :title="t.toggleTheme" @click="toggleTheme">
+        <li class="tooltip tooltip-bottom tooltip-end" :data-tip="t.toggleTheme">
+          <!-- Pages are rendered before the theme is known, so CSS picks and animates the icon (tailwind.css) -->
+          <button :aria-label="t.toggleTheme" @click="toggleTheme">
             <!-- As tall as a line of text, so it matches the neighbouring menu items -->
-            <span class="flex h-lh items-center">
+            <span class="grid h-lh place-items-center">
               <i class="fa-solid fa-sun theme-to-light"></i>
               <i class="fa-solid fa-moon theme-to-dark"></i>
             </span>
           </button>
         </li>
+        <li>
+          <!-- The tooltip shows the shortcut as keys, so it is HTML and sits in the button -->
+          <button :aria-label="t.search" @click="searchOpen = true" class="tooltip tooltip-bottom tooltip-end">
+            <span class="flex h-lh items-center"><i class="fa-solid fa-magnifying-glass"></i></span>
+            <span class="tooltip-content flex items-center gap-1 whitespace-nowrap">
+              {{t.search}}<template v-if="superKey"><kbd class="kbd kbd-sm ml-1 bg-transparent border-current/40 text-inherit">{{superKey}}</kbd><kbd class="kbd kbd-sm bg-transparent border-current/40 text-inherit">K</kbd></template>
+            </span>
+          </button>
+        </li>
       </ul>
-      <button class="btn btn-ghost btn-square sm:hidden" :aria-label="t.search" @click="searchOpen = true">
-        <i class="fa-solid fa-magnifying-glass"></i>
-      </button>
-      <button class="input h-10 hidden sm:flex cursor-pointer" @click="searchOpen = true">
-        <i class="fa-solid fa-magnifying-glass"></i>
-        <span class="grow text-left opacity-60">{{t.search}}</span>
-        <kbd class="kbd kbd-sm">{{superKey}} K</kbd>
-      </button>
     </div>
     <NuxtLoadingIndicator color="var(--color-primary)" :height="2" :throttle="0" />
 

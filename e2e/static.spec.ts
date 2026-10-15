@@ -93,7 +93,7 @@ test.describe("in the browser", () => {
         const lightColor = await code.evaluate(el => getComputedStyle(el).color);
         await expect(page.locator(".theme-to-dark")).toBeVisible();
 
-        await page.getByRole("button", {name: "Toggle light and dark theme"}).click();
+        await page.getByRole("button", {name: "Theme"}).click();
         await expect(page.locator("html")).toHaveAttribute("data-theme", "clay-dark");
         await expect(page.locator(".theme-to-light")).toBeVisible();
         expect(await code.evaluate(el => getComputedStyle(el).color)).not.toBe(lightColor);
@@ -144,6 +144,14 @@ test.describe("in the browser", () => {
             .evaluate(pane => pane.scrollTop = pane.scrollHeight);
         await expect(toc.getByRole("link", {name: "Tables"})).toHaveClass(/text-primary/);
         await expect(toc.getByRole("link", {name: "Links"})).not.toHaveClass(/text-primary/);
+    });
+
+    test("the navbar shows its links as icons with tooltips", async ({page}) => {
+        await page.goto("configuration/");
+        const github = page.locator(".navbar").getByRole("link", {name: "Github"});
+        await expect(github).toHaveAttribute("href", "https://github.com/clay-doc/clay");
+        await expect(github.locator("xpath=..")).toHaveAttribute("data-tip", "Github");
+        await expect(page.locator(".navbar").getByRole("link", {name: "Example"})).toBeVisible();
     });
 
     test("a new page starts at the top", async ({page}) => {
