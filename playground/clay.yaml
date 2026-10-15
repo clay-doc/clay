@@ -16,6 +16,10 @@ navbar:
     - name: "Example"
       icon: "fa-solid fa-book"
       link: "https://clay-doc.github.io/clay-example-repo"
-# {{version}} in the docs
+# {{version}} in the docs, and extra tags in the head of every page
 variables:
   version: "4.0"
+head:
+  meta:
+    - name: "clay-playground"
+      content: "from clay.yaml"

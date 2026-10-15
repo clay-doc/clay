@@ -47,6 +47,17 @@ useHead(() => ({
   script: kit ? [{src: `https://kit.fontawesome.com/${siteConfig.fontawesomeKit}.js`, crossorigin: 'anonymous' as const, async: true}] : [],
 }));
 
+// Tags of the site's own from "head" in clay.yaml, in the language of the page.
+// Their attributes are whatever the site needs, so they are not typed per tag.
+useHead(() => {
+  const {script = [], link = [], meta = []} = configuration.value.head ?? {};
+  return {
+    script: script.map(({code, ...attributes}) => ({...attributes, ...(code === undefined ? {} : {innerHTML: String(code)})})) as never[],
+    link: link as never[],
+    meta: meta as never[],
+  };
+});
+
 const pathInEdition = computed(() => stripPrefix(route.path, edition.value.prefix));
 const linkParts = computed(() => getLinkPartsFromCurrentRoute(pathInEdition.value, structure.value));
 const currentItem = computed(() => getCurrentDocItemFromRoute(pathInEdition.value, structure.value));

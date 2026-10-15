@@ -19,6 +19,7 @@ export const configSchema: Schema = {
     // obsolete, reported separately
     langs: true, index: true,
     navbar: {logo: true, source: link, links: [link]},
+    head: {script: [true], link: [true], meta: [true]},
 };
 
 // Keys in YAML data that the schema does not define, e.g. "navbar.lgo", so

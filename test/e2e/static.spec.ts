@@ -486,6 +486,11 @@ test.describe("snippets, variables, head and social images", () => {
         await expect(page.locator("#snippets + .markdown-alert")).toContainText("Included from a snippet, for Clay 4.0.");
         expect((await request.get("_snippets/note/")).status()).toBe(404);
     });
+
+    test("pages carry the head tags of clay.yaml", async ({request}) => {
+        const html = await (await request.get("reference/feature-tour/")).text();
+        expect(html).toContain('<meta name="clay-playground" content="from clay.yaml">');
+    });
 });
 
 test.describe("for language models and agents", () => {

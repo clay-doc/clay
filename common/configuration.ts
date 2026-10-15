@@ -14,7 +14,17 @@ export type Configuration = {
     messages?: Record<string, Partial<Messages>>, // interface texts by language
     navbar?: NavbarConfiguration,
     variables?: Record<string, string | number | boolean>, // {{name}} in the docs, e.g. version: "4.0.0"
+    head?: HeadConfiguration,
     langs?: string[], // obsolete: code languages are detected automatically
+}
+
+// Extra tags in the head of every page, e.g. a chat widget's script or a
+// site verification; each tag is its attributes, a script's code is "code"
+export type HeadTag = Record<string, string | number | boolean>;
+export type HeadConfiguration = {
+    script?: HeadTag[],
+    link?: HeadTag[],
+    meta?: HeadTag[],
 }
 
 export type NavbarConfiguration = {
