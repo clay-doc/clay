@@ -3,7 +3,7 @@ import {format} from "#common/i18n";
 import type {Edition} from "#common/editions";
 import {markdownRoute, normalizePath} from "#common/route-path";
 import linkConcat from "#common/link-concat";
-import {ASSISTANT_ICONS} from "~/assets/assistant-icons";
+import {ASSISTANT_ICONS} from "~/utils/assistant-icons";
 
 // The page for language models: copy or open its Markdown, or ask an assistant
 // about it (server/middleware/agent-docs.ts). Shown below the contents of the

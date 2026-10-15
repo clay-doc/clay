@@ -3,7 +3,7 @@ import {renderMermaidSVG} from "beautiful-mermaid";
 import {Marked, type MarkedExtension, type Token, type Tokens} from "marked";
 import type {BadgeToken, ContainerToken, MathToken, TabToken} from "../../common/markdown-components";
 import type {Messages} from "../../common/i18n";
-import {COPY_ICON} from "../../common/code-copy";
+import {COPY_ICON} from "./code-block";
 
 const escapeHtml = (text: string) =>
     text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
@@ -157,7 +157,7 @@ export function fileTree(source: string): string {
 // Mermaid diagrams are drawn when the site is built (beautiful-mermaid), as SVG
 // that takes its colors from the site's theme (tailwind.css), so they show
 // without JavaScript and follow theme switches. Kinds it cannot draw, like pie
-// charts, are drawn in the browser by Mermaid itself (app/assets/diagrams.ts),
+// charts, are drawn in the browser by Mermaid itself (app/utils/diagrams.ts),
 // and show their source until then. n numbers the diagrams of a page, for the
 // ids inside them.
 export function mermaidDiagram(source: string, n: number): string {

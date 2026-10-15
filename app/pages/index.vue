@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import Landing from "~/component/Landing.vue";
+import Landing from "~/components/Landing.vue";
 
 const enter = usePageEnter();
 </script>

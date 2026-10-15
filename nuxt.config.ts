@@ -14,6 +14,8 @@ export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   devtools: { enabled: false },
   modules: ["./modules/clay"],
+  // Components are imported where they are used, not registered globally
+  components: {dirs: []},
   // The package has no public files of its own; docs assets come from the
   // project (modules/clay.ts)
   dir: {public: "app/public"},

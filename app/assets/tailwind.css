@@ -460,7 +460,7 @@ dialog input[type="search"]::-webkit-search-cancel-button {
     @apply relative flex-nowrap overflow-x-auto border-b border-base-300;
 }
 
-/* The line under the picked tab slides to the next one (app/assets/tabs.ts);
+/* The line under the picked tab slides to the next one (app/utils/tabs.ts);
    until the page runs, each tab draws its own */
 .clay-tab-indicator {
     @apply pointer-events-none absolute bottom-0 h-[3px] rounded-field bg-base-content;

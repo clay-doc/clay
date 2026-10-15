@@ -1,13 +1,13 @@
 <script setup lang="ts">
-import Error from "~/component/Error.vue";
-import TableOfContents from "~/component/TableOfContents.vue";
-import PageFooter from "~/component/PageFooter.vue";
-import PageList from "~/component/PageList.vue";
-import PageActions from "~/component/PageActions.vue";
-import {clearHighlights, firstMarkInSection, highlightTerms} from "~/assets/highlight-dom";
-import {copyCodeBlock} from "#common/code-copy";
-import {remember, restoreTabs, reveal, selectLabel, selectTab, tabKeydown} from "~/assets/tabs";
-import {drawDiagrams} from "~/assets/diagrams";
+import Error from "~/components/Error.vue";
+import TableOfContents from "~/components/TableOfContents.vue";
+import PageFooter from "~/components/PageFooter.vue";
+import PageList from "~/components/PageList.vue";
+import PageActions from "~/components/PageActions.vue";
+import {clearHighlights, firstMarkInSection, highlightTerms} from "~/utils/highlight-dom";
+import {copyCodeBlock} from "~/utils/code-copy";
+import {remember, restoreTabs, reveal, selectLabel, selectTab, tabKeydown} from "~/utils/tabs";
+import {drawDiagrams} from "~/utils/diagrams";
 import type {DocItem, LinkPart} from "#common/nav";
 import type {TocEntry} from "#common/toc";
 

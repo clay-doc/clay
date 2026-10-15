@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import Markdown from "~/component/Markdown.vue";
-import Directory from "~/component/Directory.vue";
-import Error from "~/component/Error.vue";
-import Landing from "~/component/Landing.vue";
+import Markdown from "~/components/Markdown.vue";
+import Directory from "~/components/Directory.vue";
+import Error from "~/components/Error.vue";
+import Landing from "~/components/Landing.vue";
 import {type DocItem, type LinkPart} from "#common/nav";
 import {normalizePath} from "#common/route-path";
 

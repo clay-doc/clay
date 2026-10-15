@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import Navbar from "~/component/Navbar.vue";
-import Sidebar from "~/component/Sidebar.vue";
-import Content from "~/component/Content.vue";
-import SearchModal from "~/component/SearchModal.vue";
-import MobileNav from "~/component/MobileNav.vue";
+import Navbar from "~/components/Navbar.vue";
+import Sidebar from "~/components/Sidebar.vue";
+import Content from "~/components/Content.vue";
+import SearchModal from "~/components/SearchModal.vue";
+import MobileNav from "~/components/MobileNav.vue";
 
 import {hasFontawesomeKit} from "#common/configuration";
 import {delimitLinkParts, getCurrentDocItemFromRoute, getLinkPartsFromCurrentRoute} from "#common/nav";

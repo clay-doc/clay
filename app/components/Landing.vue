@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import type {Configuration} from "#common/configuration";
 import type {DocItem} from "#common/nav";
-import Markdown from "~/component/Markdown.vue";
-import PageList from "~/component/PageList.vue";
+import Markdown from "~/components/Markdown.vue";
+import PageList from "~/components/PageList.vue";
 
 // Start page of the site, and of each other version and language under its
 // prefix: docs/index.md, or the site title with a list of the top-level pages

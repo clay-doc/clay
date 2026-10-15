@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import type MiniSearch from "minisearch";
 import {highlight, searchSections, type SearchHit, type SearchSection, type SearchTarget} from "#common/search";
-import {getSearchIndex, useSearchOpen} from "~/composables/use-search";
-import SearchHighlight from "~/component/SearchHighlight.vue";
+import {useSearchOpen} from "~/composables/use-search";
+import {getSearchIndex} from "~/utils/search-index";
+import SearchHighlight from "~/components/SearchHighlight.vue";
 import type {Edition} from "#common/editions";
 import {format} from "#common/i18n";
 

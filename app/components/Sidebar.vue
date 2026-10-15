@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import SidebarNode from "~/component/SidebarNode.vue";
+import SidebarNode from "~/components/SidebarNode.vue";
 import type { DocItem } from "#common/nav";
 
 const structureIn = inject('structure') as Ref<DocItem>;

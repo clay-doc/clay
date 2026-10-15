@@ -1,6 +1,7 @@
 import type {ShikiTransformer} from "shiki";
 import type {Element} from "hast";
-import {COPY_ICON} from "../../common/code-copy";
+
+export const COPY_ICON = "fa-solid fa-copy";
 
 // Wraps the highlighted <pre> in a div with a copy button. The button sits
 // outside the <pre> so it stays in place when long lines scroll sideways.

@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import type {DocItem, LinkPart} from "#common/nav";
-import Markdown from "~/component/Markdown.vue";
-import PageList from "~/component/PageList.vue";
-import PageFooter from "~/component/PageFooter.vue";
+import Markdown from "~/components/Markdown.vue";
+import PageList from "~/components/PageList.vue";
+import PageFooter from "~/components/PageFooter.vue";
 
 // A folder's page: its index.md, or its title with a list of its pages
 const currentDocItem = inject("currentDocItem") as Ref<DocItem>

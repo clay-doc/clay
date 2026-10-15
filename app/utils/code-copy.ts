@@ -1,6 +1,3 @@
-// DOM types: runs in the browser
-/// <reference lib="dom" />
-export const COPY_ICON = "fa-solid fa-copy";
 const RESET_AFTER_MS = 2000;
 
 export type CopyLabels = { copyCode: string, copied: string, copyFailed: string };
@@ -21,12 +18,16 @@ export async function copyCodeBlock(button: HTMLElement, clipboard: Pick<Clipboa
         copied = false;
     }
 
+    // The button's own icon, drawn on the server (server/utils/code-block.ts)
     const icon = button.querySelector("i");
-    if (icon) icon.className = copied ? "fa-solid fa-check" : "fa-solid fa-xmark";
+    if (icon) {
+        icon.dataset.icon ??= icon.className;
+        icon.className = copied ? "fa-solid fa-check" : "fa-solid fa-xmark";
+    }
     button.setAttribute("aria-label", copied ? labels.copied : labels.copyFailed);
 
     setTimeout(() => {
-        if (icon) icon.className = COPY_ICON;
+        if (icon) icon.className = icon.dataset.icon!;
         button.setAttribute("aria-label", label);
     }, RESET_AFTER_MS);
 

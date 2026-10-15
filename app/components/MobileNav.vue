@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import Sidebar from "~/component/Sidebar.vue";
+import Sidebar from "~/components/Sidebar.vue";
 import type {Configuration} from "#common/configuration";
 
 // Navigation drawer for screens too narrow for the sidebar
