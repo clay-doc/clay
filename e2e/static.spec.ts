@@ -270,7 +270,7 @@ test.describe("languages", () => {
 });
 
 test.describe("index pages", () => {
-    test("docs/index.md is the start page, with a large header and cards", async ({request}) => {
+    test("docs/index.md is the start page, with a large header and a list of pages", async ({request}) => {
         const html = await (await request.get("")).text();
         expect(html).toContain("Welcome to the Clay playground</h1>");
         expect(html).toContain("This playground shows every part of a Clay site.");
@@ -278,7 +278,7 @@ test.describe("index pages", () => {
         expect(await (await request.get("de/")).text()).toContain("Willkommen im Clay-Playground</h1>");
     });
 
-    test("a folder's index.md is its page; without text, the folder shows its cards", async ({request}) => {
+    test("a folder's index.md is its page; without text, the folder lists its pages", async ({request}) => {
         const guides = await (await request.get("guides/")).text();
         expect(guides).toContain('<h1 id="guides">Guides</h1>');
         expect(guides).toContain("Step-by-step guides for organizing");
@@ -286,6 +286,12 @@ test.describe("index pages", () => {
         expect(guides).toContain('href="/clay/configuration"');
         const advanced = await (await request.get("guides/advanced/")).text();
         expect(advanced).toContain("Advanced Features");
+        expect(advanced).toContain('href="/clay/guides/advanced/advanced-features"');
+        expect(guides).toContain("<hr><h2>In this section</h2>");
+        expect(advanced).toContain("<h2>In this section</h2>");
+        // Every folder's page is part of previous and next
+        const features = await (await request.get("guides/advanced/advanced-features")).text();
+        expect(features).toMatch(/<a href="\/clay\/guides\/advanced"[^>]*rel="prev"/);
     });
 
     test("folders open their page; the arrow shows and hides their entries", async ({page}) => {

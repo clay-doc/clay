@@ -119,13 +119,13 @@ these pages:
 title: Guides
 icon: fa-solid fa-book-open
 order: 2
-cards: true   # cards of the folder's pages below the text
+list: true    # list of links to the folder's pages below the text
 hero: true    # title, icon and description as a large centered header
 ---
 ```
 
 An `index.md` with only front matter names the folder; a folder without text in its `index.md` (or without one)
-shows its title and cards of its pages. In the sidebar, a folder's title opens its page; the arrow shows and hides
+shows its title and a list of its pages. In the sidebar, a folder's title opens its page; the arrow shows and hides
 its entries.
 
 Links between docs work like on GitHub: `[Setup](./guides/setup.md)` is resolved relative to the page. Sections
@@ -231,7 +231,7 @@ they are there.
    `index.md` (`name` becomes `title`); names per language go into `index.de.md` and so on. Delete `dir-meta.yaml`.
 2. Move older versions from `versions/<name>/docs/` to `docs-archive/<name>/`.
 3. Write the start page in `docs/index.md`: `index.title`, `index.description` and `index.icon` become `title`,
-   `description` and `icon`, with `hero: true` and `cards: true` for the previous layout. Remove `index` from
+   `description` and `icon`, with `hero: true` and `list: true` for a header and the top-level pages. Remove `index` from
    `clay.yaml`.
 
 ## Migrating from Clay Oven

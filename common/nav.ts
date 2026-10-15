@@ -89,9 +89,9 @@ export function delimitLinkParts(parts: LinkPart[], count: number): LinkPart[] {
     return sliced;
 }
 
-// Pages in navigation order, with folders that have a page (index.md) before their contents
+// Pages in navigation order, with each folder's page before its contents
 export function flattenPages(root: DocItem): DocItem[] {
-    return (root.children ?? []).flatMap(item => item.children ? [...(item.hasIndex ? [item] : []), ...flattenPages(item)] : [item]);
+    return (root.children ?? []).flatMap(item => item.children ? [item, ...flattenPages(item)] : [item]);
 }
 
 // The pages before and after a page in navigation order, for prev/next links

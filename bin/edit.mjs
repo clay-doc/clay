@@ -46,13 +46,13 @@ function fit(line, columns) {
     return out;
 }
 
-// Front matter fields the details view edits; cards and hero only apply to index.md
+// Front matter fields the details view edits; list and hero only apply to index.md
 const FIELDS = [
     {key: "title", label: "Title", type: "text"},
     {key: "icon", label: "Icon", type: "text"},
     {key: "description", label: "Description", type: "text"},
     {key: "order", label: "Order", type: "number", defaultOnly: true},
-    {key: "cards", label: "Cards of the folder's pages", type: "boolean", index: true},
+    {key: "list", label: "List of the folder's pages", type: "boolean", index: true},
     {key: "hero", label: "Large header (hero)", type: "boolean", index: true},
 ];
 
@@ -228,7 +228,9 @@ export async function edit(root) {
             const written = editor.setFields(root, {...edition, language: languages[0]}, {...node, file: node.kind === "page" ? node.path : `${node.path}/index.md`}, {order: value});
             done("Saved", [written]);
         } else {
-            done("Saved", [editor.setFields(root, edition, node, {[key]: value})]);
+            // "cards" is the name of "list" in Clay 3.0; it goes when the list is set
+            const updates = key === "list" ? {list: value, cards: null} : {[key]: value};
+            done("Saved", [editor.setFields(root, edition, node, updates)]);
         }
         reload(node.path);
     }

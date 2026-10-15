@@ -1,7 +1,7 @@
 ---
 title: Guides
 icon: fa-solid fa-book-open
-cards: true
+list: true
 ---
 
 # Guides

@@ -153,7 +153,7 @@ export function createFolder(root: string, version: string, parent: string, titl
     if (existsSync(dir)) throw new Error(`${path}/ already exists`);
     const order = nextOrder(siblings);
     mkdirSync(dir, {recursive: true});
-    const frontMatter = `---\ntitle: ${JSON.stringify(title)}\n${order === undefined ? "" : `order: ${order}\n`}cards: true\n---\n`;
+    const frontMatter = `---\ntitle: ${JSON.stringify(title)}\n${order === undefined ? "" : `order: ${order}\n`}list: true\n---\n`;
     writeFileSync(join(dir, "index.md"), `${frontMatter}\n# ${title}\n`);
     return relative(root, join(dir, "index.md"));
 }

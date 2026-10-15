@@ -2,7 +2,7 @@
 import Error from "~/component/Error.vue";
 import TableOfContents from "~/component/TableOfContents.vue";
 import PageFooter from "~/component/PageFooter.vue";
-import DirectoryGrid from "~/component/DirectoryGrid.vue";
+import PageList from "~/component/PageList.vue";
 import {clearHighlights, firstMarkInSection, highlightTerms} from "~/assets/highlight-dom";
 import {copyCodeBlock} from "#common/code-copy";
 import type {DocItem, LinkPart} from "#common/nav";
@@ -19,7 +19,7 @@ const untranslatedNote = inject('untranslatedNote') as Ref<string>;
 const t = useMessages();
 
 type Hero = { title: string, icon?: string, description?: string };
-type RenderedDoc = { html: string, toc: TocEntry[], description: string, hero: Hero | null, cards: boolean };
+type RenderedDoc = { html: string, toc: TocEntry[], description: string, hero: Hero | null, list: boolean };
 
 // Rendered on the server at build time; its data is part of the page payload.
 // The site's start page has the route "/", requested as "/_start".
@@ -96,7 +96,7 @@ function handleClicks(event: MouseEvent) {
           <span>{{untranslatedNote}}</span>
         </div>
         <div ref="contentEl" v-html="doc.html" @click="handleClicks" class="w-full"></div>
-        <DirectoryGrid v-if="doc.cards" class="not-prose"/>
+        <PageList v-if="doc.list"/>
         <PageFooter v-if="!start" :url="url"/>
       </template>
       <Error v-else :code="error?.statusCode ?? 500" :message="error?.statusMessage ?? 'Error'"/>

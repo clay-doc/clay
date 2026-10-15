@@ -1,7 +1,7 @@
 ---
 title: Anleitungen
 icon: fa-solid fa-book-open
-cards: true
+list: true
 ---
 
 # Anleitungen

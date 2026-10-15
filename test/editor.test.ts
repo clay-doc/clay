@@ -39,8 +39,8 @@ beforeEach(() => {
 describe("setFrontMatter", () => {
     it("replaces, adds and removes keys and keeps other lines", () => {
         const doc = "---\ntitle: Old\n# a comment\nicon: fa-x\n---\nBody\n";
-        expect(setFrontMatter(doc, {title: "New: part 2", icon: null, order: 3, cards: true}))
-            .toBe("---\ntitle: \"New: part 2\"\n# a comment\norder: 3\ncards: true\n---\nBody\n");
+        expect(setFrontMatter(doc, {title: "New: part 2", icon: null, order: 3, list: true}))
+            .toBe("---\ntitle: \"New: part 2\"\n# a comment\norder: 3\nlist: true\n---\nBody\n");
     });
 
     it("adds front matter to a document without one, and drops it again when empty", () => {
@@ -116,7 +116,7 @@ describe("creating", () => {
         expect(createPage(root, "", "guides", "Deploying", "deploying", tree[2]!.children)).toBe("docs/guides/deploying.md");
         expect(read("docs/guides/deploying.md")).toBe("---\ntitle: \"Deploying\"\n---\n\n# Deploying\n");
         expect(createFolder(root, "", "", "Reference", "reference", tree)).toBe("docs/reference/index.md");
-        expect(read("docs/reference/index.md")).toBe("---\ntitle: \"Reference\"\norder: 2\ncards: true\n---\n\n# Reference\n");
+        expect(read("docs/reference/index.md")).toBe("---\ntitle: \"Reference\"\norder: 2\nlist: true\n---\n\n# Reference\n");
         expect(() => createPage(root, "", "", "Setup", "setup", tree)).toThrow(/already exists/);
     });
 

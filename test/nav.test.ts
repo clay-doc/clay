@@ -89,14 +89,15 @@ describe("delimitLinkParts", () => {
 });
 
 describe("prev/next pages", () => {
-    it("lists pages in navigation order, skipping directories", () => {
-        expect(flattenPages(root).map(p => p.displayLink)).toEqual(["/overview", "/products/product1", "/products/product2"]);
+    it("lists pages in navigation order, each folder's page before its contents", () => {
+        expect(flattenPages(root).map(p => p.displayLink)).toEqual(["/overview", "/products", "/products/product1", "/products/product2"]);
     });
 
     it("finds the neighbours of a page across directories", () => {
         const {previous, next} = adjacentPages(root, "/products/product1");
-        expect(previous?.title).toBe("Overview");
+        expect(previous?.title).toBe("Products");
         expect(next?.title).toBe("Product 2");
+        expect(adjacentPages(root, "/products").previous?.title).toBe("Overview");
     });
 
     it("has no previous on the first page and no next on the last", () => {

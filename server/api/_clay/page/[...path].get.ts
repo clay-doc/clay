@@ -24,7 +24,7 @@ export default defineEventHandler(async event => {
     // Pages without a description of their own fall back to the start page's
     const start = site.pages.find(p => p.route === (page.prefix || "/") && p.isDir);
     const result = await renderDoc(page.markdown, path, baseURL, start?.frontMatter.description, assetPath, messages);
-    // index.md can ask for a large header (hero) and for cards of the folder's pages
+    // index.md can ask for a large header (hero) and a list of the folder's pages
     const hero = page.frontMatter.hero ? {title: page.title, icon: page.frontMatter.icon, description: page.frontMatter.description} : null;
-    return {...result, hero, cards: page.frontMatter.cards ?? false};
+    return {...result, hero, list: page.frontMatter.list ?? false};
 });

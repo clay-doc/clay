@@ -30,4 +30,10 @@ describe("stripFrontMatter", () => {
     ])("%j", (content, expected) => {
         expect(stripFrontMatter(content)).toBe(expected);
     });
+
+    it("reads list and hero, and cards as the old name of list", () => {
+        expect(parseFrontMatter("---\nlist: true\nhero: false\n---\n")).toEqual({list: true, hero: false});
+        expect(parseFrontMatter("---\ncards: true\n---\n")).toEqual({list: true});
+        expect(parseFrontMatter("---\nlist: yes\n---\n")).toEqual({});
+    });
 });
