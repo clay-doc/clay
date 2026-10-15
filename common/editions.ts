@@ -2,7 +2,7 @@ import {getCurrentDocItemFromRoute, type DocItem} from "./nav";
 import {normalizePath} from "./route-path";
 
 // The docs come in editions: a version (the current docs/ has the name "", older
-// ones live in versions/<name>/) in a language. The current version and the
+// ones live in docs-archive/<name>/) in a language. The current version and the
 // default language have no URL prefix; others add theirs: /1.x, /de, /1.x/de.
 export type VersionInfo = { name: string, label: string };
 export type LanguageInfo = { code: string, label: string };

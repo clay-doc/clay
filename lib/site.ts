@@ -47,7 +47,7 @@ export type Page = {
     untranslated?: boolean;
 };
 
-// One version of the docs: the current docs/ (name "") or versions/<name>/docs
+// One version of the docs: the current docs/ (name "") or docs-archive/<name>/
 export type SiteVersion = VersionInfo & {
     docsDir: string;
     tree: DocNode;
@@ -328,22 +328,23 @@ export type LoadOptions = {
 };
 
 // Version names become the first segment of their URLs
-const VERSION_NAME = /^[A-Za-z0-9][\w.-]*$/;
-const RESERVED_NAMES = new Set(["docs", "api", "_clay", "_nuxt"]);
+export const VERSION_NAME = /^[A-Za-z0-9][\w.-]*$/;
+export const RESERVED_NAMES = new Set(["docs", "api", "_clay", "_nuxt"]);
 
-// Older versions: folders in versions/ with a docs/ folder, newest first
+// Older versions: the folders in docs-archive/, newest first
 export function listVersions(root: string): { names: string[], warnings: string[] } {
-    const dir = join(root, "versions");
-    if (!existsSync(dir)) return {names: [], warnings: []};
+    const warnings: string[] = [];
+    if (existsSync(join(root, "versions"))) {
+        warnings.push(`versions/ is no longer read since Clay 3; move versions/<name>/docs/ to docs-archive/<name>/`);
+    }
+    const dir = join(root, "docs-archive");
+    if (!existsSync(dir)) return {names: [], warnings};
 
     const names: string[] = [];
-    const warnings: string[] = [];
     for (const entry of readdirSync(dir, {withFileTypes: true})) {
         if (!entry.isDirectory() || isHidden(entry.name)) continue;
         if (!VERSION_NAME.test(entry.name) || RESERVED_NAMES.has(entry.name)) {
-            warnings.push(`versions/${entry.name}: not usable as a version name in URLs; the folder is skipped`);
-        } else if (!existsSync(join(dir, entry.name, "docs"))) {
-            warnings.push(`versions/${entry.name}: has no docs/ folder; the folder is skipped`);
+            warnings.push(`docs-archive/${entry.name}: not usable as a version name in URLs; the folder is skipped`);
         } else {
             names.push(entry.name);
         }
@@ -351,20 +352,14 @@ export function listVersions(root: string): { names: string[], warnings: string[
     return {names: names.sort((a, b) => b.localeCompare(a, undefined, {numeric: true})), warnings};
 }
 
-// The docs of one version in every language: dir holds its docs/ folder.
+// The docs of one version in every language: docs/, or docs-archive/<name>/.
 // Translations ("setup.de.md") replace their original in their language;
 // pages without one show the original there.
-function loadVersion(dir: string, info: VersionInfo, gitDates: boolean, languages: LanguageInfo[]): {
+function loadVersion(docsDir: string, info: VersionInfo, gitDates: boolean, languages: LanguageInfo[]): {
     version: SiteVersion, editions: SiteEdition[], pages: Page[], warnings: string[]
 } {
-    const docsDir = join(dir, "docs");
-    if (!existsSync(docsDir)) throw new Error(`No docs/ directory found in ${dir}`);
     const codes = languages.map(language => language.code);
-
     const warnings: string[] = [];
-    if (existsSync(join(dir, "dir-meta.yaml"))) {
-        warnings.push(`dir-meta.yaml is no longer read since Clay 3; give each folder an index.md with its title, icon and order`);
-    }
     const translations = new Map<string, DocNode>();
     const originals = new Set<string>();
     const split = (nodes: DocNode[]): DocNode[] => nodes.flatMap(node => {
@@ -428,7 +423,11 @@ export function loadSite(root: string, {env = process.env, gitDates = true}: Loa
     const configs = Object.fromEntries(codes.map(code => [code, {...localize(raw, code, codes), lang: code}]));
     const config = configs[codes[0]!]!;
 
-    const current = loadVersion(root, {name: "", label: config.version || "Latest"}, gitDates, languages);
+    if (!existsSync(join(root, "docs"))) throw new Error(`No docs/ directory found in ${root}`);
+    if (existsSync(join(root, "dir-meta.yaml"))) {
+        warnings.push(`dir-meta.yaml is no longer read since Clay 3; give each folder an index.md with its title, icon and order`);
+    }
+    const current = loadVersion(join(root, "docs"), {name: "", label: config.version || "Latest"}, gitDates, languages);
     warnings.push(...current.warnings);
 
     const {names, warnings: versionWarnings} = listVersions(root);
@@ -438,10 +437,10 @@ export function loadSite(root: string, {env = process.env, gitDates = true}: Loa
         if (topLevel.has(code)) warnings.push(`docs/${code} has the same URL as the language ${code}; rename the folder`);
     }
     const older = names.map(name => {
-        if (topLevel.has(name)) warnings.push(`versions/${name}: docs/${name} has the same URL as this version; rename one of them`);
-        const loaded = loadVersion(join(root, "versions", name), {name, label: name}, gitDates, languages);
+        if (topLevel.has(name)) warnings.push(`docs-archive/${name}: docs/${name} has the same URL as this version; rename one of them`);
+        const loaded = loadVersion(join(root, "docs-archive", name), {name, label: name}, gitDates, languages);
         // Git history is reported once, for the current docs
-        warnings.push(...loaded.warnings.filter(w => !w.includes("last-updated")).map(w => `versions/${name}/${w}`));
+        warnings.push(...loaded.warnings.filter(w => !w.includes("last-updated")).map(w => `docs-archive/${name}/${w}`));
         return loaded;
     });
 

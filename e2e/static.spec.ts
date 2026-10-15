@@ -165,7 +165,7 @@ test.describe("versions", () => {
         await expect(page.getByRole("status")).toContainText("These are the docs for version 1.x.");
         await expect(page.getByRole("status").getByRole("link")).toHaveAttribute("href", "/clay/getting-started");
         await expect(page.locator("footer a", {hasText: "Edit this page"}))
-            .toHaveAttribute("href", "https://github.com/clay-doc/clay/edit/main/playground/versions/1.x/docs/getting-started.md");
+            .toHaveAttribute("href", "https://github.com/clay-doc/clay/edit/main/playground/docs-archive/1.x/getting-started.md");
 
         await page.locator(".prose a:not(footer a)", {hasText: "legacy setup"}).click();
         await expect(page).toHaveURL(/\/clay\/1\.x\/guides\/legacy-setup$/);

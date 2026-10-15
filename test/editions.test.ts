@@ -40,7 +40,7 @@ describe("edition routes", () => {
             "clay.yaml": "title: T",
             "docs/setup.md": "# Setup",
             "docs/new.md": "# New",
-            "versions/1.x/docs/setup.md": "# Setup",
+            "docs-archive/1.x/setup.md": "# Setup",
         }), {gitDates: false, env: {}});
         const navs = Object.fromEntries(site.editions.map(edition => [edition.prefix, edition.nav]));
 
@@ -56,10 +56,10 @@ describe("loadSite with versions", () => {
         const site = loadSite(project({
             "clay.yaml": "title: T\nversion: \"3.x\"",
             "docs/a.md": "# A",
-            "versions/1.x/docs/guides/b.md": "# B",
-            "versions/1.x/docs/guides/index.md": "---\ntitle: Old guides\n---\n",
-            "versions/2.x/docs/c.md": "# C",
-            "versions/10.x/docs/d.md": "# D",
+            "docs-archive/1.x/guides/b.md": "# B",
+            "docs-archive/1.x/guides/index.md": "---\ntitle: Old guides\n---\n",
+            "docs-archive/2.x/c.md": "# C",
+            "docs-archive/10.x/d.md": "# D",
         }), {gitDates: false, env: {}});
 
         expect(site.versions.map(({name, label}) => [name, label])).toEqual([["", "3.x"], ["10.x", "10.x"], ["2.x", "2.x"], ["1.x", "1.x"]]);
@@ -74,17 +74,17 @@ describe("loadSite with versions", () => {
         const root = project({
             "clay.yaml": "title: T",
             "docs/1.x/a.md": "# A",
+            "docs-archive/1.x/a.md": "# A",
+            "docs-archive/docs/a.md": "# A",
+            "docs-archive/with space/a.md": "# A",
             "versions/1.x/docs/a.md": "# A",
-            "versions/docs/docs/a.md": "# A",
-            "versions/with space/docs/a.md": "# A",
-            "versions/empty/notes.txt": "",
         });
         expect(listVersions(root).names).toEqual(["1.x"]);
         expect(loadSite(root, {gitDates: false, env: {}}).warnings).toEqual([
-            "versions/docs: not usable as a version name in URLs; the folder is skipped",
-            "versions/empty: has no docs/ folder; the folder is skipped",
-            "versions/with space: not usable as a version name in URLs; the folder is skipped",
-            "versions/1.x: docs/1.x has the same URL as this version; rename one of them",
+            "versions/ is no longer read since Clay 3; move versions/<name>/docs/ to docs-archive/<name>/",
+            "docs-archive/docs: not usable as a version name in URLs; the folder is skipped",
+            "docs-archive/with space: not usable as a version name in URLs; the folder is skipped",
+            "docs-archive/1.x: docs/1.x has the same URL as this version; rename one of them",
         ]);
     });
 });

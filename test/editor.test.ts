@@ -3,7 +3,7 @@ import {tmpdir} from "node:os";
 import {dirname, join} from "node:path";
 import {beforeEach, describe, expect, it} from "vitest";
 import {
-    addLink, createFolder, createPage, createTranslation, deleteEntry, getSetting, loadDocsTree, loadSettings, moveEntry,
+    addLink, createFolder, createPage, createTranslation, createVersion, deleteEntry, getSetting, loadDocsTree, loadSettings, moveEntry,
     removeLink, reorder, saveSettings, setFields, setSetting, settingRows, settingsChanged, slugify, type EditorNode,
 } from "../lib/editor";
 import {setFrontMatter} from "../lib/front-matter";
@@ -32,7 +32,7 @@ beforeEach(() => {
         "docs/guides/first.md": "---\nicon: fa-solid fa-star # favourite\n---\n# First\n",
         "docs/guides/img/diagram.png": "",
         "docs/empty/notes.txt": "",
-        "versions/1.x/docs/old.md": "# Old\n",
+        "docs-archive/1.x/old.md": "# Old\n",
     });
 });
 
@@ -125,6 +125,19 @@ describe("creating", () => {
         expect(createTranslation(root, de, setup)).toBe("docs/setup.de.md");
         expect(read("docs/setup.de.md")).toBe(read("docs/setup.md"));
         expect(() => createTranslation(root, de, loadDocsTree(root, de)[3]!)).toThrow(/already exists/);
+    });
+});
+
+describe("versions", () => {
+    it("saves docs/ as an older version in docs-archive/", () => {
+        write({"docs/.DS_Store": "junk"});
+        expect(createVersion(root, "2.x")).toBe("docs-archive/2.x");
+        expect(read("docs-archive/2.x/intro.de.md")).toBe(read("docs/intro.de.md"));
+        expect(existsSync(join(root, "docs-archive/2.x/.DS_Store"))).toBe(false);
+        expect(names(loadDocsTree(root, {version: "2.x", language: "en"}))).toEqual(names(loadDocsTree(root, en)));
+        expect(() => createVersion(root, "2.x")).toThrow(/already exists/);
+        expect(() => createVersion(root, "bad name")).toThrow(/can't be used in URLs/);
+        expect(() => createVersion(root, "docs")).toThrow(/can't be used in URLs/);
     });
 });
 

@@ -128,7 +128,8 @@ An `index.md` with only front matter names the folder; a folder without text in 
 shows its title and cards of its pages. In the sidebar, a folder's title opens its page; the arrow shows and hides
 its entries.
 
-Links between docs work like on GitHub: `[Setup](./guides/setup.md)` is resolved relative to the page.
+Links between docs work like on GitHub: `[Setup](./guides/setup.md)` is resolved relative to the page. Sections
+(`##` and deeper) show a `#` link next to their heading on hover.
 Images and other files next to your docs (`![Diagram](img/diagram.png)`) are published with the site.
 
 ### Versions
@@ -137,12 +138,12 @@ Images and other files next to your docs (`![Diagram](img/diagram.png)`) are pub
 as an older version:
 
 ```bash
-npx clay version 1.x   # copies docs/ to versions/1.x/
+npx clay version 1.x   # copies docs/ to docs-archive/1.x/
 ```
 
-Each folder in `versions/` becomes a version under its own path (`/1.x/guides/setup`), with its own navigation and
+Each folder in `docs-archive/` becomes a version under its own path (`/1.x/guides/setup`), with its own navigation and
 search. A switcher in the navbar keeps the page when the other version has it, and older versions show a banner
-that links to the latest one. Older versions stay editable; edit links point into `versions/<name>/docs/` when
+that links to the latest one. Older versions stay editable; edit links point into `docs-archive/<name>/` when
 `editURL` ends in `docs/`.
 
 ### Translations
@@ -168,9 +169,9 @@ prefix (`/de/setup`, `/1.x/de/setup`), and a switcher in the navbar keeps the pa
 | `clay build`   | Build the static site into `<out>/public`         |
 | `clay preview` | Serve the build under its base URL, like GitHub Pages |
 | `clay edit`    | Create, edit, order, rename, move and delete pages and folders, and edit `clay.yaml` |
-| `clay version <name>` | Save the current docs as an older version in `versions/<name>/` |
+| `clay version <name>` | Save the current docs as an older version in `docs-archive/<name>/` |
 
-`clay edit` opens an editor in the terminal for every version (`v`) and language (`l`): create pages (`n`) and
+`clay edit` opens an editor in the terminal for every version (`v`; `V` saves a new one) and language (`l`): create pages (`n`) and
 folders (`f`), edit their front matter (`⏎`), order them (`m`), rename (`r`), move (`o`) and delete (`x`) them, and
 start translations (`c`); Tab switches to the settings in `clay.yaml`. Changes are written right away, only the
 values that change: comments and formatting stay. Renaming, moving and deleting report the links that broke. With
@@ -223,11 +224,13 @@ jobs:
 
 ## Migrating from Clay 2
 
-Clay 3 drops `dir-meta.yaml` and the `index` section of `clay.yaml`; the build warns while they are there.
+Clay 3 drops `dir-meta.yaml`, the `index` section of `clay.yaml` and the `versions/` folder; the build warns while
+they are there.
 
 1. Move each folder's `name`, `icon` and `order` from `dir-meta.yaml` into the front matter of the folder's
    `index.md` (`name` becomes `title`); names per language go into `index.de.md` and so on. Delete `dir-meta.yaml`.
-2. Write the start page in `docs/index.md`: `index.title`, `index.description` and `index.icon` become `title`,
+2. Move older versions from `versions/<name>/docs/` to `docs-archive/<name>/`.
+3. Write the start page in `docs/index.md`: `index.title`, `index.description` and `index.icon` become `title`,
    `description` and `icon`, with `hero: true` and `cards: true` for the previous layout. Remove `index` from
    `clay.yaml`.
 

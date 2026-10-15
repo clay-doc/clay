@@ -66,7 +66,7 @@ export function brokenLinks(pages: Page[], docsDirs: string | Record<string, str
         for (const ref of markdownRefs(page.markdown)) {
             // A folder's index.md links relative to its folder
             const reason = checkRef(ref, docPath(page.route, page.isDir), routes, dirs[version]!, page.prefix ?? "");
-            const source = version ? `versions/${version}/docs/${page.source}` : page.source;
+            const source = version ? `docs-archive/${version}/${page.source}` : page.source;
             if (reason) broken.push(`${source}: "${ref.href}" ${reason}`);
         }
     }
