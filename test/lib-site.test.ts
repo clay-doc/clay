@@ -72,7 +72,7 @@ describe("loadSite", () => {
         "clay.yaml": "title: Docs\nbaseURL: /repo/\ntitel: typo\nnavbar:\n  lgo: x\nindex:\n  title: Old\n",
         "dir-meta.yaml": "- path: guides\n",
         "docs/index.md": "# Home\n\nWelcome.",
-        "docs/guides/index.md": "---\ntitle: User Guides\nicon: fa-solid fa-book\norder: 1\n---\n",
+        "docs/guides/index.md": "---\ntitle: User Guides\nicon: fa-solid fa-book\norder: 1\ncards: true\n---\n",
         "docs/guides/setup.md": "---\ntitle: Setup\n---\nInstall it.",
         "docs/guides/img/shot.png": "png",
         "docs/images/only.png": "png",
@@ -89,6 +89,7 @@ describe("loadSite", () => {
             'clay.yaml: unknown key "titel" is ignored (typo?)',
             'clay.yaml: "index" is no longer read since Clay 3; write the start page in docs/index.md',
             "dir-meta.yaml is no longer read since Clay 3; give each folder an index.md with its title, icon and order",
+            'guides/index.md: "cards" is no longer read since Clay 4; it is called "list"',
         ]));
     });
 

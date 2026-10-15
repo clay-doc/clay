@@ -7,7 +7,7 @@ import type {DocItem} from "../common/nav";
 import type {Configuration} from "../common/configuration";
 import {editionPrefix, type LanguageInfo, type VersionInfo} from "../common/editions";
 import {languageName} from "../common/i18n";
-import {parseFrontMatter, stripFrontMatter, type FrontMatter} from "./front-matter";
+import {parseFrontMatter, splitFrontMatter, stripFrontMatter, type FrontMatter} from "./front-matter";
 import {lastUpdated} from "./git-dates";
 import {configSchema, unknownKeys} from "./checks";
 
@@ -364,6 +364,9 @@ function loadVersion(docsDir: string, info: VersionInfo, gitDates: boolean, lang
     const originals = new Set<string>();
     const split = (nodes: DocNode[]): DocNode[] => nodes.flatMap(node => {
         if (node.isDir) return [{...node, children: split(node.children)}];
+        if (node.markdown && /^cards\s*:/m.test(splitFrontMatter(node.markdown).frontMatter)) {
+            warnings.push(`${node.path}: "cards" is no longer read since Clay 4; it is called "list"`);
+        }
         if (translationOf(node.name, codes.slice(1))) {
             translations.set(node.path, node);
             return [];

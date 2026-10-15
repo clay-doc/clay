@@ -5,7 +5,7 @@ export type FrontMatter = {
     icon?: string;
     description?: string;
     order?: number; // position in the navigation; unset pages follow ordered ones
-    list?: boolean; // index.md: list the folder's pages below the text ("cards" in Clay 3.0)
+    list?: boolean; // index.md: list the folder's pages below the text
     hero?: boolean; // index.md: show title, icon and description as a large centered header
 };
 
@@ -76,10 +76,9 @@ export function parseFrontMatter(content: string): FrontMatter {
                 if (/^-?\d+$/.test(value)) result.order = Number(value);
                 break;
             case "list":
-            case "cards": // the name in Clay 3.0
             case "hero": {
                 if (value !== "true" && value !== "false") break;
-                result[key === "cards" ? "list" : key] = value === "true";
+                result[key] = value === "true";
                 break;
             }
         }

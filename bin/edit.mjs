@@ -228,9 +228,7 @@ export async function edit(root) {
             const written = editor.setFields(root, {...edition, language: languages[0]}, {...node, file: node.kind === "page" ? node.path : `${node.path}/index.md`}, {order: value});
             done("Saved", [written]);
         } else {
-            // "cards" is the name of "list" in Clay 3.0; it goes when the list is set
-            const updates = key === "list" ? {list: value, cards: null} : {[key]: value};
-            done("Saved", [editor.setFields(root, edition, node, updates)]);
+            done("Saved", [editor.setFields(root, edition, node, {[key]: value})]);
         }
         reload(node.path);
     }
