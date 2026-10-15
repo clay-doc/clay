@@ -330,7 +330,7 @@ export type LoadOptions = {
 
 // Version names become the first segment of their URLs
 export const VERSION_NAME = /^[A-Za-z0-9][\w.-]*$/;
-export const RESERVED_NAMES = new Set(["docs", "api", "_clay", "_nuxt"]);
+export const RESERVED_NAMES = new Set(["docs", "_clay", "_nuxt"]);
 
 // Older versions: the folders in docs-archive/, newest first
 export function listVersions(root: string): { names: string[], warnings: string[] } {

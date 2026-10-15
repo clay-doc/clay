@@ -1,7 +1,7 @@
-// DOM types: runs in the browser, and on the server with jsdom
+// DOM types: runs on the server with jsdom (sanitize.ts)
 /// <reference lib="dom" />
-import {normalizePath} from "./route-path";
-import linkConcat from "./link-concat";
+import {normalizePath} from "../../common/route-path";
+import linkConcat from "../../common/link-concat";
 
 const hasScheme = (ref: string) => /^[a-z][a-z\d+.-]*:/i.test(ref) || ref.startsWith("//");
 
@@ -38,8 +38,8 @@ export function isAssetLink(href: string): boolean {
 // Rewrites a rendered doc before it is shown: doc links get their app route
 // (data-route) and a real href that also works in new tabs, relative images and
 // files point into docs/, and external links open in a new tab. Done on a
-// <template> so the browser never requests the unresolved image URLs. On the
-// server, pass a DOM implementation's document (jsdom). Files resolve against
+// <template>, so nothing loads the unresolved image URLs; pass a DOM
+// implementation's document (jsdom). Files resolve against
 // assetPath: translations share the files of their version, so their path has
 // no language prefix.
 export function rewriteDocHtml(html: string, docPath: string, baseUrl: string, routeHref: (route: string) => string,

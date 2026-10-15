@@ -1,7 +1,7 @@
 import type {DocItem} from "../../common/nav";
 import type {Page, Site, SiteEdition} from "../../lib/site";
 import {stripFrontMatter} from "../../lib/front-matter";
-import {isAssetLink, resolveDocAsset, resolveDocLink} from "../../common/doc-links";
+import {isAssetLink, resolveDocAsset, resolveDocLink} from "./doc-links";
 import {docPath, markdownRoute} from "../../common/route-path";
 import linkConcat from "../../common/link-concat";
 import {firstParagraph} from "./render-doc";

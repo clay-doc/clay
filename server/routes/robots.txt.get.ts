@@ -1,5 +1,5 @@
 import {resolveOrigin} from "../../common/seo";
-import {useClaySite} from "../utils/site";
+import {useClaySite} from "../utils/use-clay-site";
 
 // Crawlers only read robots.txt at the domain root; under a base path it is
 // informational, so submit the sitemap in the search engines' tools there.

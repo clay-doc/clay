@@ -1,5 +1,5 @@
 import {buildSearchIndex} from "../../utils/search-index";
-import {useClaySite} from "../../utils/site";
+import {useClaySite} from "../../utils/use-clay-site";
 
 // The search index of another version or language, e.g. /_clay/1.x/de/search.json,
 // so results stay within the docs shown

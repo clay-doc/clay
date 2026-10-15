@@ -1,5 +1,5 @@
 import {absoluteUrl, resolveOrigin, sitemapXml} from "../../common/seo";
-import {useClaySite} from "../utils/site";
+import {useClaySite} from "../utils/use-clay-site";
 
 export default defineEventHandler(event => {
     const site = useClaySite();

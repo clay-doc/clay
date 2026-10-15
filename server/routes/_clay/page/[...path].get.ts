@@ -1,6 +1,6 @@
 import {docPath, normalizePath} from "../../../../common/route-path";
 import {renderDoc} from "../../../utils/render-doc";
-import {useClaySite} from "../../../utils/site";
+import {useClaySite} from "../../../utils/use-clay-site";
 import {messagesFor} from "../../../../common/i18n";
 
 // A rendered doc: a page, or a folder's index.md. During the build every page

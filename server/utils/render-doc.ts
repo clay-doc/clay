@@ -3,7 +3,7 @@
 import {Marked} from "marked";
 import {plainText} from "../../common/markdown-text";
 import {componentSyntax} from "../../common/markdown-components";
-import {rewriteDocHtml} from "../../common/doc-links";
+import {rewriteDocHtml} from "./doc-links";
 import linkConcat from "../../common/link-concat";
 import {truncate} from "../../common/seo";
 import type {TocEntry} from "../../common/toc";

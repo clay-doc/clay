@@ -27,8 +27,8 @@ type RenderedDoc = { html: string, toc: TocEntry[], description: string, hero: H
 
 // Rendered on the server at build time; its data is part of the page payload.
 // The site's start page has the route "/", requested as "/_start".
-const apiPath = props.url === "/" ? "/_start" : props.url;
-const {data: doc, error} = await useAsyncData(`clay-page:${props.url}`, () => $fetch<RenderedDoc>(`/api/_clay/page${apiPath}`));
+const pagePath = props.url === "/" ? "/_start" : props.url;
+const {data: doc, error} = await useAsyncData(`clay-page:${props.url}`, () => $fetch<RenderedDoc>(`/_clay/page${pagePath}`));
 
 useClaySeo(() => ({
   title: props.start ? undefined : currentDocItem.value?.title,

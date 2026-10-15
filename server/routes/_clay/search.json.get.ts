@@ -1,5 +1,5 @@
 import {buildSearchIndex} from "../../utils/search-index";
-import {useClaySite} from "../../utils/site";
+import {useClaySite} from "../../utils/use-clay-site";
 
 // The full-text search index of the current docs in the default language, built
 // once at build time and loaded by the browser on first search; other versions

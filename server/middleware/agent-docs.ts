@@ -1,5 +1,5 @@
 import {resolveOrigin} from "../../common/seo";
-import {useClaySite} from "../utils/site";
+import {useClaySite} from "../utils/use-clay-site";
 import {llmsFullTxt, llmsTxt, pageMarkdown, pageOfMarkdown, urlMaker} from "../utils/agent-docs";
 
 // The docs for language models and agents (server/utils/agent-docs.ts): a page's

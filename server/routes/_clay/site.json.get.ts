@@ -1,4 +1,4 @@
-import {useClaySite} from "../../utils/site";
+import {useClaySite} from "../../utils/use-clay-site";
 
 // Config and navigation, read fresh on every request. Only used during
 // development; builds bundle them into the app (see app/composables/use-site.ts).

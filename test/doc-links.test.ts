@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import {describe, expect, it} from "vitest";
-import {isAssetLink, resolveDocAsset, resolveDocLink, rewriteDocHtml} from "../common/doc-links";
+import {isAssetLink, resolveDocAsset, resolveDocLink, rewriteDocHtml} from "../server/utils/doc-links";
 
 describe("resolveDocLink", () => {
     it.each([
