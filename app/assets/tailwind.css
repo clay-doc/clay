@@ -102,8 +102,16 @@
     }
 }
 
+/* Alerts: a box with a bar of its own in the alert's color, a little left of it */
 .markdown-alert {
-    @apply my-5 bg-base-200 rounded-md px-5 py-0.5 border-l-2;
+    @apply relative my-5 ms-[7px] bg-base-200 rounded-md px-5 py-0.5;
+    --alert-line: var(--color-base-content);
+}
+
+.markdown-alert::before {
+    @apply absolute -start-[7px] inset-y-1 w-[3px] rounded-full;
+    content: "";
+    background-color: var(--alert-line);
 }
 
 .markdown-alert > p {
@@ -114,28 +122,18 @@
     @apply font-bold;
 }
 
-.markdown-alert-caution {
-    @apply border-error;
+.markdown-alert-caution,
+.markdown-alert-important,
+.markdown-alert-danger {
+    --alert-line: var(--color-error);
 }
 
 .markdown-alert-warning {
-    @apply border-warning;
+    --alert-line: var(--color-warning);
 }
 
 .markdown-alert-tip {
-    @apply border-primary;
-}
-
-.markdown-alert-note {
-    @apply border-base-content;
-}
-
-.markdown-alert-important {
-    @apply border-error;
-}
-
-.markdown-alert-danger {
-    @apply border-error;
+    --alert-line: var(--color-primary);
 }
 .search-hit {
     @apply bg-primary/30 text-inherit rounded-sm;
