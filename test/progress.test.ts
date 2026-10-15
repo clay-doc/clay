@@ -62,8 +62,26 @@ describe("build parser", () => {
             " ERROR  Exiting due to prerender errors.",
         ]);
         expect(events.filter((event: {type: string}) => event.type === "error")).toEqual([
-            {type: "error", text: "├─ /nope (3ms)"},
-            {type: "error", text: "│ ├── [404] Page Not Found"},
+            {type: "error", text: "404 Page Not Found on 1 page: /nope"},
+            {type: "error", text: "Exiting due to prerender errors."},
+        ]);
+    });
+
+    it("shows why pages failed, as logged by Clay, and sums up the failed pages", () => {
+        const failed = ["/a", "/b", "/c", "/d", "/e"].flatMap(page => [`[nitro]   ├─ ${page} (8ms)`, "  │ ├── [500] Server Error", "  │ └── Linked from /"]);
+        const events = parseAll([
+            " ERROR  [clay] Rendering /a failed: boom",
+            " ERROR  [clay] Rendering /b failed: boom",
+            " ERROR  [clay] Rendering /c failed: other",
+            "Errors prerendering:",
+            ...failed,
+            "[nitro] ",
+            " ERROR  Exiting due to prerender errors.",
+        ]);
+        expect(events.filter((event: {type: string}) => event.type === "error")).toEqual([
+            {type: "error", text: "boom (rendering /a)"},
+            {type: "error", text: "other (rendering /c)"},
+            {type: "error", text: "500 Server Error on 5 pages: /a, /b, /c and 2 more"},
             {type: "error", text: "Exiting due to prerender errors."},
         ]);
     });
@@ -103,6 +121,17 @@ describe("progress without a terminal", () => {
         expect(output).toContain("✖  Prerendering pages\n│  Exiting due to prerender errors.\n");
         expect(output).toContain("Build failed after 0ms");
         expect(output).not.toContain("\x1b");
+    });
+});
+
+describe("build parser with an error on its own line", () => {
+    it("takes the message from the next line", () => {
+        expect(parseAll([" ERROR ", "Could not load the config", ""])).toEqual([{type: "error", text: "Could not load the config"}]);
+    });
+
+    it("explains that clay dev is still running", () => {
+        const events = parseAll([" ERROR ", "Another Nuxt dev server is already running:", "", "  URL:     http://[::1]:3000", "  PID:     86350"]);
+        expect(events).toEqual([{type: "error", text: '"clay dev" is running for this project (process 86350); stop it, then build again'}]);
     });
 });
 

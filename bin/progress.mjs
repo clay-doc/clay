@@ -9,6 +9,7 @@ const ANSI = /\x1b\[[0-9;?]*[A-Za-z]/g;
 // into the usual form.
 function normalize(raw) {
     let text = raw.replace(ANSI, "").trim();
+    if (text === "ERROR") return "ERROR";
     const level = text.match(/^\[(info|success|start|ready|log|debug|warn|error|fail|fatal)\]\s*/);
     if (level) {
         text = text.slice(level[0].length);
@@ -23,20 +24,51 @@ const CLAY_WARNING = /^\[clay\]\s+(?:WARN|⚠)\s+(.*)$/;
 const CLAY_LOADED = /^\[clay\].*?(\d+) pages? in (.+?)(?:; (.+))?$/;
 const loaded = match => ({type: "done", label: `Loaded ${match[1]} ${match[1] === "1" ? "page" : "pages"} from ${match[2]}`, detail: match[3]});
 
+// Nitro's list of the pages that failed, one line per status
+function failedPages(failed) {
+    return [...failed].map(([status, pages]) => {
+        const shown = pages.slice(0, 3).join(", ");
+        const more = pages.length > 3 ? ` and ${pages.length - 3} more` : "";
+        return {type: "error", text: `${status} on ${pages.length} ${pages.length === 1 ? "page" : "pages"}: ${shown}${more}`};
+    });
+}
+
 // Turns one line of Nuxt output into progress events (none for noise)
 export function createBuildParser() {
     let routes = 0;
-    let inErrors = false;
+    let failed = null; // pages by status, while Nitro lists them after "Errors prerendering:"
+    let failedPage = null;
     let failedRequest = null; // a page that failed to render; its cause follows on the next line
+    let bareError = false; // an "ERROR" whose message follows on the next line
+    let devServerRunning = false;
     const errors = new Set();
 
     return function parse(raw) {
-        const text = normalize(raw);
+        let text = normalize(raw);
         let match;
+        const events = [];
+        if (text === "ERROR") {
+            bareError = true;
+            return [];
+        }
+        if (bareError && text) {
+            bareError = false;
+            text = `ERROR ${text}`;
+        }
 
-        // Nitro lists each failed route again after "Errors prerendering:"
-        if (inErrors && !/^ERROR\s/.test(text)) return text ? [{type: "error", text}] : [];
-        inErrors = false;
+        // Each failed page comes with its status and the pages linking to it
+        if (failed) {
+            if (!/^ERROR\s/.test(text)) {
+                if ((match = text.match(/^├─ (\S+)/))) failedPage = match[1];
+                else if ((match = text.match(/^│ ├── \[(\d+)\] (.+)$/)) && failedPage) {
+                    const status = `${match[1]} ${match[2]}`;
+                    failed.set(status, [...(failed.get(status) ?? []), failedPage]);
+                }
+                return [];
+            }
+            events.push(...failedPages(failed));
+            failed = null;
+        }
 
         // The cause of a failed page, reported once for all pages it breaks
         // (in CI the cause carries an [error] prefix of its own)
@@ -50,16 +82,31 @@ export function createBuildParser() {
         }
         if ((match = text.match(/^ERROR\s+\[request error\].*?\[GET\]\s+https?:\/\/[^/]+(\S*)/))) {
             failedRequest = match[1] || "/";
-            return [];
+            return events;
+        }
+        // Nuxt does not build while a dev server runs in the same folder; it names its process below
+        if (/^ERROR\s+Another Nuxt dev server is already running/.test(text)) {
+            devServerRunning = true;
+            return events;
+        }
+        if (devServerRunning && (match = text.match(/^PID:\s+(\d+)/))) {
+            devServerRunning = false;
+            return [{type: "error", text: `"clay dev" is running for this project (process ${match[1]}); stop it, then build again`}];
+        }
+        // Why a page failed, logged by Clay (app/plugins/render-errors.server.ts)
+        if ((match = text.match(/^ERROR\s+\[clay\] Rendering (\S+) failed: (.*)$/))) {
+            if (errors.has(match[2])) return events;
+            errors.add(match[2]);
+            return [...events, {type: "error", text: `${match[2]} (rendering ${match[1]})`}];
         }
         if (/^ERROR\s/.test(text)) {
             const message = text.replace(/^ERROR\s+/, "");
-            if (errors.has(message)) return [];
+            if (errors.has(message)) return events;
             errors.add(message);
-            return [{type: "error", text: message}];
+            return [...events, {type: "error", text: message}];
         }
         if (text === "Errors prerendering:") {
-            inErrors = true;
+            failed = new Map();
             return [];
         }
         if ((match = text.match(CLAY_WARNING))) return [{type: "warn", text: match[1]}];
@@ -88,10 +135,19 @@ export function createDevParser() {
     let ready = false;
     let skip = 0; // lines of a notice to leave out
     let failedRequest = null; // a page that failed to render; its cause follows on the next line
+    let bareError = false; // an "ERROR" whose message follows on the next line
 
     return function parse(raw) {
-        const text = normalize(raw);
+        let text = normalize(raw);
         let match;
+        if (text === "ERROR") {
+            bareError = true;
+            return [];
+        }
+        if (bareError && text) {
+            bareError = false;
+            text = `ERROR ${text}`;
+        }
         if (skip > 0 && text) {
             skip--;
             return [];
