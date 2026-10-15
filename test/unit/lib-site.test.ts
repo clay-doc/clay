@@ -2,7 +2,7 @@ import {mkdirSync, mkdtempSync, writeFileSync} from "node:fs";
 import {tmpdir} from "node:os";
 import {dirname, join} from "node:path";
 import {describe, expect, it} from "vitest";
-import {collectPages, firstHeading, loadConfig, loadSite, prettyName, resolveFile, sortTree, type DocNode} from "../lib/site";
+import {collectPages, firstHeading, loadConfig, loadSite, prettyName, resolveFile, sortTree, type DocNode} from "../../lib/site";
 
 function project(files: Record<string, string>): string {
     const root = mkdtempSync(join(tmpdir(), "clay-site-"));

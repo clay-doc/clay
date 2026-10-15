@@ -1,6 +1,6 @@
 import {describe, expect, it} from "vitest";
-import {loadSite} from "../lib/site";
-import {llmsFullTxt, llmsTxt, markdownRouteOf, pageMarkdown, pageOfMarkdown, urlMaker} from "../server/utils/agent-docs";
+import {loadSite} from "../../lib/site";
+import {llmsFullTxt, llmsTxt, markdownRouteOf, pageMarkdown, pageOfMarkdown, urlMaker} from "../../server/utils/agent-docs";
 
 const site = loadSite("playground", {gitDates: false, env: {}});
 const url = urlMaker("https://example.com", "/docs/");

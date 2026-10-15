@@ -1,5 +1,5 @@
 import {describe, expect, it} from "vitest";
-import linkConcat from "../common/link-concat";
+import linkConcat from "../../common/link-concat";
 
 describe("linkConcat", () => {
     it.each([

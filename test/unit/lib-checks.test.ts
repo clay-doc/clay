@@ -3,8 +3,8 @@ import {tmpdir} from "node:os";
 import {dirname, join} from "node:path";
 import {describe, expect, it} from "vitest";
 import {load} from "js-yaml";
-import {brokenLinks, configSchema, unknownKeys} from "../lib/checks";
-import type {Page} from "../lib/site";
+import {brokenLinks, configSchema, unknownKeys} from "../../lib/checks";
+import type {Page} from "../../lib/site";
 
 describe("unknownKeys", () => {
     it("finds typos at any depth, including list items", () => {

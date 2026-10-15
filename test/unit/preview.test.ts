@@ -3,7 +3,7 @@ import {tmpdir} from "node:os";
 import {dirname, join} from "node:path";
 import type {AddressInfo} from "node:net";
 import {afterAll, beforeAll, describe, expect, it} from "vitest";
-import {basePath, createPreviewServer} from "../lib/preview";
+import {basePath, createPreviewServer} from "../../lib/preview";
 
 const publicDir = mkdtempSync(join(tmpdir(), "clay-preview-"));
 for (const [path, content] of Object.entries({

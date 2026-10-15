@@ -1,6 +1,6 @@
 import {describe, expect, it} from "vitest";
 import {Marked} from "marked";
-import {headingIds, inlineText} from "../common/markdown-text";
+import {headingIds, inlineText} from "../../common/markdown-text";
 
 const render = (md: string) => new Marked().use(headingIds()).parse(md) as string;
 

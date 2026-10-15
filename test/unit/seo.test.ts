@@ -1,5 +1,5 @@
 import {describe, expect, it} from "vitest";
-import {absoluteUrl, breadcrumbs, pageTitle, resolveOrigin, routePath, sitemapXml, truncate} from "../common/seo";
+import {absoluteUrl, breadcrumbs, pageTitle, resolveOrigin, routePath, sitemapXml, truncate} from "../../common/seo";
 
 describe("resolveOrigin", () => {
     it.each([

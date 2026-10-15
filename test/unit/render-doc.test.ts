@@ -1,6 +1,6 @@
 import {describe, expect, it} from "vitest";
-import {renderDoc} from "../server/utils/render-doc";
-import {messagesFor} from "../common/i18n";
+import {renderDoc} from "../../server/utils/render-doc";
+import {messagesFor} from "../../common/i18n";
 
 const doc = `---
 title: Setup

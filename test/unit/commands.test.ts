@@ -2,7 +2,7 @@ import {afterEach, beforeEach, describe, expect, it} from "vitest";
 import {cpSync, existsSync, mkdtempSync, readFileSync, rmSync} from "node:fs";
 import {tmpdir} from "node:os";
 import {join} from "node:path";
-import {EDIT_HELP, runCheck, runEdit} from "../lib/commands";
+import {EDIT_HELP, runCheck, runEdit} from "../../lib/commands";
 
 // Each test works on its own copy of the playground
 let root = "";

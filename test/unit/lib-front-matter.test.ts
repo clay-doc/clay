@@ -1,5 +1,5 @@
 import {describe, expect, it} from "vitest";
-import {parseFrontMatter, stripFrontMatter} from "../lib/front-matter";
+import {parseFrontMatter, stripFrontMatter} from "../../lib/front-matter";
 
 describe("parseFrontMatter", () => {
     it.each([

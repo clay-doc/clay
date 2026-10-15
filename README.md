@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="clay-transparent.svg" alt="Clay logo" height="220rem">
+  <img src=".github/assets/clay-logo.svg" alt="Clay logo" height="220rem">
 </p>
 
 <h1 align="center">Clay</h1>

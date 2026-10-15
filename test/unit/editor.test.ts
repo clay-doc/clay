@@ -5,8 +5,8 @@ import {beforeEach, describe, expect, it} from "vitest";
 import {
     addLink, createFolder, createPage, createTranslation, createVersion, deleteEntry, getSetting, loadDocsTree, loadSettings, moveEntry,
     removeLink, reorder, saveSettings, setFields, setSetting, settingRows, settingsChanged, slugify, type EditorNode,
-} from "../lib/editor";
-import {setFrontMatter} from "../lib/front-matter";
+} from "../../lib/editor";
+import {setFrontMatter} from "../../lib/front-matter";
 
 let root = "";
 const write = (files: Record<string, string>) => {

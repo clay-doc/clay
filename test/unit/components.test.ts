@@ -1,10 +1,10 @@
 import {describe, expect, it} from "vitest";
 import {Marked} from "marked";
-import {renderDoc} from "../server/utils/render-doc";
-import {componentSyntax} from "../common/markdown-components";
-import {plainText} from "../common/markdown-text";
-import {fileTree} from "../server/utils/components";
-import {serverDocument} from "../server/utils/sanitize";
+import {renderDoc} from "../../server/utils/render-doc";
+import {componentSyntax} from "../../common/markdown-components";
+import {plainText} from "../../common/markdown-text";
+import {fileTree} from "../../server/utils/components";
+import {serverDocument} from "../../server/utils/sanitize";
 
 // Through the whole pipeline, sanitizer included, like a page is rendered
 const render = async (markdown: string) => (await renderDoc(markdown, "/guides/page", "/")).html;

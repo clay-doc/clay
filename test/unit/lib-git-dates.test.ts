@@ -3,7 +3,7 @@ import {mkdirSync, mkdtempSync, writeFileSync} from "node:fs";
 import {tmpdir} from "node:os";
 import {dirname, join} from "node:path";
 import {describe, expect, it} from "vitest";
-import {lastUpdated} from "../lib/git-dates";
+import {lastUpdated} from "../../lib/git-dates";
 
 const hasGit = (() => {
     try {

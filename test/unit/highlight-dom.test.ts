@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import {describe, expect, it} from "vitest";
-import {clearHighlights, firstMarkInSection, highlightTerms} from "../app/utils/highlight-dom";
+import {clearHighlights, firstMarkInSection, highlightTerms} from "../../app/utils/highlight-dom";
 
 function container(html: string) {
     const root = document.createElement("div");

@@ -2,9 +2,9 @@
 import {describe, expect, it} from "vitest";
 import {Marked} from "marked";
 import {codeToHtml} from "shiki";
-import {sanitizeHtml} from "../server/utils/sanitize";
-import {headingIds} from "../common/markdown-text";
-import {transformerCopyButton} from "../server/utils/code-block";
+import {sanitizeHtml} from "../../server/utils/sanitize";
+import {headingIds} from "../../common/markdown-text";
+import {transformerCopyButton} from "../../server/utils/code-block";
 
 const render = (md: string) => new Marked().use(headingIds()).parse(md) as string;
 

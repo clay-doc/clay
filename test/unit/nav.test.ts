@@ -6,8 +6,8 @@ import {
     getCurrentDocItemFromRoute,
     getLinkPartsFromCurrentRoute,
     type LinkPart
-} from "../common/nav";
-import {buildNav, type DocNode} from "../lib/site";
+} from "../../common/nav";
+import {buildNav, type DocNode} from "../../lib/site";
 
 const file = (path: string, frontMatter: DocNode["frontMatter"] = {}, extra: Partial<DocNode> = {}): DocNode =>
     ({name: path.split("/").pop()!, path, isDir: false, markdown: "", frontMatter, children: [], ...extra});

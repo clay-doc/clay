@@ -1,9 +1,9 @@
 import {describe, expect, it} from "vitest";
 import {Marked} from "marked";
-import {headingIds} from "../common/markdown-text";
-import {highlight, loadSearchIndex, searchSections, snippet} from "../common/search";
-import {buildSearchIndex, createSearchIndex, directorySection, splitIntoSections, type SearchPage} from "../server/utils/search-index";
-import {collectPages, type DocNode} from "../lib/site";
+import {headingIds} from "../../common/markdown-text";
+import {highlight, loadSearchIndex, searchSections, snippet} from "../../common/search";
+import {buildSearchIndex, createSearchIndex, directorySection, splitIntoSections, type SearchPage} from "../../server/utils/search-index";
+import {collectPages, type DocNode} from "../../lib/site";
 
 const page: SearchPage = {link: "/guides/setup", title: "Setup", path: "Guides"};
 

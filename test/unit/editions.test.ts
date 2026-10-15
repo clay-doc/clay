@@ -2,8 +2,8 @@ import {mkdirSync, mkdtempSync, writeFileSync} from "node:fs";
 import {tmpdir} from "node:os";
 import {dirname, join} from "node:path";
 import {describe, expect, it} from "vitest";
-import {listVersions, loadSite, localize, translationOf} from "../lib/site";
-import {editionOf, stripPrefix, switchEdition, type LanguageInfo, type VersionInfo} from "../common/editions";
+import {listVersions, loadSite, localize, translationOf} from "../../lib/site";
+import {editionOf, stripPrefix, switchEdition, type LanguageInfo, type VersionInfo} from "../../common/editions";
 
 function project(files: Record<string, string>): string {
     const root = mkdtempSync(join(tmpdir(), "clay-versions-"));

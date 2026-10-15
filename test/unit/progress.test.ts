@@ -1,5 +1,5 @@
 import {describe, expect, it} from "vitest";
-import {createBuildParser, createDevParser, createProgress} from "../lib/progress";
+import {createBuildParser, createDevParser, createProgress} from "../../lib/progress";
 
 // Abridged output of "nuxt generate" when piped
 const LOG = [
