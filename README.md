@@ -177,13 +177,13 @@ start translations (`c`); Tab switches to the settings in `clay.yaml`. Changes a
 values that change: comments and formatting stay. Renaming, moving and deleting report the links that broke. With
 `clay dev` running, the site updates with every change.
 
-| Option         | Description                                                  | Default             |
-|----------------|--------------------------------------------------------------|---------------------|
-| `--root <dir>` | Docs project with `clay.yaml` and `docs/`                    | current directory   |
-| `--out <dir>`  | Output directory                                             | `<root>/publish`    |
-| `--port <n>`   | Port for `dev` and `preview`                                 | `3000`, `4173`      |
-| `--strict`     | `build`: fail on broken links and unknown config keys        |                     |
-| `--verbose`    | `build`: show the full Nuxt output instead of the progress   |                     |
+| Option         | Description                                                       | Default           |
+|----------------|-------------------------------------------------------------------|-------------------|
+| `--root <dir>` | Docs project with `clay.yaml` and `docs/`                         | current directory |
+| `--out <dir>`  | Output directory                                                  | `<root>/publish`  |
+| `--port <n>`   | Port for `dev` and `preview`                                      | `3000`, `4173`    |
+| `--strict`     | `build`: fail on broken links and unknown config keys             |                   |
+| `--verbose`    | `build`, `dev`: show the full Nuxt output instead of the progress |                   |
 
 ## Deploying to GitHub Pages
 

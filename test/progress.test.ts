@@ -1,6 +1,6 @@
 import {describe, expect, it} from "vitest";
 // @ts-expect-error plain JavaScript module of the CLI
-import {createBuildParser, createProgress} from "../bin/progress.mjs";
+import {createBuildParser, createDevParser, createProgress} from "../bin/progress.mjs";
 
 // Abridged output of "nuxt generate" when piped
 const LOG = [
@@ -144,5 +144,89 @@ describe("build parser in CI", () => {
             {type: "error", text: "[nuxt] instance unavailable (rendering /de)"},
             {type: "error", text: "clay build --strict: 1 problem(s) found, see the warnings above"},
         ]);
+    });
+});
+
+// Abridged output of "nuxt dev" when piped
+const DEV_LOG = [
+    "│",
+    "●  Nuxt 4.2.2 (with Nitro 2.13.0, Vite 7.3.1 and Vue 3.5.26)",
+    "  ➜ Local:    http://localhost:3000/",
+    "  ➜ Network:  use --host to expose",
+    "[clay]  WARN  Broken link in a.md: \"missing.md\" points to a missing page (/missing)",
+    "[clay] ℹ 11 pages in playground/docs; languages de (1/7 translated)",
+    "✔ Vite client built in 10ms",
+    "✔ Vite server built in 17ms",
+    "[nitro] ✔ Nuxt Nitro server built in 336ms",
+    "ℹ Vite client warmed up in 2ms",
+    "/*! 🌼 daisyUI 5.5.14 */",
+    " WARN  Browserslist: browsers data (caniuse-lite) is 10 months old. Please run:",
+    "  npx update-browserslist-db@latest",
+    "  Why you should do it regularly: https://github.com/browserslist/update-db#readme",
+    "[clay] ℹ Reloaded docs/a.md",
+    " ERROR  [request error] [unhandled] [GET] http://localhost:3000/broken",
+    " ERROR  Cannot read properties of undefined (reading 'title')",
+    "    at render (app.vue:3:4)",
+    "Something Nuxt says",
+];
+
+describe("dev parser", () => {
+    it("turns Nuxt output into startup steps, then a log, and skips noise", () => {
+        const parse = createDevParser();
+        expect(DEV_LOG.flatMap(line => parse(line))).toEqual([
+            {type: "step", label: "Loading docs"},
+            {type: "url", label: "Local", url: "http://localhost:3000/"},
+            {type: "url", label: "Network", url: "use --host to expose"},
+            {type: "warn", text: "Broken link in a.md: \"missing.md\" points to a missing page (/missing)"},
+            {type: "done", label: "Loaded 11 pages from playground/docs", detail: "languages de (1/7 translated)"},
+            {type: "ready", label: "Started dev server"},
+            {type: "log", icon: "↻", text: "Reloaded docs/a.md"},
+            {type: "error", text: "Cannot read properties of undefined (reading 'title') (rendering /broken)"},
+            {type: "log", text: "Something Nuxt says"},
+        ]);
+    });
+
+    it("reports the server as ready only once", () => {
+        const parse = createDevParser();
+        expect(parse("[nitro] ✔ Nuxt Nitro server built in 336ms")).toEqual([{type: "ready", label: "Started dev server"}]);
+        expect(parse("[nitro] ✔ Nuxt Nitro server built in 120ms")).toEqual([]);
+    });
+});
+
+describe("progress of a server without a terminal", () => {
+    const render = (lines: string[], code: number, signal?: string) => {
+        let output = "";
+        const stream = {isTTY: false, write: (text: string) => (output += text)};
+        const progress = createProgress("Clay 3.0.0 · dev", {stream, now: () => 0, mode: "serve", hint: "Run with --verbose."});
+        const parse = createDevParser();
+        for (const line of lines) parse(line).forEach(progress.apply);
+        progress.finish(code, signal);
+        return output;
+    };
+    const time = new Date(0).toTimeString().slice(0, 8);
+
+    it("shows the steps, the address and then each event with its time", () => {
+        expect(render(DEV_LOG, 0, "SIGINT")).toBe([
+            "┌  Clay 3.0.0 · dev",
+            "│",
+            "●  Loaded 11 pages from playground/docs  languages de (1/7 translated) · 0ms",
+            "│  ▲ Broken link in a.md: \"missing.md\" points to a missing page (/missing)",
+            "│",
+            "●  Started dev server  0ms",
+            "│  ➜ Local:   http://localhost:3000/",
+            "│  ➜ Network: use --host to expose",
+            "│",
+            `│  ↻ Reloaded docs/a.md  ${time}`,
+            `│  ✖ Cannot read properties of undefined (reading 'title') (rendering /broken)  ${time}`,
+            `│  Something Nuxt says  ${time}`,
+            "└  Stopped",
+            "",
+        ].join("\n"));
+    });
+
+    it("shows errors at once and the hint when the server fails", () => {
+        const output = render(["●  Nuxt 4.2.2", " ERROR  Port 3000 is in use"], 1);
+        expect(output).toContain("│  ✖ Port 3000 is in use\n");
+        expect(output).toContain("└  Stopped after 0ms. Run with --verbose.\n");
     });
 });

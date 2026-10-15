@@ -10,7 +10,7 @@ import {createInterface} from "node:readline";
 import {parseArgs} from "node:util";
 import {createJiti} from "jiti";
 import {preview} from "./preview.mjs";
-import {createBuildParser, createProgress} from "./progress.mjs";
+import {createBuildParser, createDevParser, createProgress} from "./progress.mjs";
 
 const packageDir = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const require = createRequire(import.meta.url);
@@ -33,7 +33,7 @@ Options:
   --port <port>  Port for dev and preview (default: 3000 and 4173)
   --host         Listen on all interfaces, not just localhost
   --strict       build: fail on warnings such as broken links or config typos
-  --verbose      build: show the full Nuxt output instead of the progress
+  --verbose      build and dev: show the full Nuxt output instead of the progress
   -h, --help     Show this help
   -v, --version  Show the version
 
@@ -97,9 +97,17 @@ function nuxt(args, {onLine, onClose} = {}) {
 }
 
 switch (command) {
-    case "dev":
-        nuxt(["dev", "--port", options.port ?? "3000", ...(options.host ? ["--host"] : [])]);
+    case "dev": {
+        const args = ["dev", "--port", options.port ?? "3000", ...(options.host ? ["--host"] : [])];
+        if (options.verbose) {
+            nuxt(args);
+        } else {
+            const progress = createProgress(`Clay ${version} · dev`, {mode: "serve", hint: 'Run "clay dev --verbose" for the full output.'});
+            const parse = createDevParser();
+            nuxt(args, {onLine: line => parse(line).forEach(progress.apply), onClose: progress.finish});
+        }
         break;
+    }
     case "build":
         if (options.verbose) {
             nuxt(["generate"]);
@@ -110,7 +118,7 @@ switch (command) {
         }
         break;
     case "preview":
-        await preview({root, out, port: Number(options.port ?? 4173), host: options.host ? "0.0.0.0" : "127.0.0.1"});
+        await preview({root, out, port: Number(options.port ?? 4173), host: options.host ? "0.0.0.0" : "127.0.0.1", title: `Clay ${version} · preview`});
         break;
     case "version":
         // Copies docs/ to docs-archive/<name>; docs/ stays the latest version
