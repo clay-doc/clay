@@ -27,9 +27,10 @@ export function inlineText(tokens: Token[]): string {
     return tokens.map(plainText).join("");
 }
 
-// Adds GitHub-style ids to headings. The search index slugs headings the
-// same way, so result anchors always match the rendered page.
-export function headingIds(): MarkedExtension {
+// Adds GitHub-style ids to headings, and to sections (## and deeper) a "#"
+// link to them. The search index slugs headings the same way, so result
+// anchors always match the rendered page.
+export function headingIds(linkLabel = "Link to this section"): MarkedExtension {
     const slugger = new GithubSlugger();
     return {
         hooks: {
@@ -41,7 +42,8 @@ export function headingIds(): MarkedExtension {
         renderer: {
             heading({tokens, depth}) {
                 const id = slugger.slug(inlineText(tokens));
-                return `<h${depth} id="${id}">${this.parser.parseInline(tokens)}</h${depth}>\n`;
+                const link = depth > 1 ? `<a class="heading-anchor" href="#${id}" aria-label="${linkLabel}">#</a>` : "";
+                return `<h${depth} id="${id}">${link}${this.parser.parseInline(tokens)}</h${depth}>\n`;
             }
         }
     };

@@ -51,7 +51,7 @@ async function loadLanguages(highlighter: Highlighter, tokens: Token[], lexer: M
 // Alert titles and the copy button are in the language of the doc
 function createRenderer(highlighter: Highlighter, messages: Messages) {
     return new Marked()
-    .use(headingIds())
+    .use(headingIds(messages.sectionLink))
     .use(markedAlert({
         variants: [
             {type: "caution", icon: '<i class="fa-solid fa-triangle-exclamation mr-2"></i>', title: messages.alertCaution, titleClassName: "markdown-alert-title text-error"},

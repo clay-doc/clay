@@ -5,8 +5,10 @@ import {headingIds, inlineText} from "../common/markdown-text";
 const render = (md: string) => new Marked().use(headingIds()).parse(md) as string;
 
 describe("headingIds", () => {
-    it("adds GitHub-style ids to headings", () => {
-        expect(render("## Install Steps")).toBe('<h2 id="install-steps">Install Steps</h2>\n');
+    it("adds GitHub-style ids to headings, and a link to sections", () => {
+        expect(render("# Guide")).toBe('<h1 id="guide">Guide</h1>\n');
+        expect(render("## Install Steps"))
+            .toBe('<h2 id="install-steps"><a class="heading-anchor" href="#install-steps" aria-label="Link to this section">#</a>Install Steps</h2>\n');
     });
 
     it("slugs the visible text, not the markdown syntax", () => {

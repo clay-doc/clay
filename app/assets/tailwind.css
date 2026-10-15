@@ -165,6 +165,20 @@
     }
 }
 
+/* "#" links to sections, shown left of a heading on hover like on GitHub */
+.prose :is(h2, h3, h4, h5, h6) {
+    @apply relative;
+}
+
+.prose .heading-anchor {
+    @apply absolute -left-[0.9em] w-[0.9em] font-medium no-underline opacity-0 transition-opacity text-primary;
+}
+
+.prose :is(h2, h3, h4, h5, h6):hover .heading-anchor,
+.prose .heading-anchor:focus-visible {
+    @apply opacity-100;
+}
+
 /* Line notations of the Shiki transformers (server/utils/markdown.ts): ```ts {1,3},
    // [!code highlight], [!code ++] / [!code --], [!code focus], [!code error] /
    // [!code warning] and [!code word:...]. Lines span the whole block. */

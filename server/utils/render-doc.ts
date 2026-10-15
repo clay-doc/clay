@@ -39,6 +39,8 @@ export async function renderDoc(markdown: string, docPath: string, baseURL: stri
 
     const template = serverDocument.createElement("template");
     template.innerHTML = html;
+    // The headings' text, without their "#" links
+    for (const link of template.content.querySelectorAll(".heading-anchor")) link.remove();
     const toc = [...template.content.querySelectorAll<HTMLElement>("h2[id], h3[id]")].map(heading => ({
         id: heading.id,
         text: heading.textContent?.trim() ?? "",
