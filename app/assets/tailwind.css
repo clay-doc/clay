@@ -747,3 +747,25 @@ a.clay-card:focus-visible {
 .mermaid-error-message {
     @apply text-error;
 }
+
+/* The page for language models (PageActions.vue): under the contents of the
+   page, set off by a line, in the look of its entries */
+.page-actions {
+    @apply text-sm;
+}
+
+.page-actions-below {
+    @apply mt-4 border-t border-base-300 pt-4;
+}
+
+.page-actions :is(a, button) {
+    @apply flex w-full cursor-pointer items-center gap-2 py-1 ps-3 text-start opacity-70 transition-opacity hover:opacity-100;
+}
+
+.page-actions i {
+    @apply w-4 shrink-0 text-center;
+}
+
+.page-actions .assistant-icon {
+    @apply size-3.5 shrink-0 mx-px;
+}

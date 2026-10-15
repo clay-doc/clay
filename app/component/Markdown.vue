@@ -3,6 +3,7 @@ import Error from "~/component/Error.vue";
 import TableOfContents from "~/component/TableOfContents.vue";
 import PageFooter from "~/component/PageFooter.vue";
 import PageList from "~/component/PageList.vue";
+import PageActions from "~/component/PageActions.vue";
 import {clearHighlights, firstMarkInSection, highlightTerms} from "~/assets/highlight-dom";
 import {copyCodeBlock} from "#common/code-copy";
 import {remember, restoreTabs, reveal, selectLabel, selectTab, tabKeydown} from "~/assets/tabs";
@@ -134,11 +135,15 @@ function handleKeys(event: KeyboardEvent) {
           <i class="fa-solid fa-language"></i>
           <span>{{untranslatedNote}}</span>
         </div>
-        <!-- Narrower screens have no room beside the page: the contents fold up above it -->
-        <details v-if="doc.toc.length > 1" ref="tocBox" class="not-prose xl:hidden mb-6 rounded-box border border-base-300 text-sm">
-          <summary class="cursor-pointer px-4 py-2 font-semibold">{{t.onThisPage}}</summary>
-          <TableOfContents :entries="doc.toc" :scroll-container="scrollContainer" :title="false" class="px-4 pb-3"
-                           @navigate="tocBox?.removeAttribute('open')"/>
+        <!-- Narrower screens have no room beside the page: the contents and the
+             page's actions fold up above it -->
+        <details ref="tocBox" class="not-prose xl:hidden mb-6 rounded-box border border-base-300 text-sm">
+          <summary class="cursor-pointer px-4 py-2 font-semibold">{{doc.toc.length > 1 ? t.onThisPage : t.pageActions}}</summary>
+          <div class="px-4 pb-3">
+            <TableOfContents v-if="doc.toc.length > 1" :entries="doc.toc" :scroll-container="scrollContainer" :title="false"
+                             @navigate="tocBox?.removeAttribute('open')"/>
+            <PageActions :route="url" :class="{'page-actions-below': doc.toc.length > 1}"/>
+          </div>
         </details>
         <div ref="contentEl" v-html="doc.html" @click="handleClicks" @keydown="handleKeys" class="w-full"></div>
         <PageList v-if="doc.list"/>
@@ -146,8 +151,12 @@ function handleKeys(event: KeyboardEvent) {
       </template>
       <Error v-else :code="error?.statusCode ?? 500" :message="error?.statusMessage ?? 'Error'"/>
     </article>
-    <aside v-if="doc && doc.toc.length > 1" class="hidden xl:block w-56 shrink-0 ml-auto">
-      <TableOfContents :entries="doc.toc" :scroll-container="scrollContainer" class="sticky top-6"/>
+    <aside v-if="doc" class="hidden xl:block w-56 shrink-0 ml-auto">
+      <div class="sticky top-6">
+        <TableOfContents v-if="doc.toc.length > 1" :entries="doc.toc" :scroll-container="scrollContainer"/>
+        <!-- Below a line under the contents: the page for language models -->
+        <PageActions :route="url" :class="{'page-actions-below': doc.toc.length > 1}"/>
+      </div>
     </aside>
   </div>
 </template>

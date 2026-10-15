@@ -478,3 +478,40 @@ test.describe("components", () => {
         await expect(page.locator("[data-tabs]").first().getByRole("tabpanel")).toHaveText("Open PowerShell.");
     });
 });
+
+test.describe("for language models and agents", () => {
+    test("every page is published as Markdown, with an index in llms.txt", async ({request}) => {
+        const markdown = await request.get("reference/feature-tour.md");
+        expect(markdown.status()).toBe(200);
+        expect(markdown.headers()["content-type"]).toContain("text/markdown");
+        const text = await markdown.text();
+        expect(text).toMatch(/^# Feature Tour\n/);
+        expect(text).toContain("(https://clay-doc.github.io/clay/configuration.md)");
+        // Every page leads to the index of all others
+        expect(text).toContain("All pages of these docs, as Markdown for language models: https://clay-doc.github.io/clay/llms.txt");
+
+        const llms = await (await request.get("llms.txt")).text();
+        expect(llms).toContain("- [Feature Tour](https://clay-doc.github.io/clay/reference/feature-tour.md)");
+        expect(await (await request.get("llms-full.txt")).text()).toContain("Source: https://clay-doc.github.io/clay/reference/feature-tour.md");
+        expect(await (await request.get("robots.txt")).text()).toContain("https://clay-doc.github.io/clay/llms.txt");
+
+        const html = await (await request.get("reference/feature-tour/")).text();
+        expect(html).toContain('<link rel="alternate" type="text/markdown" title="Markdown" href="https://clay-doc.github.io/clay/reference/feature-tour.md">');
+        expect(html).toContain('<link rel="alternate" type="text/plain" title="llms.txt" href="https://clay-doc.github.io/clay/llms.txt">');
+    });
+
+    test("below the contents, a page can be copied or opened as Markdown and asked about", async ({page, context, browserName}) => {
+        const readable = browserName === "chromium";
+        if (readable) await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+        await page.goto("reference/feature-tour/");
+        await hydrated(page);
+        const actions = page.locator("aside .page-actions");
+        await expect(actions.getByRole("link", {name: "Open as Markdown"})).toHaveAttribute("href", "/clay/reference/feature-tour.md");
+        await expect(actions.getByRole("link", {name: "Open in Claude"})).toHaveAttribute("href",
+            /^https:\/\/claude\.ai\/new\?q=.*http%3A%2F%2F127\.0\.0\.1%3A4173%2Fclay%2Freference%2Ffeature-tour\.md/);
+
+        await actions.getByRole("button", {name: "Copy as Markdown"}).click();
+        await expect(actions.getByRole("button", {name: "Copied as Markdown"})).toBeVisible();
+        if (readable) expect(await page.evaluate(() => navigator.clipboard.readText())).toMatch(/^# Feature Tour\n/);
+    });
+});

@@ -49,6 +49,16 @@ const en = {
     alertDanger: "Danger",
     details: "Details",
     diagramError: "The diagram could not be drawn.",
+    pageActions: "More ways to use this page",
+    copyMarkdown: "Copy as Markdown",
+    copiedMarkdown: "Copied as Markdown",
+    copyMarkdownHint: "The page for AI assistants",
+    openMarkdown: "Open as Markdown",
+    openMarkdownHint: "View the page's Markdown",
+    openInChatGPT: "Open in ChatGPT",
+    openInClaude: "Open in Claude",
+    askAboutPage: "Ask questions about this page",
+    aiPrompt: "Read {url} so I can ask questions about it.",
 };
 
 export type Messages = typeof en;
@@ -102,6 +112,16 @@ const de: Messages = {
     alertDanger: "Gefahr",
     details: "Details",
     diagramError: "Das Diagramm konnte nicht gezeichnet werden.",
+    pageActions: "Weitere Möglichkeiten mit dieser Seite",
+    copyMarkdown: "Als Markdown kopieren",
+    copiedMarkdown: "Als Markdown kopiert",
+    copyMarkdownHint: "Die Seite für KI-Assistenten",
+    openMarkdown: "Als Markdown öffnen",
+    openMarkdownHint: "Den Markdown-Text der Seite ansehen",
+    openInChatGPT: "In ChatGPT öffnen",
+    openInClaude: "In Claude öffnen",
+    askAboutPage: "Fragen zu dieser Seite stellen",
+    aiPrompt: "Lies {url}, damit ich Fragen dazu stellen kann.",
 };
 
 const fr: Messages = {
@@ -153,6 +173,16 @@ const fr: Messages = {
     alertDanger: "Danger",
     details: "Détails",
     diagramError: "Le diagramme n’a pas pu être dessiné.",
+    pageActions: "Autres actions sur cette page",
+    copyMarkdown: "Copier en Markdown",
+    copiedMarkdown: "Copié en Markdown",
+    copyMarkdownHint: "La page pour les assistants IA",
+    openMarkdown: "Ouvrir en Markdown",
+    openMarkdownHint: "Voir le Markdown de la page",
+    openInChatGPT: "Ouvrir dans ChatGPT",
+    openInClaude: "Ouvrir dans Claude",
+    askAboutPage: "Poser des questions sur cette page",
+    aiPrompt: "Lis {url} pour que je puisse poser des questions dessus.",
 };
 
 const es: Messages = {
@@ -204,6 +234,16 @@ const es: Messages = {
     alertDanger: "Peligro",
     details: "Detalles",
     diagramError: "No se pudo dibujar el diagrama.",
+    pageActions: "Más acciones para esta página",
+    copyMarkdown: "Copiar como Markdown",
+    copiedMarkdown: "Copiado como Markdown",
+    copyMarkdownHint: "La página para asistentes de IA",
+    openMarkdown: "Abrir como Markdown",
+    openMarkdownHint: "Ver el Markdown de la página",
+    openInChatGPT: "Abrir en ChatGPT",
+    openInClaude: "Abrir en Claude",
+    askAboutPage: "Hacer preguntas sobre esta página",
+    aiPrompt: "Lee {url} para que pueda hacer preguntas sobre ello.",
 };
 
 const it: Messages = {
@@ -255,6 +295,16 @@ const it: Messages = {
     alertDanger: "Pericolo",
     details: "Dettagli",
     diagramError: "Impossibile disegnare il diagramma.",
+    pageActions: "Altre azioni per questa pagina",
+    copyMarkdown: "Copia come Markdown",
+    copiedMarkdown: "Copiato come Markdown",
+    copyMarkdownHint: "La pagina per gli assistenti IA",
+    openMarkdown: "Apri come Markdown",
+    openMarkdownHint: "Vedi il Markdown della pagina",
+    openInChatGPT: "Apri in ChatGPT",
+    openInClaude: "Apri in Claude",
+    askAboutPage: "Fai domande su questa pagina",
+    aiPrompt: "Leggi {url} così posso fare domande al riguardo.",
 };
 
 const pt: Messages = {
@@ -306,6 +356,16 @@ const pt: Messages = {
     alertDanger: "Perigo",
     details: "Detalhes",
     diagramError: "Não foi possível desenhar o diagrama.",
+    pageActions: "Mais ações para esta página",
+    copyMarkdown: "Copiar como Markdown",
+    copiedMarkdown: "Copiado como Markdown",
+    copyMarkdownHint: "A página para assistentes de IA",
+    openMarkdown: "Abrir como Markdown",
+    openMarkdownHint: "Ver o Markdown da página",
+    openInChatGPT: "Abrir no ChatGPT",
+    openInClaude: "Abrir no Claude",
+    askAboutPage: "Fazer perguntas sobre esta página",
+    aiPrompt: "Leia {url} para que eu possa fazer perguntas sobre ela.",
 };
 
 const nl: Messages = {
@@ -357,6 +417,16 @@ const nl: Messages = {
     alertDanger: "Gevaar",
     details: "Details",
     diagramError: "Het diagram kon niet worden getekend.",
+    pageActions: "Meer acties voor deze pagina",
+    copyMarkdown: "Kopiëren als Markdown",
+    copiedMarkdown: "Gekopieerd als Markdown",
+    copyMarkdownHint: "De pagina voor AI-assistenten",
+    openMarkdown: "Openen als Markdown",
+    openMarkdownHint: "Bekijk de Markdown van de pagina",
+    openInChatGPT: "Openen in ChatGPT",
+    openInClaude: "Openen in Claude",
+    askAboutPage: "Stel vragen over deze pagina",
+    aiPrompt: "Lees {url} zodat ik er vragen over kan stellen.",
 };
 
 const pl: Messages = {
@@ -408,6 +478,16 @@ const pl: Messages = {
     alertDanger: "Niebezpieczeństwo",
     details: "Szczegóły",
     diagramError: "Nie udało się narysować diagramu.",
+    pageActions: "Więcej działań dla tej strony",
+    copyMarkdown: "Kopiuj jako Markdown",
+    copiedMarkdown: "Skopiowano jako Markdown",
+    copyMarkdownHint: "Strona dla asystentów AI",
+    openMarkdown: "Otwórz jako Markdown",
+    openMarkdownHint: "Zobacz Markdown strony",
+    openInChatGPT: "Otwórz w ChatGPT",
+    openInClaude: "Otwórz w Claude",
+    askAboutPage: "Zadawaj pytania o tę stronę",
+    aiPrompt: "Przeczytaj {url}, abym mógł zadawać pytania na jej temat.",
 };
 
 const ru: Messages = {
@@ -459,6 +539,16 @@ const ru: Messages = {
     alertDanger: "Опасность",
     details: "Подробнее",
     diagramError: "Не удалось построить диаграмму.",
+    pageActions: "Другие действия со страницей",
+    copyMarkdown: "Копировать как Markdown",
+    copiedMarkdown: "Скопировано как Markdown",
+    copyMarkdownHint: "Страница для ИИ-ассистентов",
+    openMarkdown: "Открыть как Markdown",
+    openMarkdownHint: "Посмотреть Markdown страницы",
+    openInChatGPT: "Открыть в ChatGPT",
+    openInClaude: "Открыть в Claude",
+    askAboutPage: "Задать вопросы об этой странице",
+    aiPrompt: "Прочитай {url}, чтобы я мог задать вопросы о ней.",
 };
 
 const ja: Messages = {
@@ -510,6 +600,16 @@ const ja: Messages = {
     alertDanger: "危険",
     details: "詳細",
     diagramError: "図を描画できませんでした。",
+    pageActions: "このページのその他の操作",
+    copyMarkdown: "Markdown としてコピー",
+    copiedMarkdown: "Markdown としてコピーしました",
+    copyMarkdownHint: "AI アシスタント向けのページ",
+    openMarkdown: "Markdown として開く",
+    openMarkdownHint: "ページの Markdown を表示",
+    openInChatGPT: "ChatGPT で開く",
+    openInClaude: "Claude で開く",
+    askAboutPage: "このページについて質問する",
+    aiPrompt: "{url} を読んで、質問に答えられるようにしてください。",
 };
 
 const zh: Messages = {
@@ -561,6 +661,16 @@ const zh: Messages = {
     alertDanger: "危险",
     details: "详情",
     diagramError: "无法绘制图表。",
+    pageActions: "此页面的更多操作",
+    copyMarkdown: "复制为 Markdown",
+    copiedMarkdown: "已复制为 Markdown",
+    copyMarkdownHint: "供 AI 助手使用的页面",
+    openMarkdown: "以 Markdown 打开",
+    openMarkdownHint: "查看页面的 Markdown",
+    openInChatGPT: "在 ChatGPT 中打开",
+    openInClaude: "在 Claude 中打开",
+    askAboutPage: "就此页面提问",
+    aiPrompt: "请阅读 {url}，以便我就此提问。",
 };
 
 const ko: Messages = {
@@ -612,6 +722,16 @@ const ko: Messages = {
     alertDanger: "위험",
     details: "자세히",
     diagramError: "다이어그램을 그릴 수 없습니다.",
+    pageActions: "이 페이지의 추가 작업",
+    copyMarkdown: "Markdown으로 복사",
+    copiedMarkdown: "Markdown으로 복사됨",
+    copyMarkdownHint: "AI 어시스턴트용 페이지",
+    openMarkdown: "Markdown으로 열기",
+    openMarkdownHint: "페이지의 Markdown 보기",
+    openInChatGPT: "ChatGPT에서 열기",
+    openInClaude: "Claude에서 열기",
+    askAboutPage: "이 페이지에 대해 질문하기",
+    aiPrompt: "{url}을(를) 읽고 내가 질문할 수 있게 해 줘.",
 };
 
 // The most widely used languages; others use English unless clay.yaml provides "messages"

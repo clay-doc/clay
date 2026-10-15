@@ -10,3 +10,10 @@ export function normalizePath(path: string): string {
 export function docPath(route: string, isFolder: boolean): string {
     return isFolder ? `${route === "/" ? "" : route}/index` : route;
 }
+
+// The address of a page's Markdown, for language models and agents: the page's
+// path with ".md"; a start page (of the site, a version or a language) is
+// ".../index.md"
+export function markdownRoute(route: string, isStart: boolean): string {
+    return isStart ? `${route === "/" ? "" : route}/index.md` : `${route}.md`;
+}

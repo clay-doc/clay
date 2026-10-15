@@ -13,6 +13,12 @@ test("the dev server renders pages on the server and in the browser", async ({pa
     expect((await request.get("does-not-exist")).status()).toBe(404);
     expect((await request.get("1.x/does-not-exist")).status()).toBe(404);
 
+    // The Markdown of pages and llms.txt, rendered on request like the pages
+    const markdown = await request.get("reference/feature-tour.md");
+    expect(markdown.headers()["content-type"]).toContain("text/markdown");
+    expect(await markdown.text()).toMatch(/^# Feature Tour\n/);
+    expect(await (await request.get("de/llms.txt")).text()).toContain("/de/getting-started.md");
+
     const messages = watchConsole(page);
     await page.goto("reference/feature-tour");
     await hydrated(page);

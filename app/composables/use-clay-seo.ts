@@ -1,6 +1,9 @@
 import type {Configuration} from "#common/configuration";
 import type {LanguageInfo} from "#common/editions";
 import {absoluteUrl, breadcrumbs, pageTitle, resolveOrigin, truncate} from "#common/seo";
+import type {Edition} from "#common/editions";
+import {markdownRoute, normalizePath} from "#common/route-path";
+import linkConcat from "#common/link-concat";
 
 export type SeoInput = {
     title?: string;          // page title, without the site title
@@ -12,13 +15,16 @@ export type SeoInput = {
 };
 
 // Title, description, canonical URL, translations (hreflang), Open Graph tags and
-// breadcrumbs of a page
+// breadcrumbs of a page, and where language models find it as Markdown
 export function useClaySeo(input: MaybeRefOrGetter<SeoInput>) {
     const basePath = useRuntimeConfig().app.baseURL;
     const configRef = inject("config") as Ref<Configuration>;
     const alternates = inject("alternates") as Ref<{ language: string, route: string }[]>;
     const canonicalRoute = inject("canonicalRoute") as Ref<string | undefined>;
     const languages = inject("languages") as Ref<LanguageInfo[]>;
+    const edition = inject("edition") as Ref<Edition>;
+
+    const markdownFor = (route: string) => markdownRoute(normalizePath(route), normalizePath(route) === (edition.value.prefix || "/"));
 
     useHead(() => {
         const config = configRef.value;
@@ -53,6 +59,9 @@ export function useClaySeo(input: MaybeRefOrGetter<SeoInput>) {
                 ...(defaultTranslation ? [{rel: "alternate" as const, hreflang: "x-default", href: defaultTranslation.href}] : []),
                 // Tools that look for the sitemap in the page, where robots.txt is out of reach (sites under a base path)
                 ...(origin ? [{rel: "sitemap" as const, type: "application/xml", href: `${origin}${basePath.replace(/\/?$/, "/")}sitemap.xml`}] : []),
+                // The page as Markdown, and the index of all pages for language models (server/middleware/agent-docs.ts)
+                {rel: "alternate" as const, type: "text/markdown", title: "Markdown", href: `${origin ?? ""}${linkConcat(basePath, markdownFor(page.route))}`},
+                {rel: "alternate" as const, type: "text/plain", title: "llms.txt", href: `${origin ?? ""}${linkConcat(basePath, `${edition.value.prefix}/llms.txt`)}`},
             ],
             script: jsonLd ? [{type: "application/ld+json", innerHTML: jsonLd}] : [],
         };

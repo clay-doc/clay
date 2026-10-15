@@ -4,6 +4,7 @@ import {addTemplate, defineNuxtModule, updateTemplates, useLogger} from "@nuxt/k
 import {isMarkdown, loadSite, type Site} from "../lib/site";
 import {brokenLinks} from "../lib/checks";
 import {resolveOrigin} from "../common/seo";
+import {markdownRoute} from "../common/route-path";
 import type {ViteDevServer} from "vite";
 
 const SITE_TEMPLATE = "clay-site.mjs";
@@ -120,7 +121,10 @@ export default defineNuxtModule({
                 ...site.pages.map(page => page.route),
                 ...site.editions.map(edition => `/_clay${edition.prefix}/search.json`),
                 "/robots.txt",
-                ...(origin ? ["/sitemap.xml"] : [])
+                ...(origin ? ["/sitemap.xml"] : []),
+                // For language models and agents (server/middleware/agent-docs.ts)
+                ...site.editions.flatMap(edition => [`${edition.prefix}/llms.txt`, `${edition.prefix}/llms-full.txt`]),
+                ...site.pages.map(page => markdownRoute(page.route, page.isDir && page.route === (page.prefix || "/"))),
             ];
         });
 

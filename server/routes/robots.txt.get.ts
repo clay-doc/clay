@@ -10,5 +10,7 @@ export default defineEventHandler(event => {
     setHeader(event, "content-type", "text/plain; charset=utf-8");
     let robots = "User-agent: *\nAllow: /\n";
     if (origin) robots += `\nSitemap: ${origin}${basePath.replace(/\/?$/, "/")}sitemap.xml\n`;
+    // Not a robots.txt rule, but where language models find the docs as Markdown
+    robots += `\n# Docs for language models and agents: ${origin ?? ""}${basePath.replace(/\/?$/, "/")}llms.txt\n`;
     return robots;
 });
