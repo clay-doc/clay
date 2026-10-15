@@ -81,7 +81,8 @@ function handleClicks(event: MouseEvent) {
 </script>
 
 <template>
-  <div class="flex gap-10 p-6">
+  <!-- More room on the left for the "#" links next to headings -->
+  <div class="flex gap-10 p-6 sm:pl-9">
     <article class="prose prose-sm sm:prose max-w-none! min-w-0 flex-1">
       <template v-if="doc">
         <header v-if="doc.hero" class="not-prose text-center py-12">

@@ -165,13 +165,14 @@
     }
 }
 
-/* "#" links to sections, shown left of a heading on hover like on GitHub */
+/* "#" links to sections, shown left of a heading on hover like on GitHub
+   (the page has room for them in its left padding, see Markdown.vue) */
 .prose :is(h2, h3, h4, h5, h6) {
     @apply relative;
 }
 
 .prose .heading-anchor {
-    @apply absolute -left-[0.9em] w-[0.9em] font-medium no-underline opacity-0 transition-opacity text-primary;
+    @apply absolute -left-[1.15em] top-1/2 -translate-y-1/2 text-[0.75em] font-medium no-underline opacity-0 transition-opacity text-primary;
 }
 
 .prose :is(h2, h3, h4, h5, h6):hover .heading-anchor,
