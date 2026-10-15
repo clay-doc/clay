@@ -342,6 +342,29 @@ pre.shiki .highlighted-word {
     outline-offset: -2px;
 }
 
+/* The navbar and sidebar lie above the page (Content.vue): their shadow falls
+   on its top edge, and on its left edge where the sidebar is */
+.content-shadow {
+    --shadow-color: oklch(0% 0 0 / 0.2);
+    box-shadow: inset 0 9px 12px -9px var(--shadow-color);
+}
+
+:root[data-theme="clay-dark"] .content-shadow {
+    --shadow-color: oklch(0% 0 0 / 0.65);
+}
+
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme="clay-light"]) .content-shadow {
+        --shadow-color: oklch(0% 0 0 / 0.65);
+    }
+}
+
+@media (min-width: 64rem) {
+    .content-shadow {
+        box-shadow: inset 0 9px 12px -9px var(--shadow-color), inset 9px 0 12px -9px var(--shadow-color);
+    }
+}
+
 /* The logo leads to the start page; there it is the current page, which
    daisyUI's buttons show like a pressed button */
 .navbar .btn-ghost[aria-current="page"]:not(:hover, :focus-visible) {
