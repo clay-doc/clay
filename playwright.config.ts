@@ -19,6 +19,18 @@ export default defineConfig({
             testMatch: /static\.spec\.ts/,
             use: {...devices["Desktop Chrome"], viewport: {width: 1440, height: 900}, baseURL: `http://127.0.0.1:4173${BASE}`},
         },
+        // The same tests in the engines of Firefox and Safari. Playwright's
+        // Firefox does not start on macOS here, so it runs in CI (Linux) only.
+        ...(process.platform !== "darwin" || process.env.CI ? [{
+            name: "firefox",
+            testMatch: /static\.spec\.ts/,
+            use: {...devices["Desktop Firefox"], viewport: {width: 1440, height: 900}, baseURL: `http://127.0.0.1:4173${BASE}`},
+        }] : []),
+        {
+            name: "webkit",
+            testMatch: /static\.spec\.ts/,
+            use: {...devices["Desktop Safari"], viewport: {width: 1440, height: 900}, baseURL: `http://127.0.0.1:4173${BASE}`},
+        },
         {
             name: "mobile",
             testMatch: /mobile\.spec\.ts/,

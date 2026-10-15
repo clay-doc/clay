@@ -35,11 +35,12 @@ jobs:
       - name: Unit Tests
         run: npm test
 
-      - name: Install Playwright Browser
-        run: npx playwright install --with-deps chromium
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps chromium firefox webkit
 
       # Builds the playground strictly (broken links fail), then tests the
-      # static site under a base path, on mobile, and the dev server
+      # static site under a base path in Chromium, Firefox and WebKit, on
+      # mobile, its accessibility, and the dev server
       - name: Browser Tests
         run: npm run test:e2e
 

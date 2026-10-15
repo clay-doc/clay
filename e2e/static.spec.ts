@@ -111,8 +111,10 @@ test.describe("in the browser", () => {
         await expect(page.locator(".prose")).toContainText("Text after the attacks.");
     });
 
-    test("code blocks can be copied", async ({page, context}) => {
-        await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+    test("code blocks can be copied", async ({page, context, browserName}) => {
+        // Only Chromium lets a test read the clipboard
+        const readable = browserName === "chromium";
+        if (readable) await context.grantPermissions(["clipboard-read", "clipboard-write"]);
         await page.goto("reference/feature-tour/");
         await hydrated(page);
 
@@ -120,7 +122,7 @@ test.describe("in the browser", () => {
         await block.hover();
         await block.locator("button.copy-code").click();
         await expect(block.locator("button.copy-code i")).toHaveClass(/fa-check/);
-        expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(await block.locator("pre").textContent());
+        if (readable) expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(await block.locator("pre").textContent());
     });
 
     test("pages show a table of contents, prev/next links and an edit link", async ({page}) => {
