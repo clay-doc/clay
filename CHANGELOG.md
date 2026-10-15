@@ -1,5 +1,26 @@
 # Changelog
 
+## [3.0.0](https://github.com/clay-doc/clay/compare/v2.1.2...v3.0.0) (2026-10-15)
+
+
+### ⚠ BREAKING CHANGES
+
+* versions/ is no longer read. Move each versions/<name>/docs/ to docs-archive/<name>/.
+* dir-meta.yaml and the index section of clay.yaml are no longer read. Move folder names, icons and order into each folder's index.md (name becomes title; translations into index.<lang>.md) and the start page into docs/index.md (hero: true, cards: true for the previous layout).
+
+### Features
+
+* **edit:** save versions with V and react to esc at once ([b8e8775](https://github.com/clay-doc/clay/commit/b8e87756511d34aec78f2f03cfaaba140ab8b8b9))
+* **markdown:** add "#" links to section headings ([9f3fd58](https://github.com/clay-doc/clay/commit/9f3fd58c47c0e2c1d22a621818fc0d1f31cd758e))
+* move older versions to docs-archive/&lt;name&gt;/ ([c4389e6](https://github.com/clay-doc/clay/commit/c4389e6a6ee65f5edda1b25adb0a535719d7f24a))
+* replace dir-meta.yaml and the index config with index.md pages ([207a7e0](https://github.com/clay-doc/clay/commit/207a7e08137cf255ebea034c10f5d6057dd2892f))
+
+
+### Bug Fixes
+
+* **icons:** load the Font Awesome kit as a stylesheet ([44245c2](https://github.com/clay-doc/clay/commit/44245c24b6d53ada58cd487139a559b35be052d0))
+* **navbar:** close dropdowns on outside click, escape and navigation ([8774e56](https://github.com/clay-doc/clay/commit/8774e56ec086a6803c2180a567010c16ec821dab))
+
 ## [2.1.2](https://github.com/clay-doc/clay/compare/v2.1.1...v2.1.2) (2026-10-14)
 
 
