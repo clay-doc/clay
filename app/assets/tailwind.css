@@ -409,3 +409,9 @@ pre.shiki .highlighted-word {
         transition: none;
     }
 }
+
+/* The search field (SearchModal.vue) is cleared with Escape; the browser's own
+   clear button would sit oddly in the large field */
+dialog input[type="search"]::-webkit-search-cancel-button {
+    appearance: none;
+}
