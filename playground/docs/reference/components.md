@@ -64,6 +64,13 @@ title: "My Project"
 ```
 :::
 
+## Prompt
+
+::: prompt
+Read the docs of this project and add a page about
+**deploying** to `docs/guides/`.
+:::
+
 ## Badges
 
 Old option :badge[Deprecated]{warning}, new one :badge[Since 4.0]{tip}.

@@ -443,6 +443,7 @@ test.describe("components", () => {
         expect(html).toContain("prices like $5 and $10 stay text");
         expect(html).toContain('<span class="file-tree-comment">the start page</span>');
         expect(html).toContain('<div class="mermaid-diagram"><svg');
+        expect(html).toContain('<pre class="clay-prompt-text">Read the docs of this project and add a page about\n**deploying** to `docs/guides/`.</pre>');
     });
 
     test("details open, and cards lead to their page", async ({page}) => {

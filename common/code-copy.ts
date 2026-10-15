@@ -10,6 +10,8 @@ const ENGLISH: CopyLabels = {copyCode: "Copy code", copied: "Copied", copyFailed
 export async function copyCodeBlock(button: HTMLElement, clipboard: Pick<Clipboard, "writeText"> = navigator.clipboard,
                                     labels: CopyLabels = ENGLISH): Promise<boolean> {
     const code = button.closest(".code-block")?.querySelector("pre")?.textContent ?? "";
+    // The button's own label: "Copy code", or "Copy prompt" for prompts
+    const label = button.dataset.label ??= button.getAttribute("aria-label") ?? labels.copyCode;
 
     let copied = true;
     try {
@@ -25,7 +27,7 @@ export async function copyCodeBlock(button: HTMLElement, clipboard: Pick<Clipboa
 
     setTimeout(() => {
         if (icon) icon.className = COPY_ICON;
-        button.setAttribute("aria-label", labels.copyCode);
+        button.setAttribute("aria-label", label);
     }, RESET_AFTER_MS);
 
     return copied;

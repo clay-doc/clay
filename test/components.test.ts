@@ -141,6 +141,22 @@ describe("math", () => {
     });
 });
 
+describe("prompts", () => {
+    it("show their text as written, with a title and a copy button", async () => {
+        const root = await dom("::: prompt\nAdd a page about **deploying**.\nUse <b>bold</b> sparingly.\n:::\n\n::: prompt For Claude Code\nRun clay check.\n:::");
+        const [first, second] = root.querySelectorAll(".clay-prompt");
+        expect(first!.querySelector(".clay-prompt-title")!.textContent).toBe("Suggested prompt");
+        expect(first!.querySelector("pre")!.textContent).toBe("Add a page about **deploying**.\nUse <b>bold</b> sparingly.");
+        expect(first!.querySelector("button.copy-code")!.getAttribute("aria-label")).toBe("Copy prompt");
+        expect(second!.querySelector(".clay-prompt-title")!.textContent).toBe("For Claude Code");
+    });
+
+    it("are found by the search", () => {
+        const lexer = new Marked({gfm: true}, componentSyntax());
+        expect(lexer.lexer("::: prompt\nDeploy the site\n:::").map(plainText).join(" ")).toContain("Deploy the site");
+    });
+});
+
 describe("badges", () => {
     it("render with the color of their type", async () => {
         const root = await dom("## API :badge[New]\n\nOld :badge[Deprecated]{warning} :badge[x]{nope}");

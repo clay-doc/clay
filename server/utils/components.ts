@@ -3,6 +3,7 @@ import {renderMermaidSVG} from "beautiful-mermaid";
 import {Marked, type MarkedExtension, type Token, type Tokens} from "marked";
 import type {BadgeToken, ContainerToken, MathToken, TabToken} from "../../common/markdown-components";
 import type {Messages} from "../../common/i18n";
+import {COPY_ICON} from "../../common/code-copy";
 
 const escapeHtml = (text: string) =>
     text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
@@ -74,6 +75,13 @@ export function componentRenderers(messages: Messages): MarkedExtension {
                             return `<div class="clay-steps">${render(token.tokens)}</div>\n`;
                         case "cards":
                             return cards(token, render);
+                        case "prompt":
+                            return `<div class="clay-prompt code-block not-prose"><div class="clay-prompt-title">`
+                                + `<i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i>`
+                                + `<span>${inline.parseInline(token.title || escapeHtml(messages.suggestedPrompt))}</span></div>`
+                                + `<pre class="clay-prompt-text">${escapeHtml(token.text ?? "")}</pre>`
+                                + `<button type="button" class="copy-code btn btn-sm btn-square btn-ghost" title="${escapeHtml(messages.copyPrompt)}" `
+                                + `aria-label="${escapeHtml(messages.copyPrompt)}"><i class="${COPY_ICON}"></i></button></div>\n`;
                         case "details":
                             return `<details class="clay-details collapse"><summary class="collapse-title">`
                                 + `<span class="clay-details-icon" aria-hidden="true"><i class="fa-solid fa-chevron-right"></i></span>`

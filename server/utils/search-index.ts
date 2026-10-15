@@ -39,7 +39,7 @@ export function splitIntoSections(markdown: string, page: SearchPage): SearchSec
             current.code += token.text + "\n";
         } else if (token.type === "container" || token.type === "tab") {
             // Components: their sections and code blocks count like the page's own
-            current.text += (token.title ?? token.label ?? "") + " ";
+            current.text += [token.title ?? token.label ?? "", token.text ?? ""].join(" ") + " ";
             token.tokens?.forEach(add);
         } else {
             current.text += plainText(token) + " ";

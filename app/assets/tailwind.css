@@ -597,6 +597,19 @@ a.clay-card:focus-visible {
     }
 }
 
+/* Prompts: a suggested prompt for AI assistants and agents, copied as written */
+.clay-prompt {
+    @apply relative my-5 rounded-box border border-primary/30 bg-primary/5;
+}
+
+.clay-prompt-title {
+    @apply flex items-center gap-2 px-4 pt-3 pe-12 text-sm font-semibold text-primary;
+}
+
+.clay-prompt-text {
+    @apply m-0 whitespace-pre-wrap bg-transparent px-4 pt-2 pb-4 font-sans text-[0.9375rem] leading-relaxed text-base-content;
+}
+
 /* Math: wide formulas scroll instead of widening the page */
 .clay-math {
     @apply overflow-x-auto overflow-y-hidden;
