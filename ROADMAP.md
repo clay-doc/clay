@@ -26,7 +26,6 @@ back if users need something they do not.
 - The link check reads Markdown links and images only: files in HTML (`<video src>`, `<img src>`) are not
   checked.
 - Badges in a heading become part of its `#` link (`#setup-new`); leave them out of the id.
-
 - `npm audit` reports braces and node-forge, both in Nuxt's dev tooling and without a fix yet; they go away
   when Nuxt updates them.
 - unstorage stays pinned to 1.17.5: 1.17.6 breaks Nitro's prerendering (`[unstorage] Invalid key: "/"`); unpin
