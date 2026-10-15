@@ -7,13 +7,8 @@ impact.
 
 - Custom components in Markdown (e.g. tabs, cards), diagrams (Mermaid) and math (KaTeX).
 - A plugin system and analytics integration.
-- "On this page" on small screens (it is shown on wide screens only).
 
 ## Smaller issues
 
-- The link check verifies pages and files but not `#section` anchors; with the renderer's heading ids
-  available at build time, this is now a small change.
 - `robots.txt` only takes effect at the domain root; project sites under a base path need the sitemap submitted
   in the search engines' webmaster tools.
-- Accessibility pass: skip link, focus styles and contrast of the light theme.
-- Browser tests cover Chromium only; add Firefox and WebKit.
