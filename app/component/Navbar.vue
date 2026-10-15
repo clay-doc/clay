@@ -85,7 +85,8 @@ onUnmounted(() => {
         <i class="fa-solid fa-bars"></i>
       </button>
       <NuxtLink :to="home" class="btn btn-ghost text-xl h-10">
-        <img v-if="config.navbar?.logo" :src="linkConcat(baseUrl, config.navbar.logo)" alt="logo" class="max-h-8 pl-2"/>
+        <!-- height: logos stay small while the stylesheet is still loading -->
+        <img v-if="config.navbar?.logo" :src="linkConcat(baseUrl, config.navbar.logo)" alt="logo" height="32" class="max-h-8 pl-2"/>
         <span class="pr-2">{{config.title}}</span>
       </NuxtLink>
       <div class="breadcrumbs text-md hidden lg:block">
