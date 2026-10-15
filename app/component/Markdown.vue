@@ -85,7 +85,8 @@ function handleClicks(event: MouseEvent) {
   <div class="flex gap-10 p-6 sm:pl-9">
     <article class="prose prose-sm sm:prose max-w-none! min-w-0 flex-1">
       <template v-if="doc">
-        <header v-if="doc.hero" class="not-prose text-center py-12">
+        <!-- The full text color: the article's own is a softer one for body text -->
+        <header v-if="doc.hero" class="not-prose text-base-content text-center py-12">
           <h1 class="text-5xl font-bold">
             <i v-if="doc.hero.icon" :class="doc.hero.icon"/>
             {{doc.hero.title}}

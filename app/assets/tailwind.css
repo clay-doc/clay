@@ -282,9 +282,10 @@ pre.shiki .highlighted-word {
     display: none;
 }
 
-/* Tooltips of the last navbar items end at their item, inside the window */
-.navbar .tooltip-end[data-tip]::before,
-.navbar .tooltip-end > .tooltip-content {
+/* Tooltips of the last navbar items end at their item, inside the window
+   (daisyUI's own "tooltip-end" moves the arrow to the edge as well) */
+.navbar .navbar-tooltip-end[data-tip]::before,
+.navbar .navbar-tooltip-end > .tooltip-content {
     inset: var(--tt-off) 0 auto auto;
     transform: translateY(var(--tt-pos, -0.25rem));
 }
@@ -331,4 +332,12 @@ pre.shiki .highlighted-word {
     .menu > .sidebar-marker {
         transition: none;
     }
+}
+
+/* The logo leads to the start page; there it is the current page, which
+   daisyUI's buttons show like a pressed button */
+.navbar .btn-ghost[aria-current="page"]:not(:hover, :focus-visible) {
+    background-color: transparent;
+    border-color: transparent;
+    box-shadow: none;
 }

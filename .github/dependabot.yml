@@ -18,6 +18,9 @@ updates:
       # The type check needs vue-tsc, which does not support TypeScript 7 yet
       - dependency-name: typescript
         update-types: ["version-update:semver-major"]
+      # Newer Node.js types would allow APIs that the oldest supported Node.js lacks
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
       # Breaks Nitro's prerendering ("Invalid key"); unstorage is pinned to 1.17.5
       - dependency-name: unstorage
         versions: ["1.17.6"]

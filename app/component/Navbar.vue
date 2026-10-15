@@ -140,7 +140,7 @@ onUnmounted(() => {
             </span>
           </NuxtLink>
         </li>
-        <li class="tooltip tooltip-bottom tooltip-end" :data-tip="t.toggleTheme">
+        <li class="tooltip tooltip-bottom navbar-tooltip-end" :data-tip="t.toggleTheme">
           <!-- Pages are rendered before the theme is known, so CSS picks and animates the icon (tailwind.css) -->
           <button :aria-label="t.toggleTheme" @click="toggleTheme">
             <!-- As tall as a line of text, so it matches the neighbouring menu items -->
@@ -152,7 +152,7 @@ onUnmounted(() => {
         </li>
         <li>
           <!-- The tooltip shows the shortcut as keys, so it is HTML and sits in the button -->
-          <button :aria-label="t.search" @click="searchOpen = true" class="tooltip tooltip-bottom tooltip-end">
+          <button :aria-label="t.search" @click="searchOpen = true" class="tooltip tooltip-bottom navbar-tooltip-end">
             <span class="flex h-lh items-center"><i class="fa-solid fa-magnifying-glass"></i></span>
             <span class="tooltip-content flex items-center gap-1 whitespace-nowrap">
               {{t.search}}<template v-if="superKey"><kbd class="kbd kbd-sm ml-1 bg-transparent border-current/40 text-inherit">{{superKey}}</kbd><kbd class="kbd kbd-sm bg-transparent border-current/40 text-inherit">K</kbd></template>

@@ -183,8 +183,8 @@ test.describe("versions", () => {
 
         await expect(page.locator(".prose h1")).toHaveText("Getting Started with Clay 1.x");
         await expect(page.locator("ul.menu.bg-base-200 > li:not(.sidebar-marker)")).toHaveText([/Getting Started/, /Guides/]);
-        await expect(page.getByRole("status")).toContainText("These are the docs for version 1.x.");
-        await expect(page.getByRole("status").getByRole("link")).toHaveAttribute("href", "/clay/getting-started");
+        await expect(page.locator(".alert[role=status]")).toContainText("These are the docs for version 1.x.");
+        await expect(page.locator(".alert[role=status]").getByRole("link")).toHaveAttribute("href", "/clay/getting-started");
         await expect(page.locator("footer a", {hasText: "Edit this page"}))
             .toHaveAttribute("href", "https://github.com/clay-doc/clay/edit/main/playground/docs-archive/1.x/getting-started.md");
 
@@ -268,8 +268,8 @@ test.describe("languages", () => {
         await expect(page).toHaveURL(/\/clay\/1\.x\/de\/getting-started$/);
         await expect(page.locator(".prose h1")).toHaveText("Erste Schritte mit Clay 1.x");
         await expect(page.locator("html")).toHaveAttribute("lang", "de");
-        await expect(page.getByRole("status")).toContainText("Dies ist die Dokumentation für Version 1.x.");
-        await expect(page.getByRole("status").getByRole("link")).toHaveAttribute("href", "/clay/de/getting-started");
+        await expect(page.locator(".alert[role=status]")).toContainText("Dies ist die Dokumentation für Version 1.x.");
+        await expect(page.locator(".alert[role=status]").getByRole("link")).toHaveAttribute("href", "/clay/de/getting-started");
 
         // Links inside a translation stay in its language
         await page.locator(".prose a:not(footer a)", {hasText: "alte Einrichtung"}).click();
