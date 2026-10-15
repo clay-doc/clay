@@ -24,7 +24,9 @@ Commands:
   dev       Start a development server with live reload
   build     Build the static site into <out>/public
   preview   Serve the built site like a static host would
-  edit      Edit page order, titles and icons, and the settings in clay.yaml
+  edit      Edit pages, folders, their front matter and order, and clay.yaml: interactively,
+            or one change per command for scripts and AI agents ("clay edit help")
+  check     Check links, translations and settings without building; --json for programs
   version   Save the current docs as an older version in docs-archive/: clay version <name>
 
 Options:
@@ -34,7 +36,8 @@ Options:
   --host         Listen on all interfaces, not just localhost
   --strict       build: fail on warnings such as broken links or config typos
   --verbose      build and dev: show the full Nuxt output instead of the progress
-  -h, --help     Show this help
+  --json         edit and check: print the result as JSON
+  -h, --help     Show this help (clay edit --help: the edit commands)
   -v, --version  Show the version
 
 Environment overrides for clay.yaml: CLAY_TITLE, CLAY_BASE_URL, CLAY_SITE_URL, CLAY_FONTAWESOME_KIT`;
@@ -50,6 +53,11 @@ try {
             host: {type: "boolean"},
             strict: {type: "boolean"},
             verbose: {type: "boolean"},
+            json: {type: "boolean"},
+            yes: {type: "boolean"},
+            lang: {type: "string"},
+            "docs-version": {type: "string"},
+            slug: {type: "string"},
             help: {type: "boolean", short: "h"},
             version: {type: "boolean", short: "v"},
         },
@@ -66,7 +74,9 @@ if (options.version) {
     console.log(version);
     process.exit(0);
 }
-if (options.help || !command) {
+// "clay edit --help" and "clay edit help" explain the edit commands
+const editHelp = command === "edit" && (options.help || positionals[1] === "help");
+if ((options.help && !editHelp) || !command) {
     console.log(HELP);
     process.exit(options.help ? 0 : 2);
 }
@@ -94,6 +104,13 @@ function nuxt(args, {onLine, onClose} = {}) {
         onClose?.(code ?? 1, signal);
         process.exit(code ?? (signal ? 1 : 0));
     });
+}
+
+// Prints a command's result, as JSON with --json, and exits with its code
+function report({code, text, data}) {
+    if (options.json) console.log(JSON.stringify(data, null, 2));
+    else if (text) (code === 0 ? console.log : console.error)(text);
+    process.exit(code);
 }
 
 switch (command) {
@@ -131,15 +148,38 @@ switch (command) {
             process.exit(1);
         }
         break;
-    case "edit":
-        try {
-            const {edit} = await import("./edit.mjs");
-            await edit(root);
-        } catch (error) {
-            console.error(error.message);
-            process.exit(1);
+    case "edit": {
+        const commands = await createJiti(import.meta.url).import("../lib/commands.ts");
+        if (editHelp) {
+            console.log(commands.EDIT_HELP);
+            break;
         }
+        // Without a command, the interactive editor; scripts and agents without a
+        // terminal get the commands they can use instead
+        if (!positionals[1]) {
+            if (!process.stdin.isTTY || !process.stdout.isTTY) {
+                console.error(`clay edit needs an interactive terminal; without one, use its commands:\n\n${commands.EDIT_HELP}`);
+                process.exit(2);
+            }
+            try {
+                const {edit} = await import("./edit.mjs");
+                await edit(root);
+            } catch (error) {
+                console.error(error.message);
+                process.exit(1);
+            }
+            break;
+        }
+        report(commands.runEdit(root, positionals.slice(1), {
+            json: options.json, yes: options.yes, lang: options.lang, docsVersion: options["docs-version"], slug: options.slug,
+        }));
         break;
+    }
+    case "check": {
+        const commands = await createJiti(import.meta.url).import("../lib/commands.ts");
+        report(commands.runCheck(root));
+        break;
+    }
     default:
         console.error(`Unknown command "${command}".\n\n${HELP}`);
         process.exit(2);
