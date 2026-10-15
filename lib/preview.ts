@@ -1,32 +1,32 @@
 // Serves a built site the way static hosts such as GitHub Pages do: under the
 // base URL, "/page" redirects to "/page/", unknown paths get 404.html with 404.
 import {createReadStream, existsSync, readFileSync, statSync} from "node:fs";
-import {createServer} from "node:http";
+import {createServer, type ServerResponse} from "node:http";
 import {extname, join, normalize, relative, sep} from "node:path";
 import {load} from "js-yaml";
-import {createProgress} from "./progress.mjs";
+import {createProgress} from "./progress";
 
-const TYPES = {
+const TYPES: Record<string, string> = {
     ".html": "text/html; charset=utf-8", ".js": "text/javascript", ".mjs": "text/javascript",
     ".css": "text/css", ".json": "application/json", ".xml": "application/xml", ".txt": "text/plain; charset=utf-8", ".md": "text/markdown; charset=utf-8",
     ".svg": "image/svg+xml", ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".gif": "image/gif",
     ".webp": "image/webp", ".ico": "image/x-icon", ".woff2": "font/woff2", ".woff": "font/woff", ".pdf": "application/pdf",
 };
 
-export function basePath(root) {
-    const config = load(readFileSync(join(root, "clay.yaml"), "utf8")) ?? {};
+export function basePath(root: string): string {
+    const config = (load(readFileSync(join(root, "clay.yaml"), "utf8")) ?? {}) as { baseURL?: string };
     // Same precedence as the build: the environment overrides clay.yaml
     const trimmed = String(process.env.CLAY_BASE_URL || config.baseURL || "").replace(/^\/+|\/+$/g, "");
     return trimmed ? `/${trimmed}/` : "/";
 }
 
 // onNotFound hears of each path that has no file
-export function createPreviewServer(publicDir, base, {onNotFound} = {}) {
-    const send = (res, status, file) => {
+export function createPreviewServer(publicDir: string, base: string, {onNotFound}: { onNotFound?: (path: string) => void } = {}) {
+    const send = (res: ServerResponse, status: number, file: string) => {
         res.writeHead(status, {"content-type": TYPES[extname(file)] ?? "application/octet-stream"});
         createReadStream(file).pipe(res);
     };
-    const notFound = (res, pathname) => {
+    const notFound = (res: ServerResponse, pathname: string) => {
         onNotFound?.(pathname);
         const page = join(publicDir, "404.html");
         if (existsSync(page)) send(res, 404, page);
@@ -35,7 +35,7 @@ export function createPreviewServer(publicDir, base, {onNotFound} = {}) {
 
     return createServer((req, res) => {
         const url = new URL(req.url ?? "/", "http://localhost");
-        let pathname;
+        let pathname: string;
         try {
             pathname = decodeURIComponent(url.pathname);
         } catch {
@@ -58,7 +58,7 @@ export function createPreviewServer(publicDir, base, {onNotFound} = {}) {
     });
 }
 
-export async function preview({root, out, port, host, title}) {
+export async function preview({root, out, port, host, title}: { root: string, out: string, port: number, host: string, title: string }) {
     const publicDir = join(out, "public");
     if (!existsSync(publicDir)) {
         console.error(`No build found in ${publicDir}. Run "clay build" first.`);
@@ -69,16 +69,17 @@ export async function preview({root, out, port, host, title}) {
     const server = createPreviewServer(publicDir, base, {onNotFound: path => progress.apply({type: "warn", text: `404 ${path}`})});
     progress.apply({type: "step", label: "Starting preview server"});
     try {
-        await new Promise((done, fail) => server.once("error", fail).listen(port, host, done));
+        await new Promise<void>((done, fail) => server.once("error", fail).listen(port, host, done));
     } catch (error) {
-        progress.apply({type: "error", text: error.code === "EADDRINUSE" ? `Port ${port} is in use; pick another with --port` : error.message});
+        const {code, message} = error as NodeJS.ErrnoException;
+        progress.apply({type: "error", text: code === "EADDRINUSE" ? `Port ${port} is in use; pick another with --port` : message});
         progress.finish(1);
         process.exit(1);
     }
     progress.apply({type: "url", label: "Local", url: `http://${host === "0.0.0.0" ? "localhost" : host}:${port}${base}`});
     if (host !== "0.0.0.0") progress.apply({type: "url", label: "Network", url: "use --host to expose"});
     progress.apply({type: "ready", label: `Serving ${relative(process.cwd(), publicDir) || publicDir}`});
-    for (const signal of ["SIGINT", "SIGTERM"]) process.on(signal, () => {
+    for (const signal of ["SIGINT", "SIGTERM"] as const) process.on(signal, () => {
         progress.finish(0, signal);
         process.exit(0);
     });

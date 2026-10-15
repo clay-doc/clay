@@ -3,8 +3,7 @@ import {tmpdir} from "node:os";
 import {dirname, join} from "node:path";
 import type {AddressInfo} from "node:net";
 import {afterAll, beforeAll, describe, expect, it} from "vitest";
-// @ts-expect-error plain JavaScript module of the CLI
-import {basePath, createPreviewServer} from "../bin/preview.mjs";
+import {basePath, createPreviewServer} from "../lib/preview";
 
 const publicDir = mkdtempSync(join(tmpdir(), "clay-preview-"));
 for (const [path, content] of Object.entries({

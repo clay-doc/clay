@@ -409,8 +409,8 @@ test.describe("components", () => {
         await expect(first.getByRole("tab", {name: "Windows"})).toHaveAttribute("aria-selected", "true");
         // The line under the tabs slides to the picked one
         const line = first.locator(".clay-tab-indicator");
-        const windows = await first.getByRole("tab", {name: "Windows"}).evaluate(tab => tab.offsetLeft);
-        await expect.poll(() => line.evaluate(el => el.offsetLeft)).toBeGreaterThan(windows);
+        const windows = await first.getByRole("tab", {name: "Windows"}).evaluate(tab => (tab as HTMLElement).offsetLeft);
+        await expect.poll(() => line.evaluate(el => (el as HTMLElement).offsetLeft)).toBeGreaterThan(windows);
         await expect(first.getByRole("tabpanel")).toHaveText("Open PowerShell.");
         await expect(second.getByRole("tabpanel")).toHaveText("Second group, Windows.");
 

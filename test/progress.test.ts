@@ -1,6 +1,5 @@
 import {describe, expect, it} from "vitest";
-// @ts-expect-error plain JavaScript module of the CLI
-import {createBuildParser, createDevParser, createProgress} from "../bin/progress.mjs";
+import {createBuildParser, createDevParser, createProgress} from "../lib/progress";
 
 // Abridged output of "nuxt generate" when piped
 const LOG = [
@@ -233,7 +232,7 @@ describe("dev parser", () => {
 });
 
 describe("progress of a server without a terminal", () => {
-    const render = (lines: string[], code: number, signal?: string) => {
+    const render = (lines: string[], code: number, signal?: NodeJS.Signals) => {
         let output = "";
         const stream = {isTTY: false, write: (text: string) => (output += text)};
         const progress = createProgress("Clay 3.0.0 · dev", {stream, now: () => 0, mode: "serve", hint: "Run with --verbose."});

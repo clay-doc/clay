@@ -2,20 +2,22 @@
 // (pages, folders, their front matter, order, translations) and for the
 // settings in clay.yaml. Changes are written right away. The model lives in
 // lib/editor.ts.
-import {emitKeypressEvents} from "node:readline";
-import {createJiti} from "jiti";
-import {GRAY, MINT, SAGE, rgb} from "./colors.mjs";
+import {emitKeypressEvents, type Key} from "node:readline";
+import {GRAY, MINT, SAGE, rgb} from "./colors";
+import * as editor from "./editor";
+import type {EditorNode, SettingRow} from "./editor";
+import type {FrontMatter} from "./front-matter";
 
 const color = !("NO_COLOR" in process.env);
-const paint = (code, text) => color ? `\x1b[${code}m${text}\x1b[0m` : text;
-const sage = text => paint(rgb(...SAGE), text);
-const mint = text => paint(rgb(...MINT), text);
-const gray = text => paint(rgb(...GRAY), text);
-const bold = text => paint("1", text);
-const yellow = text => paint("33", text);
-const red = text => paint("31", text);
+const paint = (code: string, text: string) => color ? `\x1b[${code}m${text}\x1b[0m` : text;
+const sage = (text: string) => paint(rgb(...SAGE), text);
+const mint = (text: string) => paint(rgb(...MINT), text);
+const gray = (text: string) => paint(rgb(...GRAY), text);
+const bold = (text: string) => paint("1", text);
+const yellow = (text: string) => paint("33", text);
+const red = (text: string) => paint("31", text);
 
-const HELP = {
+const HELP: Record<string, string> = {
     pages: "⏎ details · n page · f folder · m order · o move · r rename · x delete · v/V version · l language · tab · q",
     translate: "c translate",
     moving: "↑↓ move · ⏎ drop · esc cancel",
@@ -24,12 +26,12 @@ const HELP = {
     settings: "⏎ edit · d remove link · l language · tab pages · q quit",
 };
 
-const chars = text => [...text];
-const width = text => chars(text.replace(/\x1b\[[0-9;]*m/g, "")).length;
-const pad = (text, size) => text + " ".repeat(Math.max(size - width(text), 0));
+const chars = (text: string) => [...text];
+const width = (text: string) => chars(text.replace(/\x1b\[[0-9;]*m/g, "")).length;
+const pad = (text: string, size: number) => text + " ".repeat(Math.max(size - width(text), 0));
 
 // Cuts a line with color codes to the terminal width
-function fit(line, columns) {
+function fit(line: string, columns: number): string {
     let visible = 0;
     let out = "";
     for (const part of line.split(/(\x1b\[[0-9;]*m)/)) {
@@ -47,7 +49,13 @@ function fit(line, columns) {
 }
 
 // Front matter fields the details view edits; list and hero only apply to index.md
-const FIELDS = [
+type Field = {
+    key: keyof FrontMatter, label: string, type: "text" | "number" | "boolean",
+    defaultOnly?: boolean, // only in the default language
+    index?: boolean, // only for folders and the start page
+};
+
+const FIELDS: Field[] = [
     {key: "title", label: "Title", type: "text"},
     {key: "icon", label: "Icon", type: "text"},
     {key: "description", label: "Description", type: "text"},
@@ -56,32 +64,35 @@ const FIELDS = [
     {key: "hero", label: "Large header (hero)", type: "boolean", index: true},
 ];
 
-export async function edit(root) {
+// A visible row of the tree, with what is needed to move it
+type Row = { node: EditorNode, depth: number, siblings: EditorNode[], index: number, parent: EditorNode | null };
+type Input = { label: string, value: string[], cursor: number, placeholder: string, done: (value: string) => void };
+
+export async function edit(root: string) {
     if (!process.stdin.isTTY || !process.stdout.isTTY) {
         console.error("clay edit needs an interactive terminal.");
         process.exit(1);
     }
-    const editor = await createJiti(import.meta.url).import("../lib/editor.ts");
     let {versions, languages} = editor.editorContext(root);
-    const edition = {version: "", language: languages[0]};
+    const edition = {version: "", language: languages[0]!};
     const isDefaultLanguage = () => edition.language === languages[0];
 
     let tree = editor.loadDocsTree(root, edition);
     let settings = editor.loadSettings(root);
-    const collapsed = new Set();
-    let tab = "pages";
-    let mode = "list"; // list, moving, details, pick, confirm
+    const collapsed = new Set<string>();
+    let tab: "pages" | "settings" = "pages";
+    let mode: "list" | "moving" | "details" | "pick" = "list";
     const selected = {pages: 0, settings: 1, details: 0, pick: 0};
     let scroll = 0;
-    let input = null; // {label, value: [...chars], cursor, placeholder, done(value)}
-    let confirm = null; // {question, yes()}
-    let picks = []; // folders to move an entry into
+    let input: Input | null = null;
+    let confirm: { question: string, yes: () => void } | null = null;
+    let picks: string[] = []; // folders to move an entry into
     let message = "";
 
     // Visible tree rows with what is needed to move them
     const pageRows = () => {
-        const rows = [];
-        const walk = (nodes, depth, parent) => nodes.forEach((node, index) => {
+        const rows: Row[] = [];
+        const walk = (nodes: EditorNode[], depth: number, parent: EditorNode | null) => nodes.forEach((node, index) => {
             rows.push({node, depth, siblings: nodes, index, parent});
             if (node.kind === "folder" && !collapsed.has(node.path)) walk(node.children, depth + 1, node);
         });
@@ -89,10 +100,10 @@ export async function edit(root) {
         return rows;
     };
     const currentRow = () => pageRows()[selected.pages];
-    const detailFields = node => FIELDS.filter(field => (!field.index || node.kind !== "page") && (!field.defaultOnly || isDefaultLanguage()))
+    const detailFields = (node: EditorNode) => FIELDS.filter(field => (!field.index || node.kind !== "page") && (!field.defaultOnly || isDefaultLanguage()))
         .filter(field => !(field.key === "order" && node.kind === "start"));
     const settingRows = () => editor.settingRows(settings.doc);
-    const selectable = row => row.kind !== "section";
+    const selectable = (row: SettingRow) => row.kind !== "section";
     const editionLabel = () => `${edition.version || "latest"} · ${edition.language}`;
 
     // Reloads the tree after a write, keeping the selection on the same entry
@@ -102,30 +113,30 @@ export async function edit(root) {
         selected.pages = Math.max(index, 0);
     }
 
-    function run(action) {
+    function run(action: () => void) {
         try {
             action();
         } catch (error) {
-            message = red(error.message);
+            message = red((error as Error).message);
         }
     }
 
-    const done = (text, files = []) => message = sage(`${text}${files.length ? `: ${files.join(", ")}` : ""}`);
-    const reportBroken = broken => broken.length === 0 ? "" : ` · ${yellow(`${broken.length} link(s) broke`)}: ${broken[0]}${broken.length > 1 ? " …" : ""}`;
+    const done = (text: string, files: string[] = []) => message = sage(`${text}${files.length ? `: ${files.join(", ")}` : ""}`);
+    const reportBroken = (broken: string[]) => broken.length === 0 ? "" : ` · ${yellow(`${broken.length} link(s) broke`)}: ${broken[0]}${broken.length > 1 ? " …" : ""}`;
 
     function render() {
         const columns = process.stdout.columns || 80;
         const height = Math.max((process.stdout.rows || 24) - 5, 3);
         const tabs = ["pages", "settings"].map(name => {
-            const label = name[0].toUpperCase() + name.slice(1);
+            const label = name[0]!.toUpperCase() + name.slice(1);
             return name === tab ? bold(sage(label)) : gray(label);
         }).join("   ");
         const lines = [`${gray("┌")}  ${bold("Clay")} ${gray("· edit")}   ${tabs}   ${gray(editionLabel())}`, gray("│")];
 
-        let body;
+        let body: string[];
         let current = 0;
         if (mode === "details") {
-            const node = currentRow().node;
+            const node = currentRow()!.node;
             const fields = detailFields(node);
             lines.push(`${gray("│")}   ${bold(node.frontMatter.title ?? node.fallbackTitle)} ${gray(node.file)}${node.exists ? "" : ` ${yellow("(not created yet)")}`}`, gray("│"));
             body = fields.map((field, i) => {
@@ -135,7 +146,7 @@ export async function edit(root) {
             });
             current = selected.details;
         } else if (mode === "pick") {
-            lines.push(`${gray("│")}   Move ${bold(currentRow().node.name)} to:`, gray("│"));
+            lines.push(`${gray("│")}   Move ${bold(currentRow()!.node.name)} to:`, gray("│"));
             body = picks.map((folder, i) => `${i === selected.pick ? sage("›") : " "}   ${i === selected.pick ? bold(`docs/${folder}`) : `docs/${folder}`}`);
             current = selected.pick;
         } else if (tab === "pages") {
@@ -159,7 +170,7 @@ export async function edit(root) {
                 const cursor = isSelected ? sage("›") : " ";
                 if (row.kind === "section") return `  ${bold(row.label)}`;
                 if (row.kind === "add-link") return `${cursor}   ${sage("+")} ${isSelected ? bold(row.label) : row.label}`;
-                const value = editor.getSetting(settings.doc, row.path, edition.language);
+                const value = row.kind === "field" ? editor.getSetting(settings.doc, row.path, edition.language) : "";
                 return `${cursor}   ${pad(isSelected ? bold(row.label) : row.label, labelWidth)}${value || gray("—")}`;
             });
             current = selected.settings;
@@ -174,15 +185,16 @@ export async function edit(root) {
         lines.push(gray("│"));
 
         if (input) {
-            const value = input.value.length || !input.placeholder ? input.value : null;
+            const {label, cursor, placeholder} = input;
+            const value = input.value.length || !placeholder ? input.value : null;
             const text = value
-                ? value.map((char, i) => i === input.cursor ? paint("7", char) : char).join("") + (input.cursor === value.length ? paint("7", " ") : "")
-                : paint("7", " ") + gray(input.placeholder);
-            lines.push(`${gray("└")}  ${input.label}: ${text}`, `   ${gray("⏎ apply · esc cancel · empty removes")}`);
+                ? value.map((char, i) => i === cursor ? paint("7", char) : char).join("") + (cursor === value.length ? paint("7", " ") : "")
+                : paint("7", " ") + gray(placeholder);
+            lines.push(`${gray("└")}  ${label}: ${text}`, `   ${gray("⏎ apply · esc cancel · empty removes")}`);
         } else if (confirm) {
             lines.push(`${gray("└")}  ${yellow(confirm.question)} ${gray("y yes · n no")}`, "");
         } else {
-            let help = mode === "list" ? HELP[tab] : HELP[mode];
+            let help = HELP[mode === "list" ? tab : mode]!;
             if (mode === "list" && tab === "pages" && !isDefaultLanguage()) help = `${HELP.translate} · ${help}`;
             lines.push(`${gray("└")}  ${gray(help)}`, `   ${message}`);
         }
@@ -190,7 +202,7 @@ export async function edit(root) {
         process.stdout.write("\x1b[H" + lines.map(line => fit(line, columns) + "\x1b[K").join("\n") + "\x1b[J");
     }
 
-    function ask(label, value, placeholder, onDone) {
+    function ask(label: string, value: string | undefined, placeholder: string, onDone: (value: string) => void) {
         input = {label, value: chars(value ?? ""), cursor: chars(value ?? "").length, placeholder, done: onDone};
     }
 
@@ -199,7 +211,8 @@ export async function edit(root) {
         process.exit(0);
     }
 
-    function onInput(text, key) {
+    function onInput(text: string | undefined, key: Key) {
+        if (!input) return;
         if (key.name === "return") {
             const value = input.value.join("").trim();
             const onDone = input.done;
@@ -223,9 +236,9 @@ export async function edit(root) {
     }
 
     // Sets one front matter field of an entry and shows what was written
-    function setField(node, key, value) {
+    function setField(node: EditorNode, key: string, value: string | number | boolean | null) {
         if (key === "order") {
-            const written = editor.setFields(root, {...edition, language: languages[0]}, {...node, file: node.kind === "page" ? node.path : `${node.path}/index.md`}, {order: value});
+            const written = editor.setFields(root, {...edition, language: languages[0]!}, {...node, file: node.kind === "page" ? node.path : `${node.path}/index.md`}, {order: value});
             done("Saved", [written]);
         } else {
             done("Saved", [editor.setFields(root, edition, node, {[key]: value})]);
@@ -234,12 +247,12 @@ export async function edit(root) {
     }
 
     // The folder new entries go into: the selected folder, or the folder of the selected page
-    function targetFolder(row) {
+    function targetFolder(row: Row) {
         if (row.node.kind === "folder") return {folder: row.node.path, siblings: row.node.children};
         return {folder: row.parent?.path ?? "", siblings: row.siblings};
     }
 
-    function create(kind) {
+    function create(kind: "page" | "folder") {
         if (!isDefaultLanguage()) {
             message = yellow(`New ${kind === "page" ? "pages" : "folders"} are created in ${languages[0]}; translate them afterwards`);
             return;
@@ -260,22 +273,22 @@ export async function edit(root) {
         });
     }
 
-    function onPages(key) {
+    function onPages(key: Key) {
         const rows = pageRows();
         const row = rows[selected.pages];
         if (!row) return;
         const node = row.node;
-        const select = target => selected.pages = Math.max(pageRows().findIndex(r => r.node === target), 0);
+        const select = (target: EditorNode) => selected.pages = Math.max(pageRows().findIndex(r => r.node === target), 0);
         const movable = node.kind !== "start";
 
         if (mode === "moving") {
             if (key.name === "up" || key.name === "down") {
                 const target = row.index + (key.name === "up" ? -1 : 1);
                 // The start page stays first
-                if (target < 0 || target >= row.siblings.length || row.siblings[target].kind === "start") return;
-                [row.siblings[row.index], row.siblings[target]] = [row.siblings[target], row.siblings[row.index]];
+                if (target < 0 || target >= row.siblings.length || row.siblings[target]!.kind === "start") return;
+                [row.siblings[row.index], row.siblings[target]] = [row.siblings[target]!, row.siblings[row.index]!];
                 select(node);
-            } else if (["return", "space", "m"].includes(key.name)) {
+            } else if (["return", "space", "m"].includes(key.name ?? "")) {
                 mode = "list";
                 const written = editor.reorder(root, edition.version, row.siblings);
                 done(written.length ? "Saved the order" : "Order unchanged", written);
@@ -324,7 +337,7 @@ export async function edit(root) {
             });
         } else if (key.name === "o" && movable) {
             const folders = [""];
-            const walk = nodes => nodes.forEach(n => {
+            const walk = (nodes: EditorNode[]) => nodes.forEach(n => {
                 if (n.kind !== "folder" || n === node) return;
                 folders.push(n.path);
                 walk(n.children);
@@ -348,8 +361,8 @@ export async function edit(root) {
         }
     }
 
-    function onDetails(key) {
-        const node = currentRow().node;
+    function onDetails(key: Key) {
+        const node = currentRow()!.node;
         const fields = detailFields(node);
         const field = fields[selected.details];
         if (key.name === "escape" || key.name === "left") mode = "list";
@@ -363,19 +376,19 @@ export async function edit(root) {
                     setField(node, "order", value === "" ? null : Number(value));
                 });
             } else {
-                ask(field.label, node.frontMatter[field.key], field.key === "title" ? `${node.fallbackTitle} (default)` : "not set",
+                ask(field.label, node.frontMatter[field.key] as string | undefined, field.key === "title" ? `${node.fallbackTitle} (default)` : "not set",
                     value => setField(node, field.key, value || null));
             }
         }
     }
 
-    function onPick(key) {
+    function onPick(key: Key) {
         if (key.name === "escape") mode = "list";
         else if (key.name === "up" || key.name === "k") selected.pick = Math.max(selected.pick - 1, 0);
         else if (key.name === "down" || key.name === "j") selected.pick = Math.min(selected.pick + 1, picks.length - 1);
         else if (key.name === "return") {
-            const node = currentRow().node;
-            const folder = picks[selected.pick];
+            const node = currentRow()!.node;
+            const folder = picks[selected.pick]!;
             mode = "list";
             const slug = node.kind === "page" ? node.name.replace(/\.md$/i, "") : node.name;
             const {moved, broken} = editor.moveEntry(root, edition.version, node, folder, slug);
@@ -385,12 +398,13 @@ export async function edit(root) {
         }
     }
 
-    function onSettings(key) {
+    function onSettings(key: Key) {
         const rows = settingRows();
         const row = rows[selected.settings];
-        const step = delta => {
+        if (!row) return;
+        const step = (delta: number) => {
             let i = selected.settings + delta;
-            while (rows[i] && !selectable(rows[i])) i += delta;
+            while (rows[i] && !selectable(rows[i]!)) i += delta;
             if (rows[i]) selected.settings = i;
         };
         const save = () => {
@@ -404,17 +418,17 @@ export async function edit(root) {
             editor.addLink(settings.doc);
             save();
             selected.settings = settingRows().findIndex(r => r.kind === "add-link") - 3;
-        } else if (key.name === "return") {
+        } else if (key.name === "return" && row.kind === "field") {
             ask(row.label, editor.getSetting(settings.doc, row.path, edition.language), "not set", value => {
                 editor.setSetting(settings.doc, row.path, value, edition.language);
                 save();
             });
-        } else if ((key.name === "d" || key.name === "delete") && row.link !== undefined) {
+        } else if ((key.name === "d" || key.name === "delete") && row.kind === "field" && row.link !== undefined) {
             editor.removeLink(settings.doc, row.link);
             save();
             const updated = settingRows();
             selected.settings = Math.min(selected.settings, updated.length - 1);
-            while (selected.settings > 0 && !selectable(updated[selected.settings])) selected.settings--;
+            while (selected.settings > 0 && !selectable(updated[selected.settings]!)) selected.settings--;
         }
     }
 
@@ -428,13 +442,13 @@ export async function edit(root) {
     }
 
     // v and l cycle through the versions and languages
-    function switchEdition(key) {
+    function switchEdition(key: Key) {
         if (key.name === "v") {
             if (versions.length < 2) return void (message = gray("There are no older versions; V saves one"));
-            edition.version = versions[(versions.indexOf(edition.version) + 1) % versions.length];
+            edition.version = versions[(versions.indexOf(edition.version) + 1) % versions.length]!;
         } else {
             if (languages.length < 2) return void (message = gray(`The site has one language; add more with "languages" in clay.yaml`));
-            edition.language = languages[(languages.indexOf(edition.language) + 1) % languages.length];
+            edition.language = languages[(languages.indexOf(edition.language) + 1) % languages.length]!;
         }
         collapsed.clear();
         tree = editor.loadDocsTree(root, edition);
@@ -442,7 +456,7 @@ export async function edit(root) {
         message = sage(`Editing ${editionLabel()}`);
     }
 
-    function onKey(text, key = {}) {
+    function onKey(text: string | undefined, key: Key = {}) {
         message = "";
         if (input) onInput(text, key);
         else if (confirm) {
@@ -468,9 +482,10 @@ export async function edit(root) {
     process.stdout.write("\x1b[?1049h\x1b[?25l");
     process.on("exit", () => process.stdout.write("\x1b[?25h\x1b[?1049l"));
     process.stdout.on("resize", render);
-    // Esc alone is told apart from arrow keys after this pause (Node's default is 500ms)
-    emitKeypressEvents(process.stdin, {escapeCodeTimeout: 30});
+    // Esc alone is told apart from arrow keys after this pause (Node's default is 500ms).
+    // Node only reads escapeCodeTimeout of the interface it is given.
+    emitKeypressEvents(process.stdin, {escapeCodeTimeout: 30} as unknown as Parameters<typeof emitKeypressEvents>[1]);
     process.stdin.setRawMode(true);
-    process.stdin.on("keypress", (text, key) => onKey(text, key));
+    process.stdin.on("keypress", (text: string | undefined, key: Key) => onKey(text, key));
     render();
 }

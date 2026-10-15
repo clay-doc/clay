@@ -62,4 +62,10 @@ export default defineNuxtConfig({
       failOnError: true,
     },
   },
+  // The CLI and the tests run in Node, outside the app and the server: type-check them too
+  typescript: {
+    nodeTsConfig: {
+      include: ["../lib/**/*", "../test/**/*", "../e2e/**/*", "../*.config.ts"],
+    },
+  },
 })

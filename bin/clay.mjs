@@ -9,8 +9,10 @@ import {fileURLToPath} from "node:url";
 import {createInterface} from "node:readline";
 import {parseArgs} from "node:util";
 import {createJiti} from "jiti";
-import {preview} from "./preview.mjs";
-import {createBuildParser, createDevParser, createProgress} from "./progress.mjs";
+
+// The CLI's code is TypeScript in lib/, run without a build step
+const jiti = createJiti(import.meta.url);
+const {createBuildParser, createDevParser, createProgress} = await jiti.import("../lib/progress.ts");
 
 const packageDir = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const require = createRequire(import.meta.url);
@@ -135,12 +137,13 @@ switch (command) {
         }
         break;
     case "preview":
+        const {preview} = await jiti.import("../lib/preview.ts");
         await preview({root, out, port: Number(options.port ?? 4173), host: options.host ? "0.0.0.0" : "127.0.0.1", title: `Clay ${version} · preview`});
         break;
     case "version":
         // Copies docs/ to docs-archive/<name>; docs/ stays the latest version
         try {
-            const editor = await createJiti(import.meta.url).import("../lib/editor.ts");
+            const editor = await jiti.import("../lib/editor.ts");
             console.log(`Saved the current docs as version ${positionals[1]} in ${editor.createVersion(root, positionals[1] ?? "")}.`);
             console.log(`docs/ stays the latest version; the switcher calls it "Latest" unless clay.yaml sets "version".`);
         } catch (error) {
@@ -149,7 +152,7 @@ switch (command) {
         }
         break;
     case "edit": {
-        const commands = await createJiti(import.meta.url).import("../lib/commands.ts");
+        const commands = await jiti.import("../lib/commands.ts");
         if (editHelp) {
             console.log(commands.EDIT_HELP);
             break;
@@ -162,7 +165,7 @@ switch (command) {
                 process.exit(2);
             }
             try {
-                const {edit} = await import("./edit.mjs");
+                const {edit} = await jiti.import("../lib/editor-screen.ts");
                 await edit(root);
             } catch (error) {
                 console.error(error.message);
@@ -176,7 +179,7 @@ switch (command) {
         break;
     }
     case "check": {
-        const commands = await createJiti(import.meta.url).import("../lib/commands.ts");
+        const commands = await jiti.import("../lib/commands.ts");
         report(commands.runCheck(root));
         break;
     }

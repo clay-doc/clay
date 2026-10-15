@@ -1,13 +1,24 @@
 // Build progress for "clay build": parses the output of "nuxt generate" into
 // steps and shows them as a tree, with a spinner on the step that is running.
-import {GRAY, MINT, SAGE, rgb} from "./colors.mjs";
+import {GRAY, MINT, SAGE, rgb} from "./colors";
 
 const ANSI = /\x1b\[[0-9;?]*[A-Za-z]/g;
+
+// What happens during a build or while a server runs, as shown by createProgress
+export type ProgressEvent =
+    | { type: "step", label: string }
+    | { type: "detail", text: string }
+    | { type: "done", label: string, detail?: string }
+    | { type: "url", label: string, url: string }
+    | { type: "ready", label: string }
+    | { type: "log", text: string, icon?: string }
+    | { type: "warn" | "note" | "error", text: string }
+    | { type: "output", dir: string };
 
 // One line of Nuxt output without colors. In CI, Nuxt's logger writes "[info] …",
 // "[warn] [clay] …" and "[error] …" instead of icons and badges; these turn
 // into the usual form.
-function normalize(raw) {
+function normalize(raw: string): string {
     let text = raw.replace(ANSI, "").trim();
     if (text === "ERROR") return "ERROR";
     const level = text.match(/^\[(info|success|start|ready|log|debug|warn|error|fail|fatal)\]\s*/);
@@ -15,7 +26,7 @@ function normalize(raw) {
         text = text.slice(level[0].length);
         if (level[1] === "warn" && text.startsWith("[clay]")) text = text.replace(/^\[clay\]\s*/, "[clay] WARN ");
         else if (level[1] === "warn") text = `WARN ${text}`;
-        else if (["error", "fail", "fatal"].includes(level[1])) text = `ERROR ${text}`;
+        else if (["error", "fail", "fatal"].includes(level[1]!)) text = `ERROR ${text}`;
     }
     return text.replace(/^\[nitro\]/, "").trim();
 }
@@ -23,31 +34,31 @@ function normalize(raw) {
 const CLAY_WARNING = /^\[clay\]\s+(?:WARN|⚠)\s+(.*)$/;
 const CLAY_LOADED = /^\[clay\].*?(\d+) pages? in (.+?)(?:; (.+))?$/;
 const CLAY_NOTE = /^\[clay\]\s+(?:\S+\s+)?Note: (.*)$/;
-const loaded = match => ({type: "done", label: `Loaded ${match[1]} ${match[1] === "1" ? "page" : "pages"} from ${match[2]}`, detail: match[3]});
+const loaded = (match: RegExpMatchArray): ProgressEvent => ({type: "done", label: `Loaded ${match[1]} ${match[1] === "1" ? "page" : "pages"} from ${match[2]}`, detail: match[3]});
 
 // Nitro's list of the pages that failed, one line per status
-function failedPages(failed) {
+function failedPages(failed: Map<string, string[]>): ProgressEvent[] {
     return [...failed].map(([status, pages]) => {
         const shown = pages.slice(0, 3).join(", ");
         const more = pages.length > 3 ? ` and ${pages.length - 3} more` : "";
-        return {type: "error", text: `${status} on ${pages.length} ${pages.length === 1 ? "page" : "pages"}: ${shown}${more}`};
+        return {type: "error" as const, text: `${status} on ${pages.length} ${pages.length === 1 ? "page" : "pages"}: ${shown}${more}`};
     });
 }
 
 // Turns one line of Nuxt output into progress events (none for noise)
 export function createBuildParser() {
     let routes = 0;
-    let failed = null; // pages by status, while Nitro lists them after "Errors prerendering:"
-    let failedPage = null;
-    let failedRequest = null; // a page that failed to render; its cause follows on the next line
+    let failed: Map<string, string[]> | null = null; // pages by status, while Nitro lists them after "Errors prerendering:"
+    let failedPage: string | null = null;
+    let failedRequest: string | null = null; // a page that failed to render; its cause follows on the next line
     let bareError = false; // an "ERROR" whose message follows on the next line
     let devServerRunning = false;
-    const errors = new Set();
+    const errors = new Set<string>();
 
-    return function parse(raw) {
+    return function parse(raw: string): ProgressEvent[] {
         let text = normalize(raw);
-        let match;
-        const events = [];
+        let match: RegExpMatchArray | null;
+        const events: ProgressEvent[] = [];
         if (text === "ERROR") {
             bareError = true;
             return [];
@@ -60,7 +71,7 @@ export function createBuildParser() {
         // Each failed page comes with its status and the pages linking to it
         if (failed) {
             if (!/^ERROR\s/.test(text)) {
-                if ((match = text.match(/^├─ (\S+)/))) failedPage = match[1];
+                if ((match = text.match(/^├─ (\S+)/))) failedPage = match[1]!;
                 else if ((match = text.match(/^│ ├── \[(\d+)\] (.+)$/)) && failedPage) {
                     const status = `${match[1]} ${match[2]}`;
                     failed.set(status, [...(failed.get(status) ?? []), failedPage]);
@@ -96,8 +107,8 @@ export function createBuildParser() {
         }
         // Why a page failed, logged by Clay (app/plugins/render-errors.server.ts)
         if ((match = text.match(/^ERROR\s+\[clay\] Rendering (\S+) failed: (.*)$/))) {
-            if (errors.has(match[2])) return events;
-            errors.add(match[2]);
+            if (errors.has(match[2]!)) return events;
+            errors.add(match[2]!);
             return [...events, {type: "error", text: `${match[2]} (rendering ${match[1]})`}];
         }
         if (/^ERROR\s/.test(text)) {
@@ -110,13 +121,13 @@ export function createBuildParser() {
             failed = new Map();
             return [];
         }
-        if ((match = text.match(CLAY_WARNING))) return [{type: "warn", text: match[1]}];
-        if ((match = text.match(CLAY_NOTE))) return [{type: "note", text: match[1]}];
+        if ((match = text.match(CLAY_WARNING))) return [{type: "warn", text: match[1]!}];
+        if ((match = text.match(CLAY_NOTE))) return [{type: "note", text: match[1]!}];
         if ((match = text.match(CLAY_LOADED))) return [loaded(match)];
         if (/Building Nuxt for production/.test(text)) return [{type: "step", label: "Loading docs"}];
         if ((match = text.match(/Building (client|server)\.\.\./))) return [{type: "step", label: `Building ${match[1]}`}];
         if ((match = text.match(/(\d+) modules transformed/))) return [{type: "detail", text: `${match[1]} modules`}];
-        if ((match = text.match(/(Client|Server) built in/))) return [{type: "done", label: `Built ${match[1].toLowerCase()}`}];
+        if ((match = text.match(/(Client|Server) built in/))) return [{type: "done", label: `Built ${match[1]!.toLowerCase()}`}];
         if (/Initializing prerenderer/.test(text)) {
             routes = 0;
             return [{type: "step", label: "Prerendering pages"}];
@@ -126,7 +137,7 @@ export function createBuildParser() {
             return [{type: "detail", text: `${routes} ${routes === 1 ? "route" : "routes"}`}];
         }
         if ((match = text.match(/Prerendered (\d+) routes?/))) return [{type: "done", label: "Prerendered pages", detail: `${match[1]} routes`}];
-        if ((match = text.match(/Generated public (.+)$/))) return [{type: "output", dir: match[1]}];
+        if ((match = text.match(/Generated public (.+)$/))) return [{type: "output", dir: match[1]!}];
         return [];
     };
 }
@@ -136,12 +147,12 @@ export function createBuildParser() {
 export function createDevParser() {
     let ready = false;
     let skip = 0; // lines of a notice to leave out
-    let failedRequest = null; // a page that failed to render; its cause follows on the next line
+    let failedRequest: string | null = null; // a page that failed to render; its cause follows on the next line
     let bareError = false; // an "ERROR" whose message follows on the next line
 
-    return function parse(raw) {
+    return function parse(raw: string): ProgressEvent[] {
         let text = normalize(raw);
-        let match;
+        let match: RegExpMatchArray | null;
         if (text === "ERROR") {
             bareError = true;
             return [];
@@ -165,17 +176,17 @@ export function createDevParser() {
             failedRequest = match[1] || "/";
             return [];
         }
-        if ((match = text.match(/^ERROR\s+(.*)$/))) return [{type: "error", text: match[1]}];
+        if ((match = text.match(/^ERROR\s+(.*)$/))) return [{type: "error", text: match[1]!}];
         // A reminder to update browser data, which is up to Clay's releases
         if (/^WARN\s+Browserslist/.test(text)) {
             skip = 2;
             return [];
         }
-        if ((match = text.match(/^WARN\s+(.*)$/))) return [{type: "warn", text: match[1]}];
+        if ((match = text.match(/^WARN\s+(.*)$/))) return [{type: "warn", text: match[1]!}];
 
         if (/^(?:●\s+)?Nuxt \d/.test(text)) return [{type: "step", label: "Loading docs"}];
-        if ((match = text.match(/^➜\s+(Local|Network):\s+(.+)$/))) return [{type: "url", label: match[1], url: match[2]}];
-        if ((match = text.match(CLAY_WARNING))) return [{type: "warn", text: match[1]}];
+        if ((match = text.match(/^➜\s+(Local|Network):\s+(.+)$/))) return [{type: "url", label: match[1]!, url: match[2]!}];
+        if ((match = text.match(CLAY_WARNING))) return [{type: "warn", text: match[1]!}];
         if ((match = text.match(CLAY_LOADED))) return [loaded(match)];
         if ((match = text.match(/^\[clay\]\s+\S+\s+Reloaded (.+)$/))) return [{type: "log", icon: "↻", text: `Reloaded ${match[1]}`}];
         if (/Nitro server built in/.test(text)) {
@@ -196,44 +207,50 @@ const SHIMMER_DIM = SAGE;
 const SHIMMER_WIDTH = 5;
 const FRAME_MS = 60;
 
-function shimmer(text, pos) {
+function shimmer(text: string, pos: number): string {
     return [...text].map((char, i) => {
         const blend = Math.min(Math.abs(i - pos) / SHIMMER_WIDTH, 1);
-        const [r, g, b] = SHIMMER_BRIGHT.map((bright, c) => Math.round(bright + (SHIMMER_DIM[c] - bright) * blend));
-        return `\x1b[${rgb(r, g, b)}m${char}`;
+        const [r, g, b] = SHIMMER_BRIGHT.map((bright, c) => Math.round(bright + (SHIMMER_DIM[c]! - bright) * blend));
+        return `\x1b[${rgb(r!, g!, b!)}m${char}`;
     }).join("") + "\x1b[39m";
 }
 
-function duration(ms) {
+function duration(ms: number): string {
     return ms < 1000 ? `${ms}ms` : `${(ms / 1000).toFixed(1)}s`;
 }
 
-const clock = ms => new Date(ms).toTimeString().slice(0, 8);
+const clock = (ms: number) => new Date(ms).toTimeString().slice(0, 8);
 
 // Renders progress events; without a terminal (e.g. in CI) it prints finished steps only.
 // "build" ends with the result; "serve" (dev and preview) starts a server, shows
 // its address once it is ready and then logs what happens until it stops.
 // hint follows a failure, e.g. how to see the full output.
-export function createProgress(title, {stream = process.stdout, now = Date.now, mode = "build", hint = ""} = {}) {
+// Where progress is written: the terminal, or anything with write() in tests
+type Output = { write(text: string): unknown, isTTY?: boolean, columns?: number };
+
+type Step = { label: string, detail?: string | null, started: number, warnings: string[], notes: string[], idle?: boolean };
+
+export function createProgress(title: string, {stream = process.stdout, now = Date.now, mode = "build", hint = ""}:
+    { stream?: Output, now?: () => number, mode?: "build" | "serve", hint?: string } = {}) {
     const serve = mode === "serve";
     const tty = Boolean(stream.isTTY);
     const color = tty && !("NO_COLOR" in process.env);
-    const paint = (code, text) => color ? `\x1b[${code}m${text}\x1b[0m` : text;
-    const sage = text => paint(rgb(...SAGE), text);
-    const gray = text => paint(rgb(...GRAY), text);
+    const paint = (code: string, text: string) => color ? `\x1b[${code}m${text}\x1b[0m` : text;
+    const sage = (text: string) => paint(rgb(...SAGE), text);
+    const gray = (text: string) => paint(rgb(...GRAY), text);
     const bar = gray("│");
 
     const started = now();
-    let current = null;
-    let outDir = null;
+    let current: Step | null = null;
+    let outDir: string | null = null;
     let ready = false;
-    const urls = [];
+    const urls: { label: string, url: string }[] = [];
     let frame = 0;
-    let timer = null;
-    const errors = [];
+    let timer: ReturnType<typeof setInterval> | undefined;
+    const errors: string[] = [];
 
     const spinnerLine = () => {
-        const text = `${ARC_FRAMES[frame % ARC_FRAMES.length]}  ${current.label}${current.detail ? ` · ${current.detail}` : ""}`;
+        const text = `${ARC_FRAMES[frame % ARC_FRAMES.length]}  ${current!.label}${current!.detail ? ` · ${current!.detail}` : ""}`;
         const fitted = [...text].slice(0, Math.max((stream.columns || 80) - 1, 10)).join("");
         const span = fitted.length + SHIMMER_WIDTH * 2;
         return color ? shimmer(fitted, (frame % span) - SHIMMER_WIDTH) : fitted;
@@ -242,26 +259,26 @@ export function createProgress(title, {stream = process.stdout, now = Date.now, 
         if (tty && current) stream.write(`\r\x1b[2K${spinnerLine()}`);
     };
     // Permanent output goes above the spinner
-    const print = lines => {
+    const print = (lines: string[]) => {
         if (tty) stream.write("\r\x1b[2K");
         stream.write(lines.map(line => `${line}\n`).join(""));
         draw();
     };
     const restoreCursor = () => tty && stream.write("\x1b[?25h");
 
-    const start = label => {
+    const start = (label: string) => {
         current = {label, detail: null, started: now(), warnings: [], notes: []};
         draw();
     };
-    const complete = (label, lines = []) => {
-        const {detail, started: stepStarted, warnings, notes} = current;
+    const complete = (label: string, lines: string[] = []) => {
+        const {detail, started: stepStarted, warnings, notes} = current!;
         const info = [detail, duration(now() - stepStarted)].filter(Boolean).join(" · ");
         current = null;
         print([`${sage("●")}  ${label}  ${gray(info)}`, ...warnings.map(warning => `${bar}  ${paint("33", "▲")} ${warning}`),
             ...notes.map(note => `${bar}  ${gray(`ℹ ${note}`)}`), ...lines, bar]);
     };
     // Once a server runs, each event is a line of its own, with the time
-    const log = (icon, text) => print([`${bar}  ${icon ? `${icon} ` : ""}${text}  ${gray(clock(now()))}`]);
+    const log = (icon: string, text: string) => print([`${bar}  ${icon ? `${icon} ` : ""}${text}  ${gray(clock(now()))}`]);
 
     print([`${gray("┌")}  ${paint("1", title)}`, bar]);
     if (tty) {
@@ -275,7 +292,7 @@ export function createProgress(title, {stream = process.stdout, now = Date.now, 
     }
 
     return {
-        apply(event) {
+        apply(event: ProgressEvent) {
             switch (event.type) {
                 case "step":
                     if (current && !current.idle) complete(current.label);
@@ -286,12 +303,12 @@ export function createProgress(title, {stream = process.stdout, now = Date.now, 
                     break;
                 case "done":
                     if (!current) start(event.label);
-                    if (event.detail) current.detail = event.detail;
+                    if (event.detail) current!.detail = event.detail;
                     complete(event.label);
                     if (ready) break;
                     // Nuxt keeps working until the next step is announced
                     start(serve ? "Starting dev server" : "Building");
-                    current.idle = true;
+                    current!.idle = true;
                     break;
                 case "url":
                     urls.push(event);
@@ -299,7 +316,7 @@ export function createProgress(title, {stream = process.stdout, now = Date.now, 
                 case "ready":
                     // How long the server took to start, from the very beginning
                     if (!current) start(event.label);
-                    current.started = started;
+                    current!.started = started;
                     complete(event.label, urls.map(({label, url}) =>
                         `${bar}  ${gray("➜")} ${`${label}:`.padEnd(9)}${/^https?:/.test(url) ? paint("1", url) : gray(url)}`));
                     ready = true;
@@ -326,7 +343,7 @@ export function createProgress(title, {stream = process.stdout, now = Date.now, 
                     break;
             }
         },
-        finish(code, signal) {
+        finish(code: number, signal?: NodeJS.Signals | null) {
             clearInterval(timer);
             const step = current;
             current = null;

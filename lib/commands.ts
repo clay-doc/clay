@@ -9,7 +9,7 @@ import {brokenLinks} from "./checks";
 
 // "clay edit <command>" and "clay check": the editor's actions as commands for
 // scripts and AI agents. Each returns what happened, for people as text and
-// for programs as JSON (--json); the interactive editor is bin/edit.mjs.
+// for programs as JSON (--json); the interactive editor is editor-screen.ts.
 
 export type CommandOptions = {
     json?: boolean;
