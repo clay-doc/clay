@@ -73,7 +73,7 @@ function createRenderer(highlighter: Highlighter, messages: Messages) {
             if (lang === "tree") return fileTree(code);
             return highlighter.codeToHtml(code, {
                 lang: lang && isLoaded(highlighter, lang) ? lang : "text",
-                // Both themes as CSS variables; tailwind.css picks one per site theme
+                // Both themes as CSS variables; assets/css/code.css picks one per site theme
                 themes: {light: "light-plus", dark: "dark-plus"},
                 colorReplacements: {"light-plus": LIGHT_PLUS_CONTRAST},
                 defaultColor: false,

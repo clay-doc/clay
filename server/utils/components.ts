@@ -155,7 +155,7 @@ export function fileTree(source: string): string {
 }
 
 // Mermaid diagrams are drawn when the site is built (beautiful-mermaid), as SVG
-// that takes its colors from the site's theme (tailwind.css), so they show
+// that takes its colors from the site's theme (assets/css/components.css), so they show
 // without JavaScript and follow theme switches. Kinds it cannot draw, like pie
 // charts, are drawn in the browser by Mermaid itself (app/utils/diagrams.ts),
 // and show their source until then. n numbers the diagrams of a page, for the
@@ -163,7 +163,7 @@ export function fileTree(source: string): string {
 export function mermaidDiagram(source: string, n: number): string {
     try {
         const svg = renderMermaidSVG(source, {transparent: true})
-            // The colors and fonts come from the site (tailwind.css), and no
+            // The colors and fonts come from the site (assets/css/components.css), and no
             // stylesheet loads from elsewhere
             .replace(/<style>[\s\S]*?<\/style>/, "")
             .replace(/^<svg([^>]*?) style="[^"]*"/, "<svg$1")

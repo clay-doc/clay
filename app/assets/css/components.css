@@ -1,0 +1,325 @@
+/* Clay Flavored Markdown's components (server/utils/components.ts) */
+
+/* Tabs and code groups: the tab names on a line, the picked tab's content below */
+.clay-tabs {
+    @apply my-5;
+}
+
+.clay-tabs > [role="tablist"] {
+    @apply relative flex-nowrap overflow-x-auto border-b border-base-300;
+}
+
+/* The line under the picked tab slides to the next one (app/utils/tabs.ts);
+   until the page runs, each tab draws its own */
+.clay-tab-indicator {
+    @apply pointer-events-none absolute bottom-0 h-[3px] rounded-field bg-base-content;
+    transition: left 0.25s cubic-bezier(0.32, 0.72, 0, 1), width 0.25s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.clay-tabs > [role="tablist"]:has(> .clay-tab-indicator) > .tab::before {
+    display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .clay-tab-indicator {
+        transition: none;
+    }
+}
+
+.clay-tabs > [role="tablist"] > .tab {
+    @apply whitespace-nowrap;
+}
+
+.clay-tab-panel > :first-child {
+    @apply mt-4;
+}
+
+.clay-tab-panel > :last-child {
+    @apply mb-0;
+}
+
+/* Code groups: the code block sits right below its tabs */
+.clay-code-group > .clay-tab-panel > :first-child {
+    @apply mt-2;
+}
+
+.clay-code-group .code-block pre {
+    @apply mt-0;
+}
+
+/* Steps: numbered circles joined by a line */
+.prose .clay-steps > ol {
+    @apply list-none ps-0;
+    counter-reset: clay-step;
+}
+
+.prose .clay-steps > ol > li {
+    @apply relative ps-11 pb-5 my-0;
+    counter-increment: clay-step;
+}
+
+.prose .clay-steps > ol > li::before {
+    @apply absolute left-0 top-0 grid size-7 place-items-center rounded-full border border-base-300 bg-base-200 text-sm font-semibold text-base-content;
+    content: counter(clay-step);
+}
+
+.prose .clay-steps > ol > li:not(:last-child)::after {
+    @apply absolute left-3.5 top-8 bottom-0 w-px bg-base-300;
+    content: "";
+}
+
+.prose .clay-steps > ol > li > :first-child {
+    @apply mt-0;
+}
+
+/* Cards: links in a grid, as many columns as fit */
+.clay-cards {
+    @apply my-6 grid gap-4;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 15rem), 1fr));
+}
+
+.clay-card {
+    @apply flex flex-col gap-1 rounded-box border border-base-300 px-5 py-4 text-base-content no-underline transition-colors;
+}
+
+a.clay-card:hover {
+    @apply border-primary bg-primary/5;
+}
+
+a.clay-card:focus-visible {
+    @apply outline-2 outline-offset-2 outline-primary;
+}
+
+.clay-card-icon {
+    @apply mb-1 text-xl text-primary;
+}
+
+.clay-card-title {
+    @apply font-semibold;
+}
+
+.clay-card-text {
+    @apply text-sm text-base-content/80;
+}
+
+/* Details: a folded section, a tinted card with an arrow until it is opened */
+.clay-details {
+    @apply my-5 rounded-box border border-base-content/10 bg-base-content/4 transition-colors;
+}
+
+/* Several in a row, like questions and answers, stay together */
+.clay-details + .clay-details {
+    @apply -mt-2;
+}
+
+.clay-details:not([open]):hover {
+    @apply bg-base-content/7;
+}
+
+.clay-details[open] {
+    @apply bg-base-100;
+}
+
+.clay-details > summary {
+    @apply flex items-center gap-3 px-4 py-3 font-semibold;
+}
+
+.clay-details[open] > summary {
+    @apply border-b border-base-content/10;
+}
+
+.clay-details-icon {
+    @apply grid size-6 shrink-0 place-items-center rounded-field bg-primary/10 text-[0.7rem] text-primary;
+}
+
+.clay-details-icon > i {
+    @apply transition-transform duration-200;
+}
+
+.clay-details[open] .clay-details-icon > i {
+    @apply rotate-90;
+}
+
+/* The same room above and below the content */
+.clay-details[open] > .collapse-content {
+    @apply px-4 py-4;
+}
+
+.clay-details > .collapse-content > :first-child {
+    @apply mt-0;
+}
+
+.clay-details > .collapse-content > :last-child,
+.clay-details > .collapse-content > .code-block:last-child > pre {
+    @apply mb-0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .clay-details-icon > i {
+        @apply transition-none;
+    }
+}
+
+/* Prompts: a suggested prompt for AI assistants and agents, copied as written */
+.clay-prompt {
+    @apply relative my-5 rounded-box border border-primary/30 bg-primary/5;
+}
+
+.clay-prompt-title {
+    @apply flex items-center gap-2 px-4 pt-3 pe-12 text-sm font-semibold text-primary;
+}
+
+.clay-prompt-text {
+    @apply m-0 whitespace-pre-wrap bg-transparent px-4 pt-2 pb-4 font-sans text-[0.9375rem] leading-relaxed text-base-content;
+}
+
+/* Math: wide formulas scroll instead of widening the page */
+.clay-math {
+    @apply overflow-x-auto overflow-y-hidden;
+}
+
+/* Badges in text and headings */
+.clay-badge {
+    @apply align-middle font-medium;
+}
+
+:is(h1, h2, h3) .clay-badge {
+    @apply badge-md;
+}
+
+/* File trees: like an editor's explorer, folders fold */
+.file-tree {
+    @apply my-5 overflow-x-auto rounded-box border border-base-300 px-4 py-3 text-sm;
+}
+
+.file-tree ul {
+    @apply m-0 list-none p-0;
+}
+
+.file-tree ul ul {
+    @apply ms-[0.875rem] border-s border-base-300 ps-1.5;
+}
+
+.file-tree-entry {
+    @apply flex items-center gap-2 whitespace-nowrap rounded-field px-2 py-1;
+}
+
+.file-tree summary {
+    @apply cursor-pointer list-none select-none;
+}
+
+.file-tree summary::-webkit-details-marker {
+    display: none;
+}
+
+.file-tree summary:hover {
+    @apply bg-base-200;
+}
+
+.file-tree summary:focus-visible {
+    @apply outline-2 -outline-offset-2 outline-primary;
+}
+
+.file-tree-entry > :is(i, .file-tree-icon) {
+    @apply w-4 shrink-0 text-center text-base-content/60;
+}
+
+/* The arrow of a folder that folds turns when it opens */
+.file-tree-entry > .file-tree-chevron {
+    @apply w-3 text-[0.625rem] transition-transform duration-150;
+}
+
+.file-tree details[open] > summary > .file-tree-chevron {
+    @apply rotate-90;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .file-tree-entry > .file-tree-chevron {
+        @apply transition-none;
+    }
+}
+
+.file-tree-folder > i:not(.file-tree-chevron) {
+    @apply text-primary;
+}
+
+.file-tree details:not([open]) > summary > .file-tree-open,
+.file-tree details[open] > summary > .file-tree-closed {
+    @apply hidden;
+}
+
+.file-tree-folder .file-tree-name {
+    @apply font-medium;
+}
+
+.file-tree-comment {
+    @apply ms-2 text-base-content/70;
+}
+
+.file-tree-more .file-tree-name {
+    @apply text-base-content/70;
+}
+
+/* Diagrams: centered, and narrower screens scroll them */
+.mermaid-diagram {
+    @apply my-6 flex justify-center overflow-x-auto;
+}
+
+.mermaid-diagram svg {
+    @apply h-auto max-w-full;
+}
+
+/* Diagrams drawn at build time (beautiful-mermaid) take the theme's colors
+   here, so they follow theme switches without being drawn again */
+.mermaid-diagram svg {
+    --bg: var(--color-base-100);
+    --fg: var(--color-base-content);
+    --accent: var(--color-primary);
+    --line: color-mix(in oklab, var(--color-base-content) 45%, var(--color-base-100));
+    --surface: color-mix(in oklab, var(--color-primary) 9%, var(--color-base-100));
+    --border: color-mix(in oklab, var(--color-primary) 65%, var(--color-base-100));
+    --_text: var(--fg);
+    --_text-sec: color-mix(in srgb, var(--fg) 60%, var(--bg));
+    --_text-muted: color-mix(in srgb, var(--fg) 40%, var(--bg));
+    --_text-faint: color-mix(in srgb, var(--fg) 25%, var(--bg));
+    --_line: var(--line);
+    --_arrow: var(--accent);
+    --_node-fill: var(--surface);
+    --_node-stroke: var(--border);
+    --_group-fill: var(--bg);
+    --_group-hdr: color-mix(in srgb, var(--fg) 5%, var(--bg));
+    --_inner-stroke: color-mix(in srgb, var(--fg) 12%, var(--bg));
+    --_key-badge: color-mix(in srgb, var(--fg) 10%, var(--bg));
+}
+
+.mermaid-diagram svg text {
+    font-family: inherit;
+}
+
+.mermaid-diagram svg .mono {
+    @apply font-mono;
+}
+
+.mermaid-diagram svg .node[data-shape="rectangle"] > rect {
+    rx: 0.5rem;
+    ry: 0.5rem;
+}
+
+/* Boxes as round and flat as the site's */
+.mermaid-diagram :is(.node, .cluster) rect,
+.mermaid-diagram rect:is(.actor, .note) {
+    rx: 0.5rem;
+    ry: 0.5rem;
+}
+
+.mermaid-diagram svg * {
+    filter: none !important;
+}
+
+.mermaid-diagram.mermaid-error {
+    @apply flex-col;
+}
+
+.mermaid-error-message {
+    @apply text-error;
+}

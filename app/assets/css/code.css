@@ -1,0 +1,100 @@
+/* Code blocks: highlighting in both themes, the copy button and the line notations */
+
+/* Code is highlighted in both themes (as CSS variables); show the one matching the site theme */
+.shiki,
+.shiki span {
+    color: var(--shiki-light);
+}
+
+:root[data-theme="clay-dark"] .shiki,
+:root[data-theme="clay-dark"] .shiki span {
+    color: var(--shiki-dark);
+}
+
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme="clay-light"]) .shiki,
+    :root:not([data-theme="clay-light"]) .shiki span {
+        color: var(--shiki-dark);
+    }
+}
+
+.code-block {
+    @apply relative;
+}
+
+.copy-code {
+    @apply absolute top-2 right-2 opacity-0 transition-opacity bg-base-200/80;
+}
+
+.code-block:hover .copy-code,
+.copy-code:focus-visible {
+    @apply opacity-100;
+}
+
+/* Touch screens have no hover, keep the button visible */
+@media (hover: none) {
+    .copy-code {
+        @apply opacity-100;
+    }
+}
+
+/* Line notations of the Shiki transformers (server/utils/markdown.ts): ```ts {1,3},
+   // [!code highlight], [!code ++] / [!code --], [!code focus], [!code error] /
+   // [!code warning] and [!code word:...]. Lines span the whole block. */
+pre.shiki code {
+    @apply block w-fit min-w-full;
+}
+
+pre.shiki .line.highlighted,
+pre.shiki .line.diff {
+    @apply relative inline-block w-full;
+}
+
+/* Light backgrounds, so the colors of the code keep their contrast */
+pre.shiki .line.highlighted {
+    background: color-mix(in oklab, var(--color-base-content) 6%, transparent);
+}
+
+pre.shiki .line.highlighted.error {
+    background: color-mix(in oklab, var(--color-error) 25%, transparent);
+}
+
+pre.shiki .line.highlighted.warning {
+    background: color-mix(in oklab, var(--color-warning) 30%, transparent);
+}
+
+pre.shiki .line.diff.add {
+    background: color-mix(in oklab, var(--color-success) 15%, transparent);
+}
+
+pre.shiki .line.diff.remove {
+    background: color-mix(in oklab, var(--color-error) 15%, transparent);
+}
+
+/* The + and - sit in the padding left of the line */
+pre.shiki .line.diff::before {
+    @apply absolute -left-3.5 opacity-70;
+}
+
+pre.shiki .line.diff.add::before {
+    content: "+";
+}
+
+pre.shiki .line.diff.remove::before {
+    content: "-";
+}
+
+/* Focus dims the other lines until the block is hovered, or its copy button focused */
+pre.shiki.has-focused .line:not(.focused) {
+    @apply opacity-40 blur-[0.5px] transition;
+}
+
+pre.shiki.has-focused:hover .line:not(.focused),
+.code-block:focus-within pre.shiki.has-focused .line:not(.focused) {
+    @apply opacity-100 blur-none;
+}
+
+pre.shiki .highlighted-word {
+    @apply rounded-sm px-0.5 -mx-0.5;
+    background: color-mix(in oklab, var(--color-primary) 30%, transparent);
+}

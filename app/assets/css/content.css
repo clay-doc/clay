@@ -1,0 +1,71 @@
+/* The text of a page: alerts, search hits, links to sections, videos and embeds */
+
+/* Alerts: a box with a bar of its own in the alert's color, a little left of it */
+.markdown-alert {
+    @apply relative my-5 ms-[7px] bg-base-200 rounded-md px-5 py-0.5;
+    --alert-line: var(--color-base-content);
+}
+
+.markdown-alert::before {
+    @apply absolute -start-[7px] inset-y-1 w-[3px] rounded-full;
+    content: "";
+    background-color: var(--alert-line);
+}
+
+.markdown-alert > p {
+    @apply my-2;
+}
+
+.markdown-alert-title {
+    @apply font-bold;
+}
+
+.markdown-alert-caution,
+.markdown-alert-important,
+.markdown-alert-danger {
+    --alert-line: var(--color-error);
+}
+
+.markdown-alert-warning {
+    --alert-line: var(--color-warning);
+}
+
+.markdown-alert-tip {
+    --alert-line: var(--color-primary);
+}
+.search-hit {
+    @apply bg-primary/30 text-inherit rounded-sm;
+}
+
+.search-hit-active {
+    @apply bg-primary/60;
+}
+
+/* "#" links to sections, shown left of a heading on hover like on GitHub
+   (the page has room for them in its left padding, see Markdown.vue) */
+.prose :is(h2, h3, h4, h5, h6) {
+    @apply relative;
+}
+
+.prose .heading-anchor {
+    @apply absolute -left-[1.15em] top-1/2 -translate-y-1/2 text-[0.75em] font-medium no-underline opacity-0 transition-opacity text-primary;
+}
+
+.prose :is(h2, h3, h4, h5, h6):hover .heading-anchor,
+.prose .heading-anchor:focus-visible {
+    @apply opacity-100;
+}
+
+/* Videos and embeds (server/utils/sanitize.ts) fill the column; embeds keep a
+   video's shape whatever size their HTML asks for, so they fit on phones */
+.prose :is(video, iframe) {
+    @apply my-6 w-full max-w-full rounded-box;
+}
+
+.prose video {
+    @apply h-auto;
+}
+
+.prose iframe {
+    @apply block aspect-video h-auto border-0 bg-base-200;
+}

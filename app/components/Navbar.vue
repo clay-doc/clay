@@ -93,7 +93,7 @@ onUnmounted(() => {
         <span class="pr-2">{{config.title}}</span>
       </NuxtLink>
       <div class="breadcrumbs text-md hidden lg:block">
-        <!-- Crumbs that stay keep their place; new ones slide in (tailwind.css) -->
+        <!-- Crumbs that stay keep their place; new ones slide in (assets/css/layout.css) -->
         <TransitionGroup tag="ul" name="crumb">
           <li key="" />
           <li v-for="p in linkParts" :key="p.link ?? p.title">
@@ -108,7 +108,7 @@ onUnmounted(() => {
     </div>
 
     <div class="navbar-end">
-      <!-- Every item shows what it does in a tooltip; dropdowns hide theirs while open (tailwind.css) -->
+      <!-- Every item shows what it does in a tooltip; dropdowns hide theirs while open (assets/css/layout.css) -->
       <ul class="menu menu-horizontal flex-nowrap items-center px-1">
         <!-- On narrow screens the switchers and links are in the navigation drawer (MobileNav.vue) -->
         <li v-if="versions.length > 1" class="hidden lg:block tooltip tooltip-bottom" :data-tip="t.docsVersion">
@@ -142,7 +142,7 @@ onUnmounted(() => {
           </NuxtLink>
         </li>
         <li class="tooltip tooltip-bottom navbar-tooltip-end" :data-tip="t.toggleTheme">
-          <!-- Pages are rendered before the theme is known, so CSS picks and animates the icon (tailwind.css) -->
+          <!-- Pages are rendered before the theme is known, so CSS picks and animates the icon (assets/css/layout.css) -->
           <button :aria-label="t.toggleTheme" @click="toggleTheme">
             <!-- As tall as a line of text, so it matches the neighbouring menu items -->
             <span class="grid h-lh place-items-center">

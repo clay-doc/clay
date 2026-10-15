@@ -1,0 +1,216 @@
+/* The frame around the pages: navbar, sidebar, theme toggle, breadcrumbs, page menu */
+
+/* Theme toggle: show the theme it switches to (the moon in light mode, the sun in
+   dark mode); the icons share one place and turn into each other */
+.theme-to-light, .theme-to-dark {
+    grid-area: 1 / 1;
+    transition: opacity 0.3s, transform 0.3s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .theme-to-light, .theme-to-dark {
+        transition: none;
+    }
+}
+
+:root .theme-to-light,
+:root[data-theme="clay-dark"] .theme-to-dark {
+    opacity: 0;
+    transform: rotate(-90deg) scale(0.5);
+}
+
+:root[data-theme="clay-dark"] .theme-to-light {
+    opacity: 1;
+    transform: none;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme="clay-light"]) .theme-to-light {
+        opacity: 1;
+        transform: none;
+    }
+
+    :root:not([data-theme="clay-light"]) .theme-to-dark {
+        opacity: 0;
+        transform: rotate(-90deg) scale(0.5);
+    }
+}
+
+/* Navbar tooltips stay out of the way of an open dropdown */
+.navbar .tooltip:has(details[open])::before,
+.navbar .tooltip:has(details[open])::after {
+    display: none;
+}
+
+/* Tooltips of the last navbar items end at their item, inside the window
+   (daisyUI's own "tooltip-end" moves the arrow to the edge as well) */
+.navbar .navbar-tooltip-end[data-tip]::before,
+.navbar .navbar-tooltip-end > .tooltip-content {
+    inset: var(--tt-off) 0 auto auto;
+    transform: translateY(var(--tt-pos, -0.25rem));
+}
+
+/* The highlight of the active sidebar entry (Sidebar.vue): a tint with a short
+   rule at its left edge, which slides to the next active entry. Once it is in
+   place, the entry itself only takes the active text color. */
+.menu > .sidebar-marker {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: -1;
+    margin: 0;
+    padding: 0;
+    border-radius: var(--radius-field);
+    background-color: var(--menu-active-bg);
+    pointer-events: none;
+    opacity: 0;
+    transition: translate 0.15s cubic-bezier(0.32, 0.72, 0, 1), width 0.15s cubic-bezier(0.32, 0.72, 0, 1),
+        height 0.15s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.15s ease-out;
+}
+
+/* After a jump to another layer of folders, the rule grows from its middle */
+.menu > .sidebar-marker.grow::before {
+    animation: sidebar-rule-grow 0.2s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+@keyframes sidebar-rule-grow {
+    from {
+        transform: scaleY(0);
+    }
+}
+
+.menu > .sidebar-marker::before {
+    content: "";
+    position: absolute;
+    inset-block: 0.35rem;
+    left: 0;
+    width: 3px;
+    border-radius: var(--radius-field);
+    background-color: var(--color-primary);
+}
+
+.menu:has(> .sidebar-marker.placed) a.menu-active {
+    background-color: transparent;
+}
+
+/* daisyUI tints a pressed entry like the active one, which showed a second
+   highlight next to the travelling one; pressed entries keep the hover tint */
+.menu:has(> .sidebar-marker) li > a:not(.menu-active):active {
+    background-color: color-mix(in oklab, var(--color-base-content) 10%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .menu > .sidebar-marker {
+        transition: none;
+    }
+
+    .menu > .sidebar-marker.grow::before {
+        animation: none;
+    }
+}
+
+/* Keyboard focus in menus (navbar, sidebar) shows as a ring, not only as the
+   light background that hovering gives too */
+.menu :where(li > a, li > button, li > details > summary):focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: -2px;
+}
+
+/* The navbar and sidebar lie above the page (Content.vue): their shadow falls
+   on its top edge, and on its left edge where the sidebar is */
+.content-shadow {
+    --shadow-color: oklch(0% 0 0 / 0.2);
+    box-shadow: inset 0 9px 12px -9px var(--shadow-color);
+}
+
+:root[data-theme="clay-dark"] .content-shadow {
+    --shadow-color: oklch(0% 0 0 / 0.65);
+}
+
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme="clay-light"]) .content-shadow {
+        --shadow-color: oklch(0% 0 0 / 0.65);
+    }
+}
+
+@media (min-width: 64rem) {
+    .content-shadow {
+        box-shadow: inset 0 9px 12px -9px var(--shadow-color), inset 9px 0 12px -9px var(--shadow-color);
+    }
+}
+
+/* The logo leads to the start page; there it is the current page, which
+   daisyUI's buttons show like a pressed button */
+.navbar .btn-ghost[aria-current="page"]:not(:hover, :focus-visible) {
+    background-color: transparent;
+    border-color: transparent;
+    box-shadow: none;
+}
+
+/* Breadcrumbs (Navbar.vue): new crumbs slide in from the left, the others
+   move to their new places; crumbs that go leave at once */
+.crumb-enter-active {
+    transition: opacity 0.2s ease-out, translate 0.2s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.crumb-enter-from {
+    opacity: 0;
+    translate: -0.5rem 0;
+}
+
+.crumb-move {
+    transition: translate 0.2s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .crumb-enter-active,
+    .crumb-move {
+        transition: none;
+    }
+}
+
+/* A page opened in the app fades in and rises a little (pages/*.vue) */
+.page-enter {
+    animation: page-enter 0.25s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+@keyframes page-enter {
+    from {
+        opacity: 0;
+        translate: 0 0.5rem;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .page-enter {
+        animation: none;
+    }
+}
+
+/* The search field (SearchModal.vue) is cleared with Escape; the browser's own
+   clear button would sit oddly in the large field */
+dialog input[type="search"]::-webkit-search-cancel-button {
+    appearance: none;
+}
+
+/* The page for language models (PageActions.vue): under the contents of the
+   page, set off by a line, in the look of its entries */
+.page-actions {
+    @apply text-sm;
+}
+
+.page-actions-below {
+    @apply mt-4 border-t border-base-300 pt-4;
+}
+
+.page-actions :is(a, button) {
+    @apply flex w-full cursor-pointer items-center gap-2 py-1 ps-3 text-start opacity-70 transition-opacity hover:opacity-100;
+}
+
+.page-actions i {
+    @apply w-4 shrink-0 text-center;
+}
+
+.page-actions .assistant-icon {
+    @apply size-3.5 shrink-0 mx-px;
+}
