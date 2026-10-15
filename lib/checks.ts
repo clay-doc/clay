@@ -83,7 +83,8 @@ export function brokenLinks(pages: Page[], docsDirs: string | Record<string, str
     const broken: string[] = [];
 
     for (const page of pages) {
-        if (page.isDir || !page.markdown || page.untranslated) continue;
+        // Folders' and start pages' index.md count too; untranslated pages repeat their original
+        if (!page.markdown || page.untranslated) continue;
         const version = page.version ?? "";
         for (const ref of markdownRefs(page.markdown)) {
             // A folder's index.md links relative to its folder

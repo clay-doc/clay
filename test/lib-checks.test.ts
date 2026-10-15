@@ -57,6 +57,18 @@ describe("brokenLinks", () => {
         ]);
     });
 
+    it("checks the links of folders' and start pages' index.md, relative to their folder", () => {
+        const pages = [
+            page("/", "index.md", "[ok](guides/setup.md) [gone](guides/old.md)", true),
+            page("/guides", "guides/index.md", "[ok](setup.md#install) [gone](setup.md#nope)", true),
+            page("/guides/setup", "guides/setup.md", "## Install"),
+        ];
+        expect(brokenLinks(pages, docs)).toEqual([
+            'index.md: "guides/old.md" points to a missing page (/guides/old)',
+            'guides/index.md: "setup.md#nope" points to a missing section (#nope on /guides/setup)',
+        ]);
+    });
+
     it("reports links to sections that do not exist, on the same page or another", () => {
         const pages = [
             page("/a", "a.md", "# A\n\n## Set up `clay`\n\n## Set up `clay`\n\n<a id=\"custom\"></a>\n\n[ok](#set-up-clay-1) [html](#custom) [top](#top) [gone](#nope) [other](b.md#install) [other-gone](b.md#uninstall) [dir](guides/#x)"),
