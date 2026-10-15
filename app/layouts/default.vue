@@ -50,6 +50,16 @@ useHead(() => ({
 const pathInEdition = computed(() => stripPrefix(route.path, edition.value.prefix));
 const linkParts = computed(() => getLinkPartsFromCurrentRoute(pathInEdition.value, structure.value));
 const currentItem = computed(() => getCurrentDocItemFromRoute(pathInEdition.value, structure.value));
+
+// The navigation, breadcrumb parts and page or folder of any path. Pages use it
+// for their own route: the router moves on as soon as a navigation starts, while
+// the old page stays on screen until the next one has loaded.
+function resolvePath(path: string) {
+  const {prefix} = editionOf(path, versions.value, languages.value);
+  const nav = site.value.navs[prefix] ?? site.value.nav;
+  const inEdition = stripPrefix(path, prefix);
+  return {prefix, structure: nav, linkParts: getLinkPartsFromCurrentRoute(inEdition, nav), currentItem: getCurrentDocItemFromRoute(inEdition, nav)};
+}
 const delimitedLinkParts = computed(() => delimitLinkParts(linkParts.value, 3))
 
 // The prefix of the same version in another language, and of the latest version in this language
@@ -81,6 +91,7 @@ provide('config', configuration);
 provide('structure', structure);
 provide('linkParts', linkParts)
 provide('currentDocItem', currentItem)
+provide('resolvePath', resolvePath)
 provide('delimitedLinkParts', delimitedLinkParts)
 provide('edition', edition)
 provide('versions', versions)

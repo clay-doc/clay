@@ -312,6 +312,20 @@ test.describe("index pages", () => {
         await expect(sidebar.getByRole("link", {name: "Organizing Pages"})).toBeVisible();
     });
 
+    test("a page stays on screen until the next one has loaded, without a 404 in between", async ({page}) => {
+        await page.goto("guides/");
+        await hydrated(page);
+        await page.evaluate(() => {
+            const w = window as unknown as { notFound: boolean };
+            w.notFound = false;
+            new MutationObserver(() => { if (document.body.innerText.includes("Page Not Found")) w.notFound = true; })
+                .observe(document.body, {subtree: true, childList: true, characterData: true});
+        });
+        await page.locator("ul.menu.bg-base-200").getByRole("link", {name: "Organizing Pages"}).click();
+        await expect(page.locator(".prose h1")).toContainText("Organiz");
+        expect(await page.evaluate(() => (window as unknown as { notFound: boolean }).notFound)).toBe(false);
+    });
+
     test("navbar dropdowns close on a click elsewhere, Escape and another dropdown", async ({page}) => {
         await page.goto("configuration/");
         await hydrated(page);
