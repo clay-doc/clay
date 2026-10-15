@@ -16,7 +16,7 @@ const yellow = text => paint("33", text);
 const red = text => paint("31", text);
 
 const HELP = {
-    pages: "⏎ details · n page · f folder · m order · o move · r rename · x delete · v version · l language · tab · q",
+    pages: "⏎ details · n page · f folder · m order · o move · r rename · x delete · v/V version · l language · tab · q",
     translate: "c translate",
     moving: "↑↓ move · ⏎ drop · esc cancel",
     details: "↑↓ select · ⏎ edit · esc back",
@@ -62,7 +62,7 @@ export async function edit(root) {
         process.exit(1);
     }
     const editor = await createJiti(import.meta.url).import("../lib/editor.ts");
-    const {versions, languages} = editor.editorContext(root);
+    let {versions, languages} = editor.editorContext(root);
     const edition = {version: "", language: languages[0]};
     const isDefaultLanguage = () => edition.language === languages[0];
 
@@ -418,10 +418,19 @@ export async function edit(root) {
         }
     }
 
+    // V saves docs/ as a new version in docs-archive/
+    function newVersion() {
+        ask("Save the current docs as version", "", "e.g. 2.x", name => {
+            if (!name) return;
+            done("Saved", [editor.createVersion(root, name)]);
+            ({versions, languages} = editor.editorContext(root));
+        });
+    }
+
     // v and l cycle through the versions and languages
     function switchEdition(key) {
         if (key.name === "v") {
-            if (versions.length < 2) return void (message = gray("There are no older versions (see clay version)"));
+            if (versions.length < 2) return void (message = gray("There are no older versions; V saves one"));
             edition.version = versions[(versions.indexOf(edition.version) + 1) % versions.length];
         } else {
             if (languages.length < 2) return void (message = gray(`The site has one language; add more with "languages" in clay.yaml`));
@@ -449,7 +458,8 @@ export async function edit(root) {
         else if (key.name === "tab") {
             tab = tab === "pages" ? "settings" : "pages";
             scroll = 0;
-        } else if (key.name === "v" || key.name === "l") run(() => switchEdition(key));
+        } else if (key.name === "v" && key.shift) newVersion();
+        else if (key.name === "v" || key.name === "l") run(() => switchEdition(key));
         else if (tab === "pages") run(() => onPages(key));
         else run(() => onSettings(key));
         render();
@@ -458,7 +468,8 @@ export async function edit(root) {
     process.stdout.write("\x1b[?1049h\x1b[?25l");
     process.on("exit", () => process.stdout.write("\x1b[?25h\x1b[?1049l"));
     process.stdout.on("resize", render);
-    emitKeypressEvents(process.stdin);
+    // Esc alone is told apart from arrow keys after this pause (Node's default is 500ms)
+    emitKeypressEvents(process.stdin, {escapeCodeTimeout: 30});
     process.stdin.setRawMode(true);
     process.stdin.on("keypress", (text, key) => onKey(text, key));
     render();
