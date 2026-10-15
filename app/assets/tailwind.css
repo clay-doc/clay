@@ -387,3 +387,25 @@ pre.shiki .highlighted-word {
     border-color: transparent;
     box-shadow: none;
 }
+
+/* Breadcrumbs (Navbar.vue): new crumbs slide in from the left, the others
+   move to their new places; crumbs that go leave at once */
+.crumb-enter-active {
+    transition: opacity 0.2s ease-out, translate 0.2s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.crumb-enter-from {
+    opacity: 0;
+    translate: -0.5rem 0;
+}
+
+.crumb-move {
+    transition: translate 0.2s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .crumb-enter-active,
+    .crumb-move {
+        transition: none;
+    }
+}

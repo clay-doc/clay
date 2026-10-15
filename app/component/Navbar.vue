@@ -93,16 +93,17 @@ onUnmounted(() => {
         <span class="pr-2">{{config.title}}</span>
       </NuxtLink>
       <div class="breadcrumbs text-md hidden lg:block">
-        <ul>
-          <li />
-          <li v-for="p in linkParts">
+        <!-- Crumbs that stay keep their place; new ones slide in (tailwind.css) -->
+        <TransitionGroup tag="ul" name="crumb">
+          <li key="" />
+          <li v-for="p in linkParts" :key="p.link ?? p.title">
             <NuxtLink v-if="p.link" :to="p.link" class="no-underline">
               <i v-if="p.icon" :class="p.icon + ' text-xs'"/>
               <span class="hover:underline!">{{p.title}}</span>
             </NuxtLink>
             <span v-else class="cursor-default no-underline">{{p.title}}</span>
           </li>
-        </ul>
+        </TransitionGroup>
       </div>
     </div>
 
