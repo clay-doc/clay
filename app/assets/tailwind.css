@@ -181,6 +181,20 @@
     @apply opacity-100;
 }
 
+/* Videos and embeds (server/utils/sanitize.ts) fill the column; embeds keep a
+   video's shape whatever size their HTML asks for, so they fit on phones */
+.prose :is(video, iframe) {
+    @apply my-6 w-full max-w-full rounded-box;
+}
+
+.prose video {
+    @apply h-auto;
+}
+
+.prose iframe {
+    @apply block aspect-video h-auto border-0 bg-base-200;
+}
+
 /* Line notations of the Shiki transformers (server/utils/markdown.ts): ```ts {1,3},
    // [!code highlight], [!code ++] / [!code --], [!code focus], [!code error] /
    // [!code warning] and [!code word:...]. Lines span the whole block. */

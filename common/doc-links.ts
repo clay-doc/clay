@@ -48,9 +48,12 @@ export function rewriteDocHtml(html: string, docPath: string, baseUrl: string, r
     template.innerHTML = html;
     const root = template.content;
 
-    for (const img of root.querySelectorAll("img[src]")) {
-        const src = resolveDocAsset(img.getAttribute("src")!, assetPath);
-        if (src) img.setAttribute("src", linkConcat(baseUrl, src));
+    // Images, and videos and sounds written in HTML
+    for (const [selector, attribute] of [["img[src], video[src], audio[src], source[src], track[src]", "src"], ["video[poster]", "poster"]] as const) {
+        for (const element of root.querySelectorAll(selector)) {
+            const src = resolveDocAsset(element.getAttribute(attribute)!, assetPath);
+            if (src) element.setAttribute(attribute, linkConcat(baseUrl, src));
+        }
     }
 
     for (const link of root.querySelectorAll("a[href]")) {

@@ -24,7 +24,55 @@ purify.addHook("uponSanitizeAttribute", (node, data) => {
     }
 });
 
-const MATH_STYLE = /^(?:height|width|min-width|max-width|vertical-align|top|bottom|margin-(?:left|right|top|bottom)|padding-(?:left|right)|border-(?:top|bottom|right)-width|color)$/;
+// Embedded players and editors. Any other frame could show a fake login form
+// inside the page, so only these hosts (and paths) may be embedded, over https.
+const EMBEDS: [host: string, path: string][] = [
+    ["www.youtube.com", "/embed/"],
+    ["www.youtube-nocookie.com", "/embed/"],
+    ["player.vimeo.com", "/video/"],
+    ["www.loom.com", "/embed/"],
+    ["www.figma.com", "/embed"],
+    ["embed.figma.com", "/"],
+    ["codepen.io", "/"],
+    ["codesandbox.io", "/"],
+    ["stackblitz.com", "/"],
+    ["www.google.com", "/maps/embed"],
+];
+
+export function isAllowedEmbed(src: string | null): boolean {
+    let url: URL;
+    try {
+        url = new URL(src ?? "");
+    } catch {
+        return false;
+    }
+    return url.protocol === "https:" && EMBEDS.some(([host, path]) => url.hostname === host && url.pathname.startsWith(path));
+}
+
+// What an embed may ask the browser for; camera, microphone and the like are not needed to watch or click
+const EMBED_FEATURES = new Set(["accelerometer", "autoplay", "clipboard-write", "encrypted-media", "fullscreen", "gyroscope", "picture-in-picture", "web-share"]);
+
+purify.addHook("uponSanitizeAttribute", (node, data) => {
+    if (node.nodeName !== "IFRAME") return;
+    // A named frame could be navigated elsewhere by a link with that target
+    if (data.attrName === "name") data.keepAttr = false;
+    if (data.attrName !== "allow") return;
+    data.attrValue = data.attrValue.split(";").map(feature => feature.trim())
+        .filter(feature => EMBED_FEATURES.has(feature.split(/\s/)[0]!.toLowerCase())).join("; ");
+});
+
+purify.addHook("afterSanitizeAttributes", node => {
+    if (node.nodeName !== "IFRAME") return;
+    if (!isAllowedEmbed((node as Element).getAttribute("src"))) {
+        (node as Element).remove();
+        return;
+    }
+    // Loaded when scrolled to; YouTube refuses to play without knowing the site
+    if (!(node as Element).hasAttribute("loading")) (node as Element).setAttribute("loading", "lazy");
+    (node as Element).setAttribute("referrerpolicy", "strict-origin-when-cross-origin");
+});
+
+const MATH_STYLE =/^(?:height|width|min-width|max-width|vertical-align|top|bottom|margin-(?:left|right|top|bottom)|padding-(?:left|right)|border-(?:top|bottom|right)-width|color)$/;
 
 // The declarations of a KaTeX style that cannot move content out of the formula
 function mathStyle(style: string): string {
@@ -35,9 +83,12 @@ function mathStyle(style: string): string {
 }
 
 // Docs may come from outside contributors: remove scripts, event handlers,
-// javascript: URLs, forms (phishing) and styles from rendered markdown.
+// javascript: URLs, forms (phishing), styles and frames other than known
+// embeds from rendered markdown.
 export function sanitizeHtml(html: string): string {
     return purify.sanitize(html, {
         FORBID_TAGS: ["form", "input", "textarea", "select", "option", "style"],
+        ADD_TAGS: ["iframe"],
+        ADD_ATTR: ["allow", "allowfullscreen", "referrerpolicy", "loading"],
     });
 }

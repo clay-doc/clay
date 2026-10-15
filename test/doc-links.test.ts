@@ -71,6 +71,15 @@ describe("rewriteDocHtml", () => {
         expect(a.dataset.route).toBe("/guides/other#x");
     });
 
+    it("points relative videos, their posters and sounds into docs/", () => {
+        const root = rewrite('<video src="demo.mp4" poster="img/demo.png"><source src="demo.webm"><track src="demo.vtt"></video><audio src="/a.mp3"></audio>');
+        expect(root.querySelector("video")!.getAttribute("src")).toBe("/base/docs/guides/demo.mp4");
+        expect(root.querySelector("video")!.getAttribute("poster")).toBe("/base/docs/guides/img/demo.png");
+        expect(root.querySelector("source")!.getAttribute("src")).toBe("/base/docs/guides/demo.webm");
+        expect(root.querySelector("track")!.getAttribute("src")).toBe("/base/docs/guides/demo.vtt");
+        expect(root.querySelector("audio")!.getAttribute("src")).toBe("/a.mp3");
+    });
+
     it("points relative images and files into docs/", () => {
         const root = rewrite('<img src="img.png" alt=""><a href="files/guide.pdf">pdf</a>');
         expect(root.querySelector("img")!.getAttribute("src")).toBe("/base/docs/guides/img.png");
