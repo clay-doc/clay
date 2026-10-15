@@ -15,7 +15,7 @@ export type Schema = true | { [key: string]: Schema } | [Schema];
 const link: Schema = {name: true, icon: true, link: true};
 
 export const configSchema: Schema = {
-    title: true, favicon: true, baseURL: true, siteURL: true, lang: true, editURL: true, fontawesomeKit: true, version: true, languages: true, messages: true, variables: true,
+    title: true, favicon: true, baseURL: true, siteURL: true, lang: true, editURL: true, fontawesomeKit: true, version: true, languages: true, messages: true, variables: true, socialImages: true,
     // obsolete, reported separately
     langs: true, index: true,
     navbar: {logo: true, source: link, links: [link]},

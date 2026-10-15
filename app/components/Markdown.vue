@@ -23,7 +23,7 @@ const t = useMessages();
 const {theme} = useTheme();
 
 type Hero = { title: string, icon?: string, description?: string };
-type RenderedDoc = { html: string, toc: TocEntry[], description: string, hero: Hero | null, list: boolean };
+type RenderedDoc = { html: string, toc: TocEntry[], description: string, hero: Hero | null, list: boolean, socialImage: string | null };
 
 // Rendered on the server at build time; its data is part of the page payload.
 // The site's start page has the route "/", requested as "/_start".
@@ -36,6 +36,7 @@ useClaySeo(() => ({
   route: props.url,
   type: "article",
   updated: currentDocItem.value?.updated,
+  image: doc.value?.socialImage ?? undefined,
   trail: linkParts.value.map(part => ({title: part.title, route: part.link ?? props.url})),
 }));
 

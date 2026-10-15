@@ -1,6 +1,6 @@
 import type {Configuration} from "#common/configuration";
 import type {LanguageInfo} from "#common/editions";
-import {absoluteUrl, breadcrumbs, pageTitle, resolveOrigin, truncate} from "#common/seo";
+import {absoluteUrl, breadcrumbs, pageTitle, resolveOrigin, SOCIAL_IMAGE_HEIGHT, SOCIAL_IMAGE_WIDTH, truncate} from "#common/seo";
 import type {Edition} from "#common/editions";
 import {markdownRoute, normalizePath} from "#common/route-path";
 import linkConcat from "#common/link-concat";
@@ -12,6 +12,7 @@ export type SeoInput = {
     type?: "article" | "website";
     updated?: string;        // ISO 8601
     trail?: { title: string, route: string }[]; // breadcrumb trail, including the page
+    image?: string;          // path of the page's social image (lib/social-images.ts)
 };
 
 // Title, description, canonical URL, translations (hreflang), Open Graph tags and
@@ -40,6 +41,8 @@ export function useClaySeo(input: MaybeRefOrGetter<SeoInput>) {
         })) : [];
         const defaultTranslation = translations.find(t => t.hreflang === languages.value[0]?.code);
         const jsonLd = page.trail ? breadcrumbs(page.trail, origin, basePath) : undefined;
+        // Link previews need the image's full address
+        const image = origin && page.image ? origin + linkConcat(basePath, page.image) : undefined;
 
         return {
             title,
@@ -49,7 +52,13 @@ export function useClaySeo(input: MaybeRefOrGetter<SeoInput>) {
                 {property: "og:title", content: title},
                 {property: "og:description", content: description},
                 {property: "og:site_name", content: config.title},
-                {name: "twitter:card", content: "summary"},
+                {name: "twitter:card", content: image ? "summary_large_image" : "summary"},
+                ...(image ? [
+                    {property: "og:image", content: image},
+                    {property: "og:image:width", content: String(SOCIAL_IMAGE_WIDTH)},
+                    {property: "og:image:height", content: String(SOCIAL_IMAGE_HEIGHT)},
+                    {property: "og:image:alt", content: title},
+                ] : []),
                 ...(url ? [{property: "og:url", content: url}] : []),
                 ...(page.updated ? [{property: "article:modified_time", content: page.updated}] : []),
             ],

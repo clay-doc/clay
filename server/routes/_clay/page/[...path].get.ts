@@ -2,6 +2,7 @@ import {docPath, normalizePath} from "../../../../common/route-path";
 import {renderDoc} from "../../../utils/render-doc";
 import {useClaySite} from "../../../utils/use-clay-site";
 import {messagesFor} from "../../../../common/i18n";
+import {socialCard, socialImagePath} from "../../../../lib/social-card";
 
 // A rendered doc: a page, or a folder's index.md. During the build every page
 // is pre-rendered, and its data is stored in the page's payload, so the
@@ -31,5 +32,7 @@ export default defineEventHandler(async event => {
     const result = await renderDoc(page.markdown, path, baseURL, start?.frontMatter.description, assetPath, messages, pageInfo);
     // index.md can ask for a large header (hero) and a list of the folder's pages
     const hero = page.frontMatter.hero ? {title: page.title, icon: page.frontMatter.icon, description: page.frontMatter.description} : null;
-    return {...result, hero, list: page.frontMatter.list ?? false};
+    // The picture for link previews, drawn at build time (lib/social-images.ts)
+    const socialImage = socialCard(page, site) ? socialImagePath(page.route) : null;
+    return {...result, hero, list: page.frontMatter.list ?? false, socialImage};
 });

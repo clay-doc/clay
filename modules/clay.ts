@@ -1,8 +1,10 @@
 import {copyFileSync, existsSync, mkdirSync, readdirSync, rmSync, watch} from "node:fs";
 import {dirname, join, relative, resolve} from "node:path";
+import {fileURLToPath} from "node:url";
 import {addTemplate, defineNuxtModule, updateTemplates, useLogger} from "@nuxt/kit";
 import {isMarkdown, loadSite, type Site} from "../lib/site";
 import {brokenLinks} from "../lib/checks";
+import {writeSocialImages} from "../lib/social-images";
 import {resolveOrigin} from "../common/seo";
 import {markdownRoute} from "../common/route-path";
 import type {ViteDevServer} from "vite";
@@ -107,6 +109,17 @@ export default defineNuxtModule({
         nuxt.options.alias["#clay-site"] = join(nuxt.options.buildDir, SITE_TEMPLATE);
 
         copyAssets(site, assetsDir);
+        // Social images are drawn into the built site; unchanged ones come from a
+        // cache shared by all projects
+        if (!nuxt.options.dev) {
+            nuxt.hook("nitro:build:public-assets", async nitro => {
+                const started = Date.now();
+                logger.info("Drawing social images");
+                const cache = fileURLToPath(new URL("../node_modules/.cache/clay/social-images", import.meta.url));
+                const {drawn, total} = await writeSocialImages(site, nitro.options.output.publicDir, cache);
+                logger.info(`Drew ${drawn} of ${total} social images, the others are unchanged · ${Date.now() - started}ms`);
+            });
+        }
         nuxt.hook("nitro:config", nitro => {
             nitro.publicAssets ??= [];
             nitro.publicAssets.push({dir: assetsDir, maxAge: 0});

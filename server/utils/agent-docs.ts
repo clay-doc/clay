@@ -4,7 +4,7 @@ import {stripFrontMatter} from "../../lib/front-matter";
 import {isAssetLink, resolveDocAsset, resolveDocLink} from "./doc-links";
 import {docPath, markdownRoute} from "../../common/route-path";
 import linkConcat from "../../common/link-concat";
-import {firstParagraph} from "./render-doc";
+import {firstParagraph} from "../../common/markdown-text";
 
 // The docs for language models and agents (llmstxt.org): every page as
 // Markdown at its own path with ".md", and per version and language an index,

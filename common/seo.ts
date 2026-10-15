@@ -1,6 +1,15 @@
 // Search engine helpers used when rendering pages and the sitemap
 
 export const TITLE_SEPARATOR = " · ";
+
+// Social images, drawn at build time (lib/social-images.ts)
+export const SOCIAL_IMAGE_WIDTH = 1200;
+export const SOCIAL_IMAGE_HEIGHT = 630;
+
+// The address of a page's social image, e.g. /_clay/social/guides/setup.png
+export function socialImagePath(route: string): string {
+    return `/_clay/social${route === "/" ? "/index" : route}.png`;
+}
 export const DESCRIPTION_LENGTH = 160;
 
 export function pageTitle(page: string | undefined, site: string): string {

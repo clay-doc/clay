@@ -28,6 +28,13 @@ const parseAll = (lines: string[]) => {
 };
 
 describe("build parser", () => {
+    it("shows drawing the social images as a step, also in CI", () => {
+        expect(parseAll(["[clay] ℹ Drawing social images", "[info] [clay] Drew 3 of 40 social images, the others are unchanged · 90ms"])).toEqual([
+            {type: "step", label: "Drawing social images"},
+            {type: "done", label: "Drew social images", detail: "40 images, 3 new"},
+        ]);
+    });
+
     it("turns Nuxt output into steps and skips noise", () => {
         expect(parseAll(LOG)).toEqual([
             {type: "step", label: "Loading docs"},

@@ -124,6 +124,11 @@ export function createBuildParser() {
         if ((match = text.match(CLAY_WARNING))) return [{type: "warn", text: match[1]!}];
         if ((match = text.match(CLAY_NOTE))) return [{type: "note", text: match[1]!}];
         if ((match = text.match(CLAY_LOADED))) return [loaded(match)];
+        // Social images (lib/social-images.ts), drawn after the pages
+        if (/^\[clay\]\s+(?:\S+\s+)?Drawing social images/.test(text)) return [{type: "step", label: "Drawing social images"}];
+        if ((match = text.match(/^\[clay\]\s+(?:\S+\s+)?Drew (\d+) of (\d+) social images/))) {
+            return [{type: "done", label: "Drew social images", detail: `${match[2]} images, ${match[1]} new`}];
+        }
         if (/Building Nuxt for production/.test(text)) return [{type: "step", label: "Loading docs"}];
         if ((match = text.match(/Building (client|server)\.\.\./))) return [{type: "step", label: `Building ${match[1]}`}];
         if ((match = text.match(/(\d+) modules transformed/))) return [{type: "detail", text: `${match[1]} modules`}];

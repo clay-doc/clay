@@ -491,6 +491,15 @@ test.describe("snippets, variables, head and social images", () => {
         const html = await (await request.get("reference/feature-tour/")).text();
         expect(html).toContain('<meta name="clay-playground" content="from clay.yaml">');
     });
+
+    test("pages link to their social image", async ({request}) => {
+        const html = await (await request.get("reference/feature-tour/")).text();
+        expect(html).toContain('<meta property="og:image" content="https://clay-doc.github.io/clay/_clay/social/reference/feature-tour.png">');
+        expect(html).toContain('<meta name="twitter:card" content="summary_large_image">');
+        const image = await request.get("_clay/social/reference/feature-tour.png");
+        expect(image.headers()["content-type"]).toBe("image/png");
+        expect((await image.body()).subarray(1, 4).toString()).toBe("PNG");
+    });
 });
 
 test.describe("for language models and agents", () => {

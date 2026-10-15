@@ -1,5 +1,6 @@
 import GithubSlugger from "github-slugger";
-import type {MarkedExtension, Token} from "marked";
+import {Marked, type MarkedExtension, type Token} from "marked";
+import {componentSyntax} from "./markdown-components";
 
 // Plain text of a markdown token, e.g. "Install `foo` [here](x)" => "Install foo here".
 export function plainText(token: Token): string {
@@ -61,4 +62,16 @@ export function headingIds(linkLabel = "Link to this section"): MarkedExtension 
             }
         }
     };
+}
+
+const lexer = new Marked({gfm: true}, componentSyntax());
+
+// Plain text of the first top-level paragraph, for the meta description
+export function firstParagraph(markdown: string): string {
+    for (const token of lexer.lexer(markdown)) {
+        if (token.type !== "paragraph") continue;
+        const text = plainText(token).replace(/\s+/g, " ").trim();
+        if (text) return text;
+    }
+    return "";
 }

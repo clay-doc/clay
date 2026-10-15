@@ -1,8 +1,6 @@
-// DOM types: runs in the browser, and on the server with jsdom
+// DOM types: runs on the server with jsdom
 /// <reference lib="dom" />
-import {Marked} from "marked";
-import {plainText} from "../../common/markdown-text";
-import {componentSyntax} from "../../common/markdown-components";
+import {firstParagraph} from "../../common/markdown-text";
 import {rewriteDocHtml} from "./doc-links";
 import linkConcat from "../../common/link-concat";
 import {truncate} from "../../common/seo";
@@ -20,18 +18,6 @@ export type RenderedDoc = {
     toc: TocEntry[];
     description: string;
 };
-
-const lexer = new Marked({gfm: true}, componentSyntax());
-
-// Plain text of the first top-level paragraph, for the meta description
-export function firstParagraph(markdown: string): string {
-    for (const token of lexer.lexer(markdown)) {
-        if (token.type !== "paragraph") continue;
-        const text = plainText(token).replace(/\s+/g, " ").trim();
-        if (text) return text;
-    }
-    return "";
-}
 
 // Renders a doc for the app: sanitized HTML with links resolved for the site's
 // base URL, its table of contents and a description for search engines.
