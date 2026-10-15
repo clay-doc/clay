@@ -7,7 +7,7 @@ order: 2
 Raw HTML from contributors is sanitized.
 
 <script>window.__xss = "script"</script>
-<img src="x" onerror="window.__xss='onerror'">
+<img src="data:," onerror="window.__xss='onerror'">
 <a href="javascript:window.__xss='link'">bad link</a>
 
 ## Forms

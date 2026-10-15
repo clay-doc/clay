@@ -40,11 +40,27 @@ export function unknownKeys(data: unknown, schema: Schema, prefix = ""): string[
 // With Clay's components, whose headings and links count too
 const marked = new Marked({gfm: true}, componentSyntax());
 
+// Files and links written in HTML: images, videos and their posters, sounds, links
+const HTML_TAG = /<(img|video|audio|source|track|a)\b([^>]*)>/gi;
+const HTML_REF = /\b(src|poster|href)\s*=\s*(?:"([^"]*)"|'([^']*)')/gi;
+
+function htmlRefs(html: string): { href: string, isImage: boolean }[] {
+    const refs: { href: string, isImage: boolean }[] = [];
+    for (const [, tag, attributes] of html.matchAll(HTML_TAG)) {
+        for (const [, name, double, single] of attributes!.matchAll(HTML_REF)) {
+            if ((name === "href") !== (tag!.toLowerCase() === "a")) continue;
+            refs.push({href: double ?? single ?? "", isImage: name !== "href"});
+        }
+    }
+    return refs;
+}
+
 function markdownRefs(markdown: string): { href: string, isImage: boolean }[] {
     const refs: { href: string, isImage: boolean }[] = [];
     marked.walkTokens(marked.lexer(stripFrontMatter(markdown)), (token: Token) => {
         if (token.type === "link") refs.push({href: token.href, isImage: false});
         if (token.type === "image") refs.push({href: token.href, isImage: true});
+        if (token.type === "html") refs.push(...htmlRefs(token.raw));
     });
     return refs;
 }

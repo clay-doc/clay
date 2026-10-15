@@ -42,6 +42,20 @@ describe("brokenLinks", () => {
         ]);
     });
 
+    it("checks files and links written in HTML too", () => {
+        const pages = [
+            page("/guides", "guides", undefined, true),
+            page("/guides/setup", "guides/setup.md", '<video src="img/clip.mp4" poster="img/shot.png" controls></video>\n\n'
+                + '<img src="img/shot.png"> <a href="../index.md">home</a> <a href="gone.md">x</a>\n\n'
+                + "<iframe src=\"https://www.youtube.com/embed/x\"></iframe>\n\n```html\n<img src=\"in-code.png\">\n```"),
+            page("/index", "index.md", "Text"),
+        ];
+        expect(brokenLinks(pages, docs)).toEqual([
+            'guides/setup.md: "img/clip.mp4" points to a missing file',
+            'guides/setup.md: "gone.md" points to a missing page (/guides/gone)',
+        ]);
+    });
+
     it("checks pages of older versions against their own docs folder", () => {
         const old = mkdtempSync(join(tmpdir(), "clay-links-old-"));
         mkdirSync(join(old, "guides"), {recursive: true});
