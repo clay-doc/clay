@@ -133,6 +133,19 @@ test.describe("in the browser", () => {
             .toHaveAttribute("href", "https://github.com/clay-doc/clay/edit/main/playground/docs/reference/feature-tour.md");
     });
 
+    test("the table of contents marks the sections on screen", async ({page}) => {
+        await page.goto("reference/feature-tour/");
+        await hydrated(page);
+        const toc = page.getByRole("navigation", {name: "On this page"});
+        await expect(toc.getByRole("link", {name: "Links"})).toHaveClass(/text-primary/);
+        await expect(toc.getByRole("link", {name: "Tables"})).not.toHaveClass(/text-primary/);
+
+        await page.locator(".prose").locator("xpath=ancestor::div[contains(@class, 'overflow-scroll')][1]")
+            .evaluate(pane => pane.scrollTop = pane.scrollHeight);
+        await expect(toc.getByRole("link", {name: "Tables"})).toHaveClass(/text-primary/);
+        await expect(toc.getByRole("link", {name: "Links"})).not.toHaveClass(/text-primary/);
+    });
+
     test("a new page starts at the top", async ({page}) => {
         await page.goto("configuration/");
         await hydrated(page);
