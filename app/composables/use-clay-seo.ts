@@ -30,7 +30,7 @@ export function useClaySeo(input: MaybeRefOrGetter<SeoInput>) {
         // An untranslated page repeats its original; search engines should show that one
         const canonical = absoluteUrl(origin, basePath, canonicalRoute.value ?? page.route);
         const translations = origin ? alternates.value.map(alternate => ({
-            rel: "alternate", hreflang: alternate.language, href: absoluteUrl(origin, basePath, alternate.route)!,
+            rel: "alternate" as const, hreflang: alternate.language, href: absoluteUrl(origin, basePath, alternate.route)!,
         })) : [];
         const defaultTranslation = translations.find(t => t.hreflang === languages.value[0]?.code);
         const jsonLd = page.trail ? breadcrumbs(page.trail, origin, basePath) : undefined;
@@ -48,9 +48,9 @@ export function useClaySeo(input: MaybeRefOrGetter<SeoInput>) {
                 ...(page.updated ? [{property: "article:modified_time", content: page.updated}] : []),
             ],
             link: [
-                ...(canonical ? [{rel: "canonical", href: canonical}] : []),
+                ...(canonical ? [{rel: "canonical" as const, href: canonical}] : []),
                 ...translations,
-                ...(defaultTranslation ? [{rel: "alternate", hreflang: "x-default", href: defaultTranslation.href}] : []),
+                ...(defaultTranslation ? [{rel: "alternate" as const, hreflang: "x-default", href: defaultTranslation.href}] : []),
             ],
             script: jsonLd ? [{type: "application/ld+json", innerHTML: jsonLd}] : [],
         };

@@ -52,7 +52,7 @@ function anchors(markdown: string): Set<string> {
     const slugger = new GithubSlugger();
     const ids = new Set<string>();
     marked.walkTokens(marked.lexer(stripFrontMatter(markdown)), (token: Token) => {
-        if (token.type === "heading") ids.add(slugger.slug(inlineText(token.tokens)));
+        if (token.type === "heading") ids.add(slugger.slug(inlineText(token.tokens ?? [])));
         if (token.type === "html") for (const match of token.raw.matchAll(/\bid=["']([^"']+)["']/g)) ids.add(match[1]!);
     });
     return ids;

@@ -39,10 +39,10 @@ const kit = hasFontawesomeKit(siteConfig);
 useHead(() => ({
   htmlAttrs: {lang: edition.value.language.code},
   link: [
-    ...(siteConfig.favicon ? [{rel: 'icon', href: linkConcat(baseUrl.value, siteConfig.favicon)}] : []),
+    ...(siteConfig.favicon ? [{rel: 'icon' as const, href: linkConcat(baseUrl.value, siteConfig.favicon)}] : []),
     ...(kit
-      ? [{rel: 'preconnect', href: 'https://ka-f.fontawesome.com', crossorigin: 'anonymous' as const}]
-      : [{rel: 'stylesheet', href: FONTAWESOME_FREE_CSS, integrity: FONTAWESOME_FREE_SRI, crossorigin: 'anonymous' as const}]),
+      ? [{rel: 'preconnect' as const, href: 'https://ka-f.fontawesome.com', crossorigin: 'anonymous' as const}]
+      : [{rel: 'stylesheet' as const, href: FONTAWESOME_FREE_CSS, integrity: FONTAWESOME_FREE_SRI, crossorigin: 'anonymous' as const}]),
   ],
   script: kit ? [{src: `https://kit.fontawesome.com/${siteConfig.fontawesomeKit}.js`, crossorigin: 'anonymous' as const, async: true}] : [],
 }));
