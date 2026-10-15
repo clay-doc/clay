@@ -31,11 +31,14 @@ if (import.meta.server && !item.value && !isEditionRoot.value) {
   setResponseStatus(useRequestEvent()!, 404, "Page Not Found");
 }
 useHead(() => item.value || isEditionRoot.value ? {} : {title: t.value.notFound});
+const enter = usePageEnter();
 </script>
 
 <template>
-  <Landing v-if="isEditionRoot" :route="path"/>
-  <Error v-else-if="!item" :code="404" :message="t.notFound"/>
-  <Directory v-else-if="isDirectory"/>
-  <Markdown v-else :url="path" class="min-w-full"/>
+  <div :class="{'page-enter': enter}">
+    <Landing v-if="isEditionRoot" :route="path"/>
+    <Error v-else-if="!item" :code="404" :message="t.notFound"/>
+    <Directory v-else-if="isDirectory"/>
+    <Markdown v-else :url="path" class="min-w-full"/>
+  </div>
 </template>

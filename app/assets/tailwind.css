@@ -410,6 +410,24 @@ pre.shiki .highlighted-word {
     }
 }
 
+/* A page opened in the app fades in and rises a little (pages/*.vue) */
+.page-enter {
+    animation: page-enter 0.25s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+@keyframes page-enter {
+    from {
+        opacity: 0;
+        translate: 0 0.5rem;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .page-enter {
+        animation: none;
+    }
+}
+
 /* The search field (SearchModal.vue) is cleared with Escape; the browser's own
    clear button would sit oddly in the large field */
 dialog input[type="search"]::-webkit-search-cancel-button {
