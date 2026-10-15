@@ -116,7 +116,7 @@ provide('untranslatedNote', untranslatedNote)
        @click.prevent="skipToContent">{{messages.skipToContent}}</a>
     <Navbar class="col-span-2"/>
     <Sidebar class="hidden lg:block w-full"/>
-    <Content class="h-full w-full col-span-2 lg:col-span-1 overflow-scroll">
+    <Content class="h-full w-full col-span-2 lg:col-span-1 overflow-hidden">
       <div v-if="version.name" role="status" class="alert alert-warning alert-soft rounded-none sm:rounded-tl-2xl">
         <i class="fa-solid fa-clock-rotate-left"></i>
         <span>

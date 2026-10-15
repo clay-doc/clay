@@ -72,7 +72,7 @@ function drawComponents() {
 }
 
 onMounted(() => {
-  scrollContainer.value = contentEl.value?.closest<HTMLElement>(".overflow-scroll") ?? null;
+  scrollContainer.value = contentEl.value?.closest<HTMLElement>("#content") ?? null;
   drawComponents();
   revealResult();
 });

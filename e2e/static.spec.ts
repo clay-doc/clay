@@ -156,6 +156,14 @@ test.describe("in the browser", () => {
         await expect(page.locator(".navbar").getByRole("link", {name: "Example"})).toBeVisible();
     });
 
+    test("only the page scrolls, and only when it has to", async ({page}) => {
+        // overflow: scroll draws empty scrollbars where scrollbars always show (Windows, or macOS set to always)
+        await page.goto("reference/security/");
+        const overflow = await page.locator("main#content").evaluate(el =>
+            [getComputedStyle(el).overflowY, getComputedStyle(el).overflowX, getComputedStyle(el.parentElement!).overflow]);
+        expect(overflow).toEqual(["auto", "auto", "hidden"]);
+    });
+
     test("a new page starts at the top", async ({page}) => {
         await page.goto("configuration/");
         await hydrated(page);
