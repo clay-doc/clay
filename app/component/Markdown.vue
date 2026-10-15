@@ -36,6 +36,7 @@ useClaySeo(() => ({
 }));
 
 const contentEl = ref<HTMLElement | null>(null);
+const tocBox = ref<HTMLDetailsElement | null>(null);
 const scrollContainer = ref<HTMLElement | null>(null);
 
 // Once the page is shown: mark the words from a search result (?highlight=)
@@ -97,6 +98,12 @@ function handleClicks(event: MouseEvent) {
           <i class="fa-solid fa-language"></i>
           <span>{{untranslatedNote}}</span>
         </div>
+        <!-- Narrower screens have no room beside the page: the contents fold up above it -->
+        <details v-if="doc.toc.length > 1" ref="tocBox" class="not-prose xl:hidden mb-6 rounded-box border border-base-300 text-sm">
+          <summary class="cursor-pointer px-4 py-2 font-semibold">{{t.onThisPage}}</summary>
+          <TableOfContents :entries="doc.toc" :scroll-container="scrollContainer" :title="false" class="px-4 pb-3"
+                           @navigate="tocBox?.removeAttribute('open')"/>
+        </details>
         <div ref="contentEl" v-html="doc.html" @click="handleClicks" class="w-full"></div>
         <PageList v-if="doc.list"/>
         <PageFooter v-if="!start" :url="url"/>

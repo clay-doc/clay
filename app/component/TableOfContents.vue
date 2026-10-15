@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import type {TocEntry} from "#common/toc";
 
-const props = defineProps<{ entries: TocEntry[], scrollContainer: HTMLElement | null }>();
+// Without title when it sits in a box that already says "On this page"
+const props = withDefaults(defineProps<{ entries: TocEntry[], scrollContainer: HTMLElement | null, title?: boolean }>(), {title: true});
+const emit = defineEmits<{ navigate: [] }>();
 const route = useRoute();
 const router = useRouter();
 const t = useMessages();
@@ -61,12 +63,13 @@ onBeforeUnmount(() => {
 
 function go(id: string) {
   router.push({query: route.query, hash: "#" + id});
+  emit("navigate");
 }
 </script>
 
 <template>
   <nav :aria-label="t.onThisPage" class="text-sm">
-    <p class="font-semibold mb-2">{{t.onThisPage}}</p>
+    <p v-if="title" class="font-semibold mb-2">{{t.onThisPage}}</p>
     <div class="relative">
       <div class="absolute inset-y-0 left-0 w-px bg-base-300"></div>
       <div class="absolute left-[-0.5px] w-0.5 rounded-full bg-primary transition-[top,height,opacity] duration-300 ease-out motion-reduce:transition-none"

@@ -33,3 +33,13 @@ test("pages fit the screen without sideways scrolling", async ({page}) => {
     await page.goto("reference/feature-tour/");
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
 });
+
+test("the contents of a page fold up above it and close after a jump", async ({page}) => {
+    await page.goto("reference/feature-tour/");
+    await hydrated(page);
+    const box = page.locator("details", {has: page.getByText("On this page")});
+    await box.locator("summary").click();
+    await box.getByRole("link", {name: "Alerts"}).click();
+    await expect(page).toHaveURL(/#alerts$/);
+    await expect(box).not.toHaveAttribute("open");
+});
