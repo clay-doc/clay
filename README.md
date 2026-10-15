@@ -23,11 +23,11 @@ site you can host anywhere, such as GitHub Pages. There is no theme to set up an
 - **Pre-rendered pages** that load fast, work without JavaScript and fit small screens.
 - **Full-text search** across every page and section, typos forgiven.
 - **Clay Flavored Markdown**: tabs, steps, cards, details, badges, math, diagrams, file trees, prompts, videos and
-  embeds, written in plain Markdown.
+  embeds, written in plain Markdown, plus snippets and variables to write a text once.
 - **Ready for AI**: every page as Markdown, `llms.txt`, a page menu to ask ChatGPT or Claude, and commands that
   coding agents understand.
 - **Versions and translations**, with switchers that keep the page you are reading.
-- **SEO**: descriptions, canonical links, Open Graph tags, structured data and a sitemap.
+- **SEO**: descriptions, canonical links, structured data, a sitemap, and a social image for every page.
 - **Checks** for broken links and config typos; `--strict` turns them into build failures.
 - **Safe** for docs from outside contributors: rendered HTML is sanitized.
 
