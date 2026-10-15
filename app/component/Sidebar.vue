@@ -11,14 +11,17 @@ const route = useRoute();
 // the new. It is placed against the list's content, so it scrolls with the entries.
 const list = ref<HTMLElement | null>(null);
 const marker = ref<HTMLElement | null>(null);
-let placed = false; // whether the mark shows, so the next move slides rather than snaps
+let placed = false; // whether the mark shows, so the next move can slide
+let layer = 0; // how deep in folders the marked entry is
 let frame = 0;
 let following = 0; // until when to follow the entries every frame
 
 // Written onto the element directly: a placement without sliding needs its
-// position and the suppressed transition in the same frame. It snaps when it
-// first shows, and while folders move the entries, which it then tracks frame by frame.
-function measure(snap: boolean) {
+// position and the suppressed transition in the same frame. It slides only
+// between entries on the same layer of folders; to another layer, and when it
+// first shows, it jumps there and its rule grows from the middle. While folders
+// move the entries, it tracks them frame by frame.
+function measure(follow: boolean) {
   const ul = list.value, bar = marker.value;
   if (!ul || !bar) return;
   const active = ul.querySelector<HTMLElement>("a.menu-active");
@@ -40,8 +43,11 @@ function measure(snap: boolean) {
     placed = false;
     return;
   }
+  let depth = 0;
+  for (let el = active!.parentElement; el && el !== ul; el = el.parentElement) if (el.nodeName === "UL") depth++;
+  const slide = placed && !follow && depth === layer;
+  layer = depth;
   const box = ul.getBoundingClientRect();
-  const slide = placed && !snap;
   if (!slide) bar.style.transition = "none";
   bar.style.translate = `${left - box.left - ul.clientLeft + ul.scrollLeft}px ${top - box.top - ul.clientTop + ul.scrollTop}px`;
   bar.style.width = `${width}px`;
@@ -49,6 +55,12 @@ function measure(snap: boolean) {
   if (!slide) {
     void bar.offsetHeight;
     bar.style.transition = "";
+  }
+  if (!slide && !follow) {
+    // Restarts the animation
+    bar.classList.remove("grow");
+    void bar.offsetHeight;
+    bar.classList.add("grow");
   }
   bar.style.opacity = "1";
   bar.classList.add("placed");

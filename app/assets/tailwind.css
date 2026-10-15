@@ -309,6 +309,17 @@ pre.shiki .highlighted-word {
         height 0.15s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.15s ease-out;
 }
 
+/* After a jump to another layer of folders, the rule grows from its middle */
+.menu > .sidebar-marker.grow::before {
+    animation: sidebar-rule-grow 0.2s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+@keyframes sidebar-rule-grow {
+    from {
+        transform: scaleY(0);
+    }
+}
+
 .menu > .sidebar-marker::before {
     content: "";
     position: absolute;
@@ -332,6 +343,10 @@ pre.shiki .highlighted-word {
 @media (prefers-reduced-motion: reduce) {
     .menu > .sidebar-marker {
         transition: none;
+    }
+
+    .menu > .sidebar-marker.grow::before {
+        animation: none;
     }
 }
 
