@@ -116,6 +116,16 @@ describe("progress without a terminal", () => {
         ].join("\n"));
     });
 
+    it("prints notes under their step", () => {
+        const lines = [LOG[0]!, "[clay] ℹ Note: submit the sitemap", ...LOG.slice(3)];
+        expect(render(lines, 0)).toContain([
+            "●  Loaded 10 pages from playground/docs  0ms",
+            "│  ℹ submit the sitemap",
+            "│",
+            "●  Built client  194 modules · 0ms",
+        ].join("\n"));
+    });
+
     it("marks the running step as failed and shows the errors", () => {
         const output = render([...LOG.slice(0, 12), " ERROR  Exiting due to prerender errors."], 1);
         expect(output).toContain("✖  Prerendering pages\n│  Exiting due to prerender errors.\n");

@@ -66,6 +66,13 @@ export default defineNuxtModule({
             return `${edition.language} (${pages.filter(page => !page.untranslated).length}/${pages.length} translated)`;
         });
         const details = [older.length ? `versions ${older.join(", ")}` : "", translated.length ? `languages ${translated.join(", ")}` : ""].filter(Boolean);
+
+        // Crawlers read robots.txt, and the sitemap it names, only at the root of a
+        // domain; a site under a base path has to hand its sitemap in itself
+        const {origin: siteOrigin} = resolveOrigin(site.config.siteURL, nuxt.options.app.baseURL);
+        if (!nuxt.options.dev && siteOrigin && nuxt.options.app.baseURL !== "/") {
+            logger.info(`Note: robots.txt only counts at the root of a domain; submit ${siteOrigin}${nuxt.options.app.baseURL}sitemap.xml in Google Search Console and Bing Webmaster Tools`);
+        }
         logger.info(`${count("")} pages in ${relative(process.cwd(), site.docsDir) || site.docsDir}${details.length ? `; ${details.join("; ")}` : ""}`);
 
         // Config and navigation for the app, bundled instead of fetched

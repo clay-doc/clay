@@ -12,6 +12,7 @@ test.describe("pre-rendered pages", () => {
         expect(html).toContain('<meta name="description" content="Every Markdown feature Clay renders, on one page.">');
         expect(html).toContain('<link rel="canonical" href="https://clay-doc.github.io/clay/reference/feature-tour/">');
         expect(html).toContain('"@type":"BreadcrumbList"');
+        expect(html).toContain('<link rel="sitemap" type="application/xml" href="https://clay-doc.github.io/clay/sitemap.xml">');
         expect(html).toContain('class="shiki');
     });
 

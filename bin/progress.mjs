@@ -22,6 +22,7 @@ function normalize(raw) {
 
 const CLAY_WARNING = /^\[clay\]\s+(?:WARN|⚠)\s+(.*)$/;
 const CLAY_LOADED = /^\[clay\].*?(\d+) pages? in (.+?)(?:; (.+))?$/;
+const CLAY_NOTE = /^\[clay\]\s+(?:\S+\s+)?Note: (.*)$/;
 const loaded = match => ({type: "done", label: `Loaded ${match[1]} ${match[1] === "1" ? "page" : "pages"} from ${match[2]}`, detail: match[3]});
 
 // Nitro's list of the pages that failed, one line per status
@@ -110,6 +111,7 @@ export function createBuildParser() {
             return [];
         }
         if ((match = text.match(CLAY_WARNING))) return [{type: "warn", text: match[1]}];
+        if ((match = text.match(CLAY_NOTE))) return [{type: "note", text: match[1]}];
         if ((match = text.match(CLAY_LOADED))) return [loaded(match)];
         if (/Building Nuxt for production/.test(text)) return [{type: "step", label: "Loading docs"}];
         if ((match = text.match(/Building (client|server)\.\.\./))) return [{type: "step", label: `Building ${match[1]}`}];
@@ -248,14 +250,15 @@ export function createProgress(title, {stream = process.stdout, now = Date.now, 
     const restoreCursor = () => tty && stream.write("\x1b[?25h");
 
     const start = label => {
-        current = {label, detail: null, started: now(), warnings: []};
+        current = {label, detail: null, started: now(), warnings: [], notes: []};
         draw();
     };
     const complete = (label, lines = []) => {
-        const {detail, started: stepStarted, warnings} = current;
+        const {detail, started: stepStarted, warnings, notes} = current;
         const info = [detail, duration(now() - stepStarted)].filter(Boolean).join(" · ");
         current = null;
-        print([`${sage("●")}  ${label}  ${gray(info)}`, ...warnings.map(warning => `${bar}  ${paint("33", "▲")} ${warning}`), ...lines, bar]);
+        print([`${sage("●")}  ${label}  ${gray(info)}`, ...warnings.map(warning => `${bar}  ${paint("33", "▲")} ${warning}`),
+            ...notes.map(note => `${bar}  ${gray(`ℹ ${note}`)}`), ...lines, bar]);
     };
     // Once a server runs, each event is a line of its own, with the time
     const log = (icon, text) => print([`${bar}  ${icon ? `${icon} ` : ""}${text}  ${gray(clock(now()))}`]);
@@ -308,6 +311,10 @@ export function createProgress(title, {stream = process.stdout, now = Date.now, 
                     if (ready) log(paint("33", "▲"), event.text);
                     else if (current) current.warnings.push(event.text);
                     else print([`${bar}  ${paint("33", "▲")} ${event.text}`]);
+                    break;
+                case "note":
+                    if (current) current.notes.push(event.text);
+                    else print([`${bar}  ${gray(`ℹ ${event.text}`)}`, bar]);
                     break;
                 case "error":
                     // A server keeps running after most errors, so they show right away

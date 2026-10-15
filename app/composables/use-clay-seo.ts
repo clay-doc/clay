@@ -51,6 +51,8 @@ export function useClaySeo(input: MaybeRefOrGetter<SeoInput>) {
                 ...(canonical ? [{rel: "canonical" as const, href: canonical}] : []),
                 ...translations,
                 ...(defaultTranslation ? [{rel: "alternate" as const, hreflang: "x-default", href: defaultTranslation.href}] : []),
+                // Tools that look for the sitemap in the page, where robots.txt is out of reach (sites under a base path)
+                ...(origin ? [{rel: "sitemap" as const, type: "application/xml", href: `${origin}${basePath.replace(/\/?$/, "/")}sitemap.xml`}] : []),
             ],
             script: jsonLd ? [{type: "application/ld+json", innerHTML: jsonLd}] : [],
         };
