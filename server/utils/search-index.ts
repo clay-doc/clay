@@ -42,7 +42,8 @@ export function splitIntoSections(markdown: string, page: SearchPage): SearchSec
     }
 
     for (const section of sections) {
-        section.text = section.text.replace(/\s+/g, " ").trim();
+        // Alerts are read without their "[!TIP]" marker, like the page shows them
+        section.text = section.text.replace(/\[!(?:NOTE|TIP|IMPORTANT|WARNING|CAUTION|DANGER)\]/gi, " ").replace(/\s+/g, " ").trim();
         section.code = section.code.trim();
     }
 

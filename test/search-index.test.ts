@@ -67,6 +67,11 @@ describe("splitIntoSections", () => {
         expect(sections[2]!.text).toBe("Edit clay.yaml to change the title. Details Deeper heading stays in the configuration section.");
     });
 
+    it("reads alerts without their marker", () => {
+        const [intro] = splitIntoSections("> [!TIP]\n> Alerts are rendered with icons.", {link: "/a", title: "A", path: ""});
+        expect(intro!.text).toBe("Alerts are rendered with icons.");
+    });
+
     it("puts code blocks in their own field", () => {
         expect(sections[1]!.text).toBe("Download the binary and run it.");
         expect(sections[1]!.code).toBe("./clay-oven -ci");
