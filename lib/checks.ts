@@ -1,7 +1,9 @@
 import {existsSync} from "node:fs";
 import {join, posix} from "node:path";
+import GithubSlugger from "github-slugger";
 import {Marked, type Token} from "marked";
 import {stripFrontMatter} from "./front-matter";
+import {inlineText} from "../common/markdown-text";
 import {docPath} from "../common/route-path";
 import type {Page} from "./site";
 
@@ -45,19 +47,37 @@ function markdownRefs(markdown: string): { href: string, isImage: boolean }[] {
     return refs;
 }
 
+// The ids a page's sections get when rendered (see headingIds), and ids written in HTML
+function anchors(markdown: string): Set<string> {
+    const slugger = new GithubSlugger();
+    const ids = new Set<string>();
+    marked.walkTokens(marked.lexer(stripFrontMatter(markdown)), (token: Token) => {
+        if (token.type === "heading") ids.add(slugger.slug(inlineText(token.tokens)));
+        if (token.type === "html") for (const match of token.raw.matchAll(/\bid=["']([^"']+)["']/g)) ids.add(match[1]!);
+    });
+    return ids;
+}
+
 const isAssetPath = (path: string) => {
     const ext = posix.extname(path).toLowerCase();
     return ext !== "" && ext !== ".md";
 };
 
-// Links and images in the docs that point to pages or files that do not exist,
-// resolved like the app resolves them: relative to the page, ".md" dropped.
-// Links to other sites and #anchors are not checked. docsDirs maps version
-// names to their docs folder ("" for the current docs). Untranslated pages
-// repeat their original, so they are checked once, there.
+// Links and images in the docs that point to pages, files or #sections that do
+// not exist, resolved like the app resolves them: relative to the page, ".md"
+// dropped. Links to other sites are not checked. docsDirs maps version names to
+// their docs folder ("" for the current docs). Untranslated pages repeat their
+// original, so they are checked once, there.
 export function brokenLinks(pages: Page[], docsDirs: string | Record<string, string>): string[] {
     const dirs = typeof docsDirs === "string" ? {"": docsDirs} : docsDirs;
     const routes = new Set(["/", ...pages.map(page => page.prefix).filter(Boolean), ...pages.map(page => page.route)]);
+    const markdown = new Map(pages.filter(page => page.markdown).map(page => [page.route, page.markdown!]));
+    const ids = new Map<string, Set<string>>();
+    // Sections of a page, or undefined for pages without text, whose sections are not known
+    const sectionsOf = (route: string) => {
+        if (!ids.has(route) && markdown.has(route)) ids.set(route, anchors(markdown.get(route)!));
+        return ids.get(route);
+    };
     const broken: string[] = [];
 
     for (const page of pages) {
@@ -65,7 +85,7 @@ export function brokenLinks(pages: Page[], docsDirs: string | Record<string, str
         const version = page.version ?? "";
         for (const ref of markdownRefs(page.markdown)) {
             // A folder's index.md links relative to its folder
-            const reason = checkRef(ref, docPath(page.route, page.isDir), routes, dirs[version]!, page.prefix ?? "");
+            const reason = checkRef(ref, page.route, docPath(page.route, page.isDir), routes, sectionsOf, dirs[version]!, page.prefix ?? "");
             const source = version ? `docs-archive/${version}/${page.source}` : page.source;
             if (reason) broken.push(`${source}: "${ref.href}" ${reason}`);
         }
@@ -73,9 +93,25 @@ export function brokenLinks(pages: Page[], docsDirs: string | Record<string, str
     return broken;
 }
 
-function checkRef(ref: { href: string, isImage: boolean }, route: string, routes: Set<string>, docsDir: string, prefix: string): string | undefined {
+// "#top" leads to the top of any page
+function checkSection(page: string, fragment: string, sectionsOf: (route: string) => Set<string> | undefined): string | undefined {
+    if (!fragment || fragment.toLowerCase() === "top") return undefined;
+    let id = fragment;
+    try {
+        id = decodeURIComponent(fragment);
+    } catch {
+        // keep the raw id
+    }
+    const sections = sectionsOf(page);
+    return !sections || sections.has(id) ? undefined : `points to a missing section (#${id} on ${page})`;
+}
+
+function checkRef(ref: { href: string, isImage: boolean }, self: string, route: string, routes: Set<string>,
+                  sectionsOf: (route: string) => Set<string> | undefined, docsDir: string, prefix: string): string | undefined {
     const href = ref.href;
-    if (!href || href.startsWith("#") || href.startsWith("//") || /^[a-z][a-z\d+.-]*:/i.test(href)) return undefined;
+    if (!href || href.startsWith("//") || /^[a-z][a-z\d+.-]*:/i.test(href)) return undefined;
+    const fragment = href.includes("#") ? href.slice(href.indexOf("#") + 1) : "";
+    if (href.startsWith("#")) return checkSection(self, fragment, sectionsOf);
 
     let target = href.split("#")[0]!.split("?")[0]!;
     try {
@@ -95,5 +131,5 @@ function checkRef(ref: { href: string, isImage: boolean }, route: string, routes
     }
 
     const page = posix.normalize("/" + resolved.replace(/\.md$/i, "")).replace(/(^|\/)index$/i, "").replace(/\/$/, "") || "/";
-    return routes.has(page) ? undefined : `points to a missing page (${page})`;
+    return routes.has(page) ? checkSection(page, fragment, sectionsOf) : `points to a missing page (${page})`;
 }

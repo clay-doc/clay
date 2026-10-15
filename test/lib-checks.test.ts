@@ -56,4 +56,16 @@ describe("brokenLinks", () => {
             'docs-archive/1.x/guides/setup.md: "old.md" points to a missing page (/1.x/guides/old)',
         ]);
     });
+
+    it("reports links to sections that do not exist, on the same page or another", () => {
+        const pages = [
+            page("/a", "a.md", "# A\n\n## Set up `clay`\n\n## Set up `clay`\n\n<a id=\"custom\"></a>\n\n[ok](#set-up-clay-1) [html](#custom) [top](#top) [gone](#nope) [other](b.md#install) [other-gone](b.md#uninstall) [dir](guides/#x)"),
+            page("/b", "b.md", "# B\n\n### Install\n"),
+            page("/guides", "guides", undefined, true),
+        ];
+        expect(brokenLinks(pages, docs)).toEqual([
+            'a.md: "#nope" points to a missing section (#nope on /a)',
+            'a.md: "b.md#uninstall" points to a missing section (#uninstall on /b)',
+        ]);
+    });
 });
