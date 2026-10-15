@@ -4,6 +4,7 @@ import GithubSlugger from "github-slugger";
 import {Marked, type Token} from "marked";
 import {stripFrontMatter} from "./front-matter";
 import {inlineText} from "../common/markdown-text";
+import {componentSyntax} from "../common/markdown-components";
 import {docPath} from "../common/route-path";
 import type {Page} from "./site";
 
@@ -36,7 +37,8 @@ export function unknownKeys(data: unknown, schema: Schema, prefix = ""): string[
     ).sort();
 }
 
-const marked = new Marked({gfm: true});
+// With Clay's components, whose headings and links count too
+const marked = new Marked({gfm: true}, componentSyntax());
 
 function markdownRefs(markdown: string): { href: string, isImage: boolean }[] {
     const refs: { href: string, isImage: boolean }[] = [];

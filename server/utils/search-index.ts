@@ -2,6 +2,7 @@ import MiniSearch from "minisearch";
 import GithubSlugger from "github-slugger";
 import {Marked, type Token} from "marked";
 import {inlineText, plainText} from "../../common/markdown-text";
+import {componentSyntax} from "../../common/markdown-components";
 import {SEARCH_OPTIONS, type SearchSection} from "../../common/search";
 import {stripFrontMatter} from "../../lib/front-matter";
 import type {Page} from "../../lib/site";
@@ -13,7 +14,7 @@ export type SearchPage = {
     path: string;  // parent directory titles, e.g. "Guides › Advanced"
 }
 
-const marked = new Marked({gfm: true});
+const marked = new Marked({gfm: true}, componentSyntax());
 
 export function splitIntoSections(markdown: string, page: SearchPage): SearchSection[] {
     const tokens = marked.lexer(stripFrontMatter(markdown));
@@ -29,21 +30,28 @@ export function splitIntoSections(markdown: string, page: SearchPage): SearchSec
     let current: SearchSection = {...base, id: page.link, heading: "", text: "", code: ""};
     const sections = [current];
 
-    for (const token of tokens) {
+    const add = (token: Token) => {
         if (token.type === "heading" && (token.depth === 2 || token.depth === 3)) {
             const anchor = anchors.get(token)!;
             current = {...base, id: `${page.link}#${anchor}`, anchor, heading: inlineText(token.tokens ?? []), text: "", code: ""};
             sections.push(current);
         } else if (token.type === "code") {
             current.code += token.text + "\n";
+        } else if (token.type === "container" || token.type === "tab") {
+            // Components: their sections and code blocks count like the page's own
+            current.text += (token.title ?? token.label ?? "") + " ";
+            token.tokens?.forEach(add);
         } else {
             current.text += plainText(token) + " ";
         }
-    }
+    };
+    tokens.forEach(add);
 
     for (const section of sections) {
         // Alerts are read without their "[!TIP]" marker, like the page shows them
-        section.text = section.text.replace(/\[!(?:NOTE|TIP|IMPORTANT|WARNING|CAUTION|DANGER)\]/gi, " ").replace(/\s+/g, " ").trim();
+        section.text = section.text.replace(/\[!(?:NOTE|TIP|IMPORTANT|WARNING|CAUTION|DANGER)\]/gi, " ")
+            // Icons of cards
+            .replace(/\{fa-[\w\s-]*\}/g, " ").replace(/\s+/g, " ").trim();
         section.code = section.code.trim();
     }
 

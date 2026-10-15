@@ -15,9 +15,24 @@ purify.addHook("uponSanitizeAttribute", (node, data) => {
     // or document properties, so keep them.
     if (data.attrName === "id" && /^H[1-6]$/.test(node.nodeName)) data.forceKeepAttr = true;
 
-    // Inline styles could lay content over the page; only highlighted code needs them
-    if (data.attrName === "style" && !(node as Element).closest?.("pre.shiki")) data.keepAttr = false;
+    // Inline styles could lay content over the page; only highlighted code needs
+    // them, and math (KaTeX) its sizes and offsets
+    if (data.attrName === "style") {
+        if ((node as Element).closest?.("pre.shiki")) return;
+        if ((node as Element).closest?.(".katex")) data.attrValue = mathStyle(data.attrValue);
+        else data.keepAttr = false;
+    }
 });
+
+const MATH_STYLE = /^(?:height|width|min-width|max-width|vertical-align|top|bottom|margin-(?:left|right|top|bottom)|padding-(?:left|right)|border-(?:top|bottom|right)-width|color)$/;
+
+// The declarations of a KaTeX style that cannot move content out of the formula
+function mathStyle(style: string): string {
+    return style.split(";").filter(declaration => {
+        const [property, value] = declaration.split(":").map(part => part.trim().toLowerCase());
+        return property && value && MATH_STYLE.test(property) && !/url\(|expression|var\(/.test(value);
+    }).join(";");
+}
 
 // Docs may come from outside contributors: remove scripts, event handlers,
 // javascript: URLs, forms (phishing) and styles from rendered markdown.

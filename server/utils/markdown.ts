@@ -14,6 +14,8 @@ import markedAlert from "marked-alert";
 import {headingIds} from "../../common/markdown-text";
 import {messagesFor, type Messages} from "../../common/i18n";
 import {transformerCopyButton} from "./code-block";
+import {componentSyntax} from "../../common/markdown-components";
+import {componentRenderers, fileTree, mermaidDiagram} from "./components";
 
 
 const transformers = (messages: Messages): ShikiTransformer[] => [
@@ -50,8 +52,10 @@ async function loadLanguages(highlighter: Highlighter, tokens: Token[], lexer: M
 
 // Alert titles and the copy button are in the language of the doc
 function createRenderer(highlighter: Highlighter, messages: Messages) {
+    let diagrams = 0;
     return new Marked()
     .use(headingIds(messages.sectionLink))
+    .use(componentSyntax(), componentRenderers(messages))
     .use(markedAlert({
         variants: [
             {type: "caution", icon: '<i class="fa-solid fa-triangle-exclamation mr-2"></i>', title: messages.alertCaution, titleClassName: "markdown-alert-title text-error"},
@@ -64,6 +68,9 @@ function createRenderer(highlighter: Highlighter, messages: Messages) {
     }))
     .use(markedShiki({
         highlight(code, lang, props) {
+            // Code blocks that are drawn instead of highlighted
+            if (lang === "mermaid") return mermaidDiagram(code, ++diagrams);
+            if (lang === "tree") return fileTree(code);
             return highlighter.codeToHtml(code, {
                 lang: lang && isLoaded(highlighter, lang) ? lang : "text",
                 // Both themes as CSS variables; tailwind.css picks one per site theme
@@ -92,10 +99,10 @@ function getHighlighter() {
     return highlighterPromise;
 }
 
-// Markdown to HTML with headings ids, alerts and highlighted code blocks
+// Markdown to HTML with headings ids, alerts, components and highlighted code blocks
 export async function renderMarkdown(markdown: string, messages: Messages = messagesFor("en")): Promise<string> {
     const highlighter = await getHighlighter();
-    const lexer = new Marked({gfm: true});
+    const lexer = new Marked({gfm: true}, componentSyntax());
     await loadLanguages(highlighter, lexer.lexer(markdown), lexer);
     // A renderer per document: heading ids are numbered per document, and
     // documents are rendered concurrently during the build

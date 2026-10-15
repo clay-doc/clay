@@ -22,7 +22,8 @@ export default defineNuxtConfig({
   vite: {
     plugins: [tailwindcss()],
   },
-  css: [fileURLToPath(new URL("./app/assets/tailwind.css", import.meta.url))],
+  // KaTeX styles math (server/utils/components.ts); its fonts only load on pages with math
+  css: [fileURLToPath(new URL("./app/assets/tailwind.css", import.meta.url)), "katex/dist/katex.min.css"],
   // Build files live in this package, where the server bundle can import its
   // dependencies; one folder per docs project. The output goes to the project.
   // Developing Clay itself (no CLAY_ROOT) uses Nuxt's .nuxt, which tsconfig.json reads.

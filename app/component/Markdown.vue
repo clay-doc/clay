@@ -5,6 +5,8 @@ import PageFooter from "~/component/PageFooter.vue";
 import PageList from "~/component/PageList.vue";
 import {clearHighlights, firstMarkInSection, highlightTerms} from "~/assets/highlight-dom";
 import {copyCodeBlock} from "#common/code-copy";
+import {remember, restoreTabs, reveal, selectLabel, selectTab, tabKeydown} from "~/assets/tabs";
+import {drawDiagrams} from "~/assets/diagrams";
 import type {DocItem, LinkPart} from "#common/nav";
 import type {TocEntry} from "#common/toc";
 
@@ -17,6 +19,7 @@ const linkParts = inject('linkParts') as Ref<LinkPart[]>;
 const currentDocItem = inject('currentDocItem') as Ref<DocItem | undefined>;
 const untranslatedNote = inject('untranslatedNote') as Ref<string>;
 const t = useMessages();
+const {theme} = useTheme();
 
 type Hero = { title: string, icon?: string, description?: string };
 type RenderedDoc = { html: string, toc: TocEntry[], description: string, hero: Hero | null, list: boolean };
@@ -54,14 +57,28 @@ async function revealResult() {
   const anchor = route.hash ? document.getElementById(decodeURIComponent(route.hash.slice(1))) : null;
   const mark = firstMarkInSection(root, marks, anchor);
   mark?.classList.add("search-hit-active");
+  // A hit in a hidden tab or folded details: show it first
+  const target = mark ?? anchor;
+  if (target) reveal(target);
   (mark ?? anchor)?.scrollIntoView({block: mark ? "center" : "start"});
+}
+
+// Components that need the browser: the reader's tabs, and diagrams in the site's theme
+function drawComponents() {
+  const root = contentEl.value;
+  if (!root) return;
+  restoreTabs(root);
+  drawDiagrams(root, theme.value === "clay-dark", t.value.diagramError);
 }
 
 onMounted(() => {
   scrollContainer.value = contentEl.value?.closest<HTMLElement>(".overflow-scroll") ?? null;
+  drawComponents();
   revealResult();
 });
 watch(() => [route.hash, route.query.highlight], revealResult);
+watch(() => doc.value?.html, () => nextTick(drawComponents));
+watch(theme, () => contentEl.value && drawDiagrams(contentEl.value, theme.value === "clay-dark", t.value.diagramError));
 
 function handleClicks(event: MouseEvent) {
   const target = event.target as HTMLElement;
@@ -72,12 +89,31 @@ function handleClicks(event: MouseEvent) {
     return;
   }
 
+  const tab = target?.closest<HTMLElement>('[data-tabs] [role=tab]');
+  if (tab) {
+    pickTab(tab);
+    return;
+  }
+
   // Plain clicks on doc links navigate in the app; modified clicks (new tab,
   // new window) and external links are left to the browser
   const link = target?.closest<HTMLAnchorElement>('a[data-route]');
   if (!link || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
   event.preventDefault();
   router.push(link.dataset.route!);
+}
+
+// A tab picked in one group is picked in all groups that have it, now and on later pages
+function pickTab(tab: HTMLElement) {
+  const label = tab.textContent?.trim() ?? "";
+  selectTab(tab);
+  if (contentEl.value) selectLabel(contentEl.value, label);
+  remember(label);
+}
+
+function handleKeys(event: KeyboardEvent) {
+  const tab = tabKeydown(event);
+  if (tab) pickTab(tab);
 }
 </script>
 
@@ -104,7 +140,7 @@ function handleClicks(event: MouseEvent) {
           <TableOfContents :entries="doc.toc" :scroll-container="scrollContainer" :title="false" class="px-4 pb-3"
                            @navigate="tocBox?.removeAttribute('open')"/>
         </details>
-        <div ref="contentEl" v-html="doc.html" @click="handleClicks" class="w-full"></div>
+        <div ref="contentEl" v-html="doc.html" @click="handleClicks" @keydown="handleKeys" class="w-full"></div>
         <PageList v-if="doc.list"/>
         <PageFooter v-if="!start" :url="url"/>
       </template>

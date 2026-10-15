@@ -3,7 +3,7 @@ import {expect, test} from "@playwright/test";
 import {hydrated} from "./helpers";
 
 // The WCAG 2 A and AA rules, contrast among them, on each kind of page in both themes
-const pages = ["", "reference/feature-tour/", "guides/advanced/", "de/guides/"];
+const pages = ["", "reference/feature-tour/", "reference/components/", "guides/advanced/", "de/guides/"];
 
 for (const theme of ["clay-light", "clay-dark"]) {
     for (const path of pages) {

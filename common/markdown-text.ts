@@ -17,6 +17,14 @@ export function plainText(token: Token): string {
         case "blockquote":
         case "list_item":
             return (token.tokens ?? []).map(plainText).join(" ");
+        // Components (markdown-components.ts): containers and tabs are read with their title or label
+        case "container":
+        case "tab":
+            return [token.title ?? token.label ?? "", ...(token.tokens ?? []).map(plainText)].join(" ");
+        case "math":
+        case "mathBlock":
+        case "badge":
+            return token.text;
         default:
             if ("tokens" in token && token.tokens) return inlineText(token.tokens);
             return "text" in token ? token.text : "";

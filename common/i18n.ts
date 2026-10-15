@@ -47,6 +47,8 @@ const en = {
     alertWarning: "Warning",
     alertCaution: "Caution",
     alertDanger: "Danger",
+    details: "Details",
+    diagramError: "The diagram could not be drawn.",
 };
 
 export type Messages = typeof en;
@@ -98,6 +100,8 @@ const de: Messages = {
     alertWarning: "Warnung",
     alertCaution: "Vorsicht",
     alertDanger: "Gefahr",
+    details: "Details",
+    diagramError: "Das Diagramm konnte nicht gezeichnet werden.",
 };
 
 const fr: Messages = {
@@ -147,6 +151,8 @@ const fr: Messages = {
     alertWarning: "Avertissement",
     alertCaution: "Attention",
     alertDanger: "Danger",
+    details: "Détails",
+    diagramError: "Le diagramme n’a pas pu être dessiné.",
 };
 
 const es: Messages = {
@@ -196,6 +202,8 @@ const es: Messages = {
     alertWarning: "Advertencia",
     alertCaution: "Precaución",
     alertDanger: "Peligro",
+    details: "Detalles",
+    diagramError: "No se pudo dibujar el diagrama.",
 };
 
 const it: Messages = {
@@ -245,6 +253,8 @@ const it: Messages = {
     alertWarning: "Avviso",
     alertCaution: "Attenzione",
     alertDanger: "Pericolo",
+    details: "Dettagli",
+    diagramError: "Impossibile disegnare il diagramma.",
 };
 
 const pt: Messages = {
@@ -294,6 +304,8 @@ const pt: Messages = {
     alertWarning: "Aviso",
     alertCaution: "Cuidado",
     alertDanger: "Perigo",
+    details: "Detalhes",
+    diagramError: "Não foi possível desenhar o diagrama.",
 };
 
 const nl: Messages = {
@@ -343,6 +355,8 @@ const nl: Messages = {
     alertWarning: "Waarschuwing",
     alertCaution: "Let op",
     alertDanger: "Gevaar",
+    details: "Details",
+    diagramError: "Het diagram kon niet worden getekend.",
 };
 
 const pl: Messages = {
@@ -392,6 +406,8 @@ const pl: Messages = {
     alertWarning: "Ostrzeżenie",
     alertCaution: "Przestroga",
     alertDanger: "Niebezpieczeństwo",
+    details: "Szczegóły",
+    diagramError: "Nie udało się narysować diagramu.",
 };
 
 const ru: Messages = {
@@ -441,6 +457,8 @@ const ru: Messages = {
     alertWarning: "Предупреждение",
     alertCaution: "Осторожно",
     alertDanger: "Опасность",
+    details: "Подробнее",
+    diagramError: "Не удалось построить диаграмму.",
 };
 
 const ja: Messages = {
@@ -490,6 +508,8 @@ const ja: Messages = {
     alertWarning: "警告",
     alertCaution: "注意",
     alertDanger: "危険",
+    details: "詳細",
+    diagramError: "図を描画できませんでした。",
 };
 
 const zh: Messages = {
@@ -539,6 +559,8 @@ const zh: Messages = {
     alertWarning: "警告",
     alertCaution: "小心",
     alertDanger: "危险",
+    details: "详情",
+    diagramError: "无法绘制图表。",
 };
 
 const ko: Messages = {
@@ -588,6 +610,8 @@ const ko: Messages = {
     alertWarning: "경고",
     alertCaution: "주의",
     alertDanger: "위험",
+    details: "자세히",
+    diagramError: "다이어그램을 그릴 수 없습니다.",
 };
 
 // The most widely used languages; others use English unless clay.yaml provides "messages"

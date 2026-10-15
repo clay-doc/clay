@@ -23,7 +23,12 @@ export default defineEventHandler(async event => {
     const messages = messagesFor(page.language, config?.messages?.[page.language]);
     // Pages without a description of their own fall back to the start page's
     const start = site.pages.find(p => p.route === (page.prefix || "/") && p.isDir);
-    const result = await renderDoc(page.markdown, path, baseURL, start?.frontMatter.description, assetPath, messages);
+    // Cards show the icon and description of the pages they link to, in this version and language
+    const pageInfo = (route: string) => {
+        const target = site.pages.find(p => p.route === route);
+        return target && {icon: target.frontMatter.icon, description: target.frontMatter.description};
+    };
+    const result = await renderDoc(page.markdown, path, baseURL, start?.frontMatter.description, assetPath, messages, pageInfo);
     // index.md can ask for a large header (hero) and a list of the folder's pages
     const hero = page.frontMatter.hero ? {title: page.title, icon: page.frontMatter.icon, description: page.frontMatter.description} : null;
     return {...result, hero, list: page.frontMatter.list ?? false};

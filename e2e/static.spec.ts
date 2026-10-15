@@ -387,3 +387,86 @@ test.describe("index pages", () => {
         await expect(versions).not.toHaveAttribute("open");
     });
 });
+
+test.describe("components", () => {
+    test("tabs switch, pick the same tab in every group and remember it", async ({page}) => {
+        const messages = watchConsole(page);
+        await page.goto("reference/components/");
+        await hydrated(page);
+        const [first, second] = [page.locator("[data-tabs]").nth(0), page.locator("[data-tabs]").nth(1)];
+        await expect(first.getByRole("tabpanel")).toHaveText("Open the Terminal app.");
+        await expect(second.getByRole("tabpanel")).toHaveText("Second group, Windows.");
+
+        await first.getByRole("tab", {name: "Windows"}).click();
+        await expect(first.getByRole("tab", {name: "Windows"})).toHaveAttribute("aria-selected", "true");
+        // The line under the tabs slides to the picked one
+        const line = first.locator(".clay-tab-indicator");
+        const windows = await first.getByRole("tab", {name: "Windows"}).evaluate(tab => tab.offsetLeft);
+        await expect.poll(() => line.evaluate(el => el.offsetLeft)).toBeGreaterThan(windows);
+        await expect(first.getByRole("tabpanel")).toHaveText("Open PowerShell.");
+        await expect(second.getByRole("tabpanel")).toHaveText("Second group, Windows.");
+
+        // Arrow keys move between tabs
+        await page.keyboard.press("ArrowRight");
+        await expect(first.getByRole("tab", {name: "macOS"})).toBeFocused();
+        await expect(second.getByRole("tabpanel")).toHaveText("Second group, macOS.");
+
+        await page.reload();
+        await hydrated(page);
+        await expect(first.getByRole("tabpanel")).toHaveText("Open the Terminal app.");
+        await expect(second.getByRole("tabpanel")).toHaveText("Second group, macOS.");
+
+        // Code groups: a tab per block
+        const group = page.locator(".clay-code-group");
+        await group.getByRole("tab", {name: "pnpm"}).click();
+        await expect(group.getByRole("tabpanel").locator("pre")).toHaveText("pnpm add clay-doc");
+        expect(messages).toEqual([]);
+    });
+
+    test("steps, cards, details, badges, math and file trees render without JavaScript", async ({request}) => {
+        const html = await (await request.get("reference/components/")).text();
+        expect(html).toContain('class="clay-steps"');
+        // Cards link like other links, with the icon of the page they point to
+        expect(html).toMatch(/<a class="clay-card" href="\/clay\/configuration" data-route="\/configuration"><i class="clay-card-icon fa-solid fa-gear"/);
+        expect(html).toContain('<span class="clay-card-text">Forms, scripts and styles in docs.</span>');
+        expect(html).toContain('<span class="clay-details-title">Why fold this?</span></summary>');
+        expect(html).toContain("badge-warning clay-badge\">Deprecated</span>");
+        expect(html).toContain('class="katex-display"');
+        expect(html).toContain("prices like $5 and $10 stay text");
+        expect(html).toContain('<span class="file-tree-comment">the start page</span>');
+        expect(html).toContain('<div class="mermaid-diagram"><svg');
+    });
+
+    test("details open, and cards lead to their page", async ({page}) => {
+        await page.goto("reference/components/");
+        await hydrated(page);
+        const details = page.locator("details.clay-details").first();
+        await expect(details.getByText("Hidden folded text.")).toBeHidden();
+        await details.locator("summary").click();
+        await expect(details.getByText("Hidden folded text.")).toBeVisible();
+
+        await page.locator("a.clay-card", {hasText: "Security"}).click();
+        await expect(page).toHaveURL(/\/clay\/reference\/security\/?$/);
+    });
+
+    test("diagrams are drawn, in the theme of the site", async ({page}) => {
+        await page.goto("reference/components/");
+        await hydrated(page);
+        // Three drawn by the build, the pie chart in the browser
+        await expect(page.locator(".mermaid-diagram svg")).toHaveCount(4);
+        await expect(page.locator(".mermaid-diagram[data-client] svg")).toContainText("Guides");
+        const diagram = page.locator(".mermaid-diagram svg").first();
+        await expect(diagram).toContainText("Clay");
+        // Boxes in the theme's colors, which follow a theme switch
+        const fill = () => diagram.locator(".node rect").first().evaluate(rect => getComputedStyle(rect).fill);
+        const light = await fill();
+        await page.locator(".navbar li.tooltip button").click();
+        await expect.poll(fill).not.toBe(light);
+    });
+
+    test("a search hit in a hidden tab shows that tab", async ({page}) => {
+        await page.goto("reference/components/?highlight=PowerShell");
+        await hydrated(page);
+        await expect(page.locator("[data-tabs]").first().getByRole("tabpanel")).toHaveText("Open PowerShell.");
+    });
+});

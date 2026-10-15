@@ -2,6 +2,7 @@ import {existsSync, readdirSync, readFileSync} from "node:fs";
 import {join} from "node:path";
 import {load} from "js-yaml";
 import {Marked} from "marked";
+import {componentSyntax} from "../common/markdown-components";
 import {inlineText} from "../common/markdown-text";
 import type {DocItem} from "../common/nav";
 import type {Configuration} from "../common/configuration";
@@ -80,7 +81,7 @@ export const isMarkdown = (name: string) => name.toLowerCase().endsWith(".md");
 export const isIndex = (name: string) => name.toLowerCase() === "index.md";
 const isHidden = (name: string) => name.startsWith(".");
 
-const marked = new Marked({gfm: true});
+const marked = new Marked({gfm: true}, componentSyntax());
 
 // The first top-level "# heading" of a markdown document
 export function firstHeading(markdown: string): string | undefined {
