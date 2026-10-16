@@ -11,6 +11,9 @@ permissions:
 
 jobs:
   test:
+    # Release pull requests only change the version and the changelog; the code
+    # was tested when it reached main, and is tested again before it is published
+    if: github.event_name != 'pull_request' || !startsWith(github.head_ref, 'release-please--')
     name: Test
     runs-on: ubuntu-latest
     steps:
