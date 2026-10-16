@@ -24,3 +24,10 @@ updates:
       # Breaks Nitro's prerendering ("Invalid key"); unstorage is pinned to 1.17.5
       - dependency-name: unstorage
         versions: ["1.17.6"]
+      # jsdom 30 needs Node.js 22.22; Clay supports Node.js 20.19 and newer
+      - dependency-name: jsdom
+        update-types: ["version-update:semver-major"]
+      # Stays on 0.33 until a newer satori is checked against every social image
+      # (ROADMAP.md); for 0.x versions, every minor version counts as major
+      - dependency-name: satori
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
