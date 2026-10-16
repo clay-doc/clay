@@ -3,16 +3,16 @@ import {copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync} from "
 import {createRequire} from "node:module";
 import {dirname, extname, join, resolve} from "node:path";
 import {writeFile} from "node:fs/promises";
-import satori, {type SatoriOptions} from "satori";
-import {Resvg} from "@resvg/resvg-js";
-import {SOCIAL_IMAGE_HEIGHT, SOCIAL_IMAGE_WIDTH, socialCard, socialImagePath, type SocialCard} from "./social-card";
+import type {SKRSContext2D} from "@napi-rs/canvas";
+import {cardFamilies, SOCIAL_IMAGE_HEIGHT as H, SOCIAL_IMAGE_WIDTH as W, socialCard, socialImagePath, type SocialCard} from "./social-card";
 import type {Site} from "./site";
 import type {ImageFont} from "./fonts";
 import {contentColor, mixColors, type ThemeConfiguration} from "../common/theme";
 
 // Social images: a picture for each page that chats and social networks show
-// with links to it, drawn at build time with satori (layout to SVG) and resvg
-// (SVG to PNG), in the colors of the dark theme (app/assets/css/themes.css)
+// with links to it, drawn at build time with Skia (@napi-rs/canvas), which
+// shapes every script, right-to-left text and color emoji, in the colors of the
+// dark theme (app/assets/css/themes.css)
 
 export type SocialColors = { background: string, text: string, title: string, muted: string, primary: string };
 const COLORS: SocialColors = {background: "#191414", text: "#cac9c9", title: "#ffffff", muted: "#9a9696", primary: "#009764"};
@@ -27,122 +27,196 @@ export function socialColors(theme: ThemeConfiguration | undefined): SocialColor
     return {background, text, primary, title: mixColors(text, contentColor(background), 0.5), muted: mixColors(text, background, 0.3)};
 }
 // Bumped when the look changes, so cached images are drawn again
-const DESIGN = "1";
+const DESIGN = "2";
 
 const require = createRequire(import.meta.url);
+type Canvas = typeof import("@napi-rs/canvas");
+let canvasModule: Canvas | null | undefined;
+
+// Skia comes as a prebuilt binary for macOS, Linux and Windows; on a platform
+// without one, sites are built without social images
+export function loadCanvas(): Canvas | undefined {
+    if (canvasModule === undefined) {
+        try {
+            canvasModule = require("@napi-rs/canvas") as Canvas;
+        } catch {
+            canvasModule = null;
+        }
+    }
+    return canvasModule ?? undefined;
+}
+
+// Skia keeps the first font registered under a name, so every font gets its own
+const registered = new Set<string>();
+function register(canvas: Canvas, data: Buffer, name: string) {
+    if (registered.has(name)) return;
+    canvas.GlobalFonts.register(data, name);
+    registered.add(name);
+}
+
+// Inter, as Clay ships it, by script and weight
 const SUBSETS = ["latin", "latin-ext", "greek", "greek-ext", "cyrillic", "cyrillic-ext", "vietnamese"];
-
-let fonts: { name: string, data: Buffer, weight: 400 | 700, style: "normal" }[] | undefined;
-function loadFonts() {
+function interFonts(canvas: Canvas): string[] {
     const dir = join(dirname(require.resolve("@fontsource/inter/package.json")), "files");
-    return fonts ??= SUBSETS.flatMap(subset => ([400, 700] as const).map(weight =>
-        ({name: "Inter", data: readFileSync(join(dir, `inter-${subset}-${weight}-normal.woff`)), weight, style: "normal" as const})));
+    return SUBSETS.map(subset => {
+        const name = `Clay Inter ${subset}`;
+        for (const weight of [400, 700]) register(canvas, readFileSync(join(dir, `inter-${subset}-${weight}-normal.woff2`)), `${name} ${weight}`);
+        return name;
+    });
 }
 
-type Font = SatoriOptions["fonts"][number];
-
-// Chinese, Japanese and Korean fonts are too large to ship with Clay (50 to 85 MB
-// each). The build fetches just the letters it draws from Google Fonts, once:
-// they are kept in the cache. Han letters follow the language of the page.
-const CJK_FAMILIES: Record<string, string> = {
-    "ja-JP": "Noto Sans JP", "ko-KR": "Noto Sans KR", "zh-CN": "Noto Sans SC", "zh-TW": "Noto Sans TC", "zh-HK": "Noto Sans TC",
-};
-
-export function cjkLocale(language: string): string | undefined {
-    const code = language.toLowerCase();
-    if (code.startsWith("ja")) return "ja-JP";
-    if (code.startsWith("ko")) return "ko-KR";
-    if (/^zh-(tw|hant)/.test(code)) return "zh-TW";
-    if (code.startsWith("zh-hk")) return "zh-HK";
-    if (code.startsWith("zh")) return "zh-CN";
-    return undefined;
-}
-
+// Whole TrueType fonts are too large to ship for every script (Chinese, Japanese
+// and Korean are 50 to 85 MB each). The build fetches just the letters it draws
+// from Google Fonts, once: they are kept in the cache.
 async function fetchFont(family: string, weight: number, text: string): Promise<Buffer> {
     const query = `family=${encodeURIComponent(family)}:wght@${weight}&text=${encodeURIComponent(text)}`;
-    const css = await (await fetch(`https://fonts.googleapis.com/css2?${query}`)).text();
-    const url = /src: url\((.+?)\) format\('(?:opentype|truetype)'\)/.exec(css)?.[1];
-    if (!url) throw new Error(`no font for ${family}`);
-    const response = await fetch(url);
-    if (!response.ok) throw new Error(`${family}: ${response.status}`);
-    return Buffer.from(await response.arrayBuffer());
+    const response = await fetch(`https://fonts.googleapis.com/css2?${query}`);
+    const url = /src: url\((.+?)\) format\('(?:opentype|truetype)'\)/.exec(await response.text())?.[1];
+    if (!url) throw new Error(`Google Fonts has no ${family} in weight ${weight}`);
+    const font = await fetch(url);
+    if (!font.ok) throw new Error(`${family}: ${font.status}`);
+    return Buffer.from(await font.arrayBuffer());
 }
 
-// The fonts for the CJK letters of a card, both weights, used for the language
-// satori asks for (lang); throws when they cannot be fetched
-async function cjkFonts(locale: string, lang: string | undefined, text: string, cacheDir: string): Promise<Font[]> {
-    const family = CJK_FAMILIES[locale];
-    if (!family) return [];
-    const letters = [...new Set(text.replace(/\s/g, ""))].sort().join("");
-    return Promise.all(([400, 700] as const).map(async weight => {
-        const key = createHash("sha256").update(`${family} ${weight} ${letters}`).digest("hex").slice(0, 16);
-        const file = join(cacheDir, `font-${key}.ttf`);
-        if (!existsSync(file)) writeFileSync(file, await fetchFont(family, weight, letters));
-        return {name: family, data: readFileSync(file), weight, style: "normal" as const, ...(lang ? {lang: lang as Font["lang"]} : {})};
-    }));
+const hash = (text: string) => createHash("sha256").update(text).digest("hex").slice(0, 16);
+
+// A family with just the letters of a text, by weight; families without bold
+// (like the emoji font) use their regular weight for both
+async function scriptFont(canvas: Canvas, family: string, letters: string, cacheDir: string): Promise<string> {
+    const name = `Clay ${family} ${hash(letters)}`;
+    const files: Partial<Record<400 | 700, Buffer>> = {};
+    for (const weight of [400, 700] as const) {
+        const file = join(cacheDir, `font-${hash(`${family} ${weight} ${letters}`)}.ttf`);
+        if (!existsSync(file)) {
+            try {
+                writeFileSync(file, await fetchFont(family, weight, letters));
+            } catch (error) {
+                if (weight === 400) throw error;
+                continue;
+            }
+        }
+        files[weight] = readFileSync(file);
+    }
+    for (const weight of [400, 700] as const) register(canvas, (files[weight] ?? files[400])!, `${name} ${weight}`);
+    return name;
 }
-
-const MIME: Record<string, string> = {".svg": "image/svg+xml", ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg"};
-
-// The site's logo as a data URL, or undefined when there is none satori can show
-function logoOf(site: Site): string | undefined {
-    const logo = site.config.navbar?.logo ?? site.config.favicon;
-    if (!logo || /^[a-z]+:\/\//i.test(logo)) return undefined;
-    const file = resolve(site.root, logo);
-    const type = MIME[extname(file).toLowerCase()];
-    if (!type || !file.startsWith(site.root) || !existsSync(file)) return undefined;
-    return `data:${type};base64,${readFileSync(file).toString("base64")}`;
-}
-
-type Node = { type: string, props: Record<string, unknown> };
-const el = (type: string, style: Record<string, unknown>, children?: unknown, props: Record<string, unknown> = {}): Node =>
-    ({type, props: {...props, style, children}});
 
 // The text font from the theme (lib/fonts.ts); Inter draws what it lacks
 export type SocialFont = { family: string, fonts: ImageFont[] };
 
-function layout(card: SocialCard, logo: string | undefined, colors: SocialColors, family: string): Node {
-    return el("div", {
-        width: "100%", height: "100%", display: "flex", flexDirection: "column", justifyContent: "space-between",
-        padding: "72px 80px", backgroundColor: colors.background, color: colors.text, fontFamily: family,
-        borderBottom: `12px solid ${colors.primary}`,
-    }, [
-        el("div", {display: "flex", alignItems: "center", gap: 24, fontSize: 34, color: colors.muted}, [
-            ...(logo ? [el("img", {width: 64, height: 64, objectFit: "contain"}, undefined, {src: logo, width: 64, height: 64})] : []),
-            el("div", {display: "flex"}, card.site),
-        ]),
-        el("div", {display: "flex", flexDirection: "column", gap: 20}, [
-            ...(card.section ? [el("div", {display: "flex", fontSize: 30, color: colors.primary, fontWeight: 700}, card.section)] : []),
-            el("div", {display: "block", fontSize: card.title.length > 40 ? 60 : 72, fontWeight: 700, lineHeight: 1.1, color: colors.title, lineClamp: 2}, card.title),
-            ...(card.description ? [el("div", {display: "block", fontSize: 32, lineHeight: 1.4, lineClamp: 3}, card.description)] : []),
-        ]),
-    ]);
+function themeFont(canvas: Canvas, font: SocialFont | undefined): string[] {
+    if (!font?.fonts.length) return [];
+    const name = `Clay theme ${font.family}`;
+    for (const weight of [400, 700] as const) {
+        const data = (font.fonts.find(f => f.weight === weight) ?? font.fonts[0])!.data;
+        register(canvas, data, `${name} ${weight}`);
+    }
+    return [name];
 }
 
-// Draws a card; cacheDir keeps the fonts fetched for Chinese, Japanese and Korean
-export async function drawSocialImage(card: SocialCard, logo: string | undefined, cacheDir: string, colors = COLORS, font?: SocialFont): Promise<Buffer> {
-    const own = (font?.fonts ?? []).map(f => ({...f, style: "normal" as const}));
-    const svg = await satori(layout(card, logo, colors, font?.family ?? "Inter") as never, {
-        width: SOCIAL_IMAGE_WIDTH, height: SOCIAL_IMAGE_HEIGHT, fonts: [...own, ...loadFonts()],
-        // Han letters and punctuation are shared by Chinese, Japanese and Korean: a page's language decides
-        loadAdditionalAsset: async (code, segment) => {
-            const known = CJK_FAMILIES[code] !== undefined;
-            if (!known && !CJK.test(segment)) return [];
-            const letters = [card.site, card.section, card.title, card.description].join("").replace(CJK_OTHER, "");
-            return cjkFonts(cjkLocale(card.language) ?? (known ? code : "zh-CN"), known ? code : undefined, letters, cacheDir);
-        },
-    });
-    return new Resvg(svg, {fitTo: {mode: "width", value: SOCIAL_IMAGE_WIDTH}}).render().asPng();
+// Languages written from right to left: the card is laid out mirrored
+const RTL = /^(ar|arc|ckb|dv|fa|he|ks|ku-arab|ps|sd|syr|ug|ur|yi)\b/i;
+
+// Breaks a text into at most maxLines lines that fit width, ending with "…" when it is cut
+function wrap(ctx: SKRSContext2D, text: string, width: number, maxLines: number, language: string): string[] {
+    const lines: string[] = [];
+    let line = "";
+    for (const {segment} of new Intl.Segmenter(language, {granularity: "word"}).segment(text)) {
+        const next = line + segment;
+        if (!line.trim() || ctx.measureText(next.trimEnd()).width <= width) {
+            line = next;
+        } else {
+            lines.push(line.trim());
+            line = segment.trimStart();
+        }
+    }
+    if (line.trim()) lines.push(line.trim());
+    if (lines.length <= maxLines) return lines;
+    let last = lines[maxLines - 1]!;
+    while (last && ctx.measureText(`${last}…`).width > width) last = [...last].slice(0, -1).join("").trimEnd();
+    return [...lines.slice(0, maxLines - 1), `${last}…`];
 }
 
-// Chinese, Japanese and Korean letters and punctuation; CJK_OTHER is everything else, which Inter draws
-const CJK = /[\u1100-\u11FF\u3000-\u9FFF\uAC00-\uD7AF\uFF00-\uFFEF]/u;
-const CJK_OTHER = /[^\u1100-\u11FF\u3000-\u9FFF\uAC00-\uD7AF\uFF00-\uFFEF]/gu;
+// Inter's metrics: the baseline of a line box of height size × lineHeight, as browsers place it
+const ASCENT = 0.96875, CONTENT = 1.2109375;
+const baselineIn = (top: number, size: number, lineHeight: number) => top + (size * lineHeight - size * CONTENT) / 2 + size * ASCENT;
 
-// Without the fonts for Chinese, Japanese and Korean (offline), a card keeps only its other texts
-const withoutCjk = (card: SocialCard): SocialCard => ({
-    ...card, ...Object.fromEntries((["site", "section", "title", "description"] as const).map(key => [key, CJK.test(card[key]) ? "" : card[key]])),
-});
+// Draws a card: logo and site at the top; section, title and description at the bottom
+export async function drawSocialImage(card: SocialCard, logo: Buffer | undefined, cacheDir: string, colors = COLORS,
+                                      font?: SocialFont, failed: Set<string> = new Set()): Promise<Buffer> {
+    const canvas = loadCanvas();
+    if (!canvas) throw new Error("@napi-rs/canvas is not available on this platform");
+    const text = [card.site, card.section, card.title, card.description].join("");
+    const letters = [...new Set(text.replace(/\s/g, ""))].sort().join("");
+    const names = [...themeFont(canvas, font), ...interFonts(canvas)];
+    for (const family of cardFamilies(text, card.language) ?? []) {
+        if (failed.has(family)) continue;
+        names.push(await scriptFont(canvas, family, letters, cacheDir));
+    }
+    const fonts = (weight: 400 | 700, size: number) => `${weight} ${size}px ${names.map(name => `"${name} ${weight}"`).join(", ")}`;
+
+    const image = canvas.createCanvas(W, H);
+    const ctx = image.getContext("2d");
+    const rtl = RTL.test(card.language);
+    ctx.direction = rtl ? "rtl" : "ltr";
+    ctx.textAlign = "start";
+    const x = rtl ? W - 80 : 80, width = W - 160;
+    ctx.fillStyle = colors.background;
+    ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = colors.primary;
+    ctx.fillRect(0, H - 12, W, 12);
+
+    // The logo and the site's title, side by side at the top
+    let siteX = x;
+    if (logo) {
+        try {
+            const picture = await canvas.loadImage(logo);
+            const scale = Math.min(64 / picture.width, 64 / picture.height);
+            const [w, h] = [picture.width * scale, picture.height * scale];
+            ctx.drawImage(picture, rtl ? x - w : x, 72 + (64 - h) / 2, w, h);
+            siteX = rtl ? x - 64 - 24 : x + 64 + 24;
+        } catch {
+            // a logo Skia cannot read is left out
+        }
+    }
+    ctx.font = fonts(400, 34);
+    ctx.fillStyle = colors.muted;
+    ctx.fillText(card.site, siteX, baselineIn(72 + (64 - 34 * CONTENT) / 2, 34, CONTENT));
+
+    // From the bottom up: description, title and section, 20 pixels apart
+    const titleSize = [...card.title].length > 40 ? 60 : 72;
+    ctx.font = fonts(700, titleSize);
+    const title = card.title ? wrap(ctx, card.title, width, 2, card.language) : [];
+    ctx.font = fonts(400, 32);
+    const description = card.description ? wrap(ctx, card.description, width, 3, card.language) : [];
+    const blocks = [
+        {lines: card.section ? [card.section] : [], weight: 700 as const, size: 30, lineHeight: CONTENT, color: colors.primary},
+        {lines: title, weight: 700 as const, size: titleSize, lineHeight: 1.1, color: colors.title},
+        {lines: description, weight: 400 as const, size: 32, lineHeight: 1.4, color: colors.text},
+    ].filter(block => block.lines.length);
+    let top = H - 12 - 72 - blocks.reduce((sum, block) => sum + block.lines.length * block.size * block.lineHeight, 0) - 20 * (blocks.length - 1);
+    for (const block of blocks) {
+        ctx.font = fonts(block.weight, block.size);
+        ctx.fillStyle = block.color;
+        for (const line of block.lines) {
+            ctx.fillText(line, x, baselineIn(top, block.size, block.lineHeight));
+            top += block.size * block.lineHeight;
+        }
+        top += 20;
+    }
+    return image.encode("png");
+}
+
+const IMAGE_TYPES = new Set([".svg", ".png", ".jpg", ".jpeg", ".webp"]);
+
+// The site's logo, or undefined when there is none to draw
+function logoOf(site: Site): Buffer | undefined {
+    const logo = site.config.navbar?.logo ?? site.config.favicon;
+    if (!logo || /^[a-z]+:\/\//i.test(logo)) return undefined;
+    const file = resolve(site.root, logo);
+    if (!IMAGE_TYPES.has(extname(file).toLowerCase()) || !file.startsWith(site.root) || !existsSync(file)) return undefined;
+    return readFileSync(file);
+}
 
 // Draws the image of every page into target (published with the site), reusing
 // images from cacheDir whose text has not changed. Returns how many were drawn,
@@ -155,28 +229,40 @@ export async function writeSocialImages(site: Site, target: string, cacheDir: st
         return card ? [{card, path: socialImagePath(page.route)}] : [];
     });
     mkdirSync(cacheDir, {recursive: true});
+    const logoHash = logo ? hash(logo.toString("base64")) : "";
+    // Families Google Fonts did not send (offline): their texts are left out
+    const failed = new Set<string>();
     let drawn = 0;
     let warning: string | undefined;
-    // A few at a time: drawing is mostly synchronous work
-    for (let i = 0; i < jobs.length; i += 8) {
-        await Promise.all(jobs.slice(i, i + 8).map(async ({card, path}) => {
-            const key = createHash("sha256").update(JSON.stringify([DESIGN, card, logo, colors, font?.family])).digest("hex").slice(0, 16);
-            const cached = join(cacheDir, `${key}.png`);
-            const file = join(target, path);
-            mkdirSync(dirname(file), {recursive: true});
-            if (!existsSync(cached)) {
-                try {
-                    await writeFile(cached, await drawSocialImage(card, logo, cacheDir, colors, font));
-                } catch (error) {
-                    // Drawn without those texts, and not kept: the next build tries again
-                    warning = `Social images: fonts for Chinese, Japanese and Korean could not be loaded from Google Fonts (${(error as Error).message}); their pages get images without that text`;
-                    await writeFile(file, await drawSocialImage(withoutCjk(card), logo, cacheDir, colors, font));
-                    return;
-                }
-                drawn++;
-            }
+    // Without the texts that need fonts Google Fonts did not send
+    const without = (card: SocialCard): SocialCard => {
+        const keep = (value: string) => cardFamilies(value, card.language)?.some(family => failed.has(family)) ? "" : value;
+        return {...card, site: keep(card.site), section: keep(card.section), title: keep(card.title), description: keep(card.description)};
+    };
+    for (const {card, path} of jobs) {
+        const key = hash(JSON.stringify([DESIGN, card, logoHash, colors, font?.family]));
+        const cached = join(cacheDir, `${key}.png`);
+        const file = join(target, path);
+        mkdirSync(dirname(file), {recursive: true});
+        if (existsSync(cached)) {
             copyFileSync(cached, file);
-        }));
+            continue;
+        }
+        const families = cardFamilies([card.site, card.section, card.title, card.description].join(""), card.language) ?? [];
+        if (!families.some(family => failed.has(family))) {
+            try {
+                await writeFile(cached, await drawSocialImage(card, logo, cacheDir, colors, font, failed));
+                copyFileSync(cached, file);
+                drawn++;
+                continue;
+            } catch (error) {
+                for (const family of families) failed.add(family);
+                warning = `Social images: fonts could not be loaded from Google Fonts (${(error as Error).message})`;
+            }
+        }
+        // Drawn without those texts, and not kept: the next build tries again
+        await writeFile(file, await drawSocialImage(without(card), logo, cacheDir, colors, font, failed));
     }
+    if (warning) warning += `; pages that need ${[...failed].join(", ")} get images without that text`;
     return {drawn, total: jobs.length, warning};
 }

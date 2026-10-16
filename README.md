@@ -31,7 +31,8 @@ site you can host anywhere, such as GitHub Pages. There is no theme to set up an
   old addresses of moved pages working.
 - **Your look**: colors, corners and fonts in `clay.yaml`; fonts from Google Fonts are published with the site.
 - **Analytics without cookies**: Plausible, Umami or GoatCounter, with events for searches that found nothing.
-- **SEO**: descriptions, canonical links, structured data, a sitemap, and a social image for every page.
+- **SEO**: descriptions, canonical links, structured data, a sitemap, and a social image for every page, in any
+  script and with emoji.
 - **Checks** for broken links and config typos; `--strict` turns them into build failures.
 - **Safe** for docs from outside contributors: rendered HTML is sanitized.
 

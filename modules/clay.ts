@@ -4,7 +4,7 @@ import {fileURLToPath} from "node:url";
 import {addTemplate, defineNuxtModule, updateTemplates, useLogger} from "@nuxt/kit";
 import {isMarkdown, loadSite, type Site} from "../lib/site";
 import {brokenLinks} from "../lib/checks";
-import {writeSocialImages} from "../lib/social-images";
+import {loadCanvas, writeSocialImages} from "../lib/social-images";
 import {loadThemeFonts, type ThemeFonts} from "../lib/fonts";
 import {socialCard} from "../lib/social-card";
 import {resolveOrigin} from "../common/seo";
@@ -132,8 +132,14 @@ export default defineNuxtModule({
         copyAssets(site, assetsDir);
         writeFonts(fonts, assetsDir);
         // Social images are drawn into the built site; unchanged ones come from a
-        // cache shared by all projects
-        if (!nuxt.options.dev) {
+        // cache shared by all projects. Without Skia for this platform, pages do
+        // not link to them (server/routes/_clay/page).
+        const canDraw = nuxt.options.dev || Boolean(loadCanvas());
+        nuxt.options.runtimeConfig.claySocialImages = canDraw;
+        if (!canDraw && site.pages.some(page => socialCard(page, site))) {
+            logger.warn("Social images are skipped: @napi-rs/canvas, which draws them, has no build for this platform");
+        }
+        if (!nuxt.options.dev && canDraw) {
             nuxt.hook("nitro:build:public-assets", async nitro => {
                 if (!site.pages.some(page => socialCard(page, site))) return;
                 const started = Date.now();

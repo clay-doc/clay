@@ -43,6 +43,7 @@ export default defineNuxtConfig({
   },
   runtimeConfig: {
     clayRoot: root,
+    claySocialImages: true, // false when Skia has no build for the platform (modules/clay.ts)
     public: {
       baseUrl: baseURL,
     },

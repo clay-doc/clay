@@ -33,6 +33,6 @@ export default defineEventHandler(async event => {
     // index.md can ask for a large header (hero) and a list of the folder's pages
     const hero = page.frontMatter.hero ? {title: page.title, icon: page.frontMatter.icon, description: page.frontMatter.description} : null;
     // The picture for link previews, drawn at build time (lib/social-images.ts)
-    const socialImage = socialCard(page, site) ? socialImagePath(page.route) : null;
+    const socialImage = useRuntimeConfig().claySocialImages !== false && socialCard(page, site) ? socialImagePath(page.route) : null;
     return {...result, hero, list: page.frontMatter.list ?? false, socialImage};
 });
