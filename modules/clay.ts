@@ -5,6 +5,7 @@ import {addTemplate, defineNuxtModule, updateTemplates, useLogger} from "@nuxt/k
 import {isMarkdown, loadSite, type Site} from "../lib/site";
 import {brokenLinks} from "../lib/checks";
 import {writeSocialImages} from "../lib/social-images";
+import {socialCard} from "../lib/social-card";
 import {resolveOrigin} from "../common/seo";
 import {markdownRoute} from "../common/route-path";
 import type {ViteDevServer} from "vite";
@@ -113,10 +114,12 @@ export default defineNuxtModule({
         // cache shared by all projects
         if (!nuxt.options.dev) {
             nuxt.hook("nitro:build:public-assets", async nitro => {
+                if (!site.pages.some(page => socialCard(page, site))) return;
                 const started = Date.now();
                 logger.info("Drawing social images");
                 const cache = fileURLToPath(new URL("../node_modules/.cache/clay/social-images", import.meta.url));
-                const {drawn, total} = await writeSocialImages(site, nitro.options.output.publicDir, cache);
+                const {drawn, total, warning} = await writeSocialImages(site, nitro.options.output.publicDir, cache);
+                if (warning) logger.warn(warning);
                 logger.info(`Drew ${drawn} of ${total} social images, the others are unchanged · ${Date.now() - started}ms`);
             });
         }
