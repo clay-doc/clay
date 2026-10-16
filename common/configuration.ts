@@ -15,6 +15,7 @@ export type Configuration = {
     navbar?: NavbarConfiguration,
     variables?: Record<string, string | number | boolean>, // {{name}} in the docs, e.g. version: "4.0.0"
     head?: HeadConfiguration,
+    generate?: string[], // commands that write docs before every build, e.g. API reference from code
     socialImages?: boolean, // an image for each page in link previews; on with siteURL unless false
     langs?: string[], // obsolete: code languages are detected automatically
 }

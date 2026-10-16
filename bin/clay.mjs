@@ -108,6 +108,15 @@ function nuxt(args, {onLine, onClose} = {}) {
     });
 }
 
+// Runs the commands of "generate" in clay.yaml (lib/generate.ts), which write docs
+// before Clay reads them; exits when one fails
+async function generate(progress) {
+    const {runGenerate} = await jiti.import("../lib/generate.ts");
+    if (await runGenerate(root, {apply: progress?.apply, verbose: options.verbose})) return;
+    progress?.finish(1);
+    process.exit(1);
+}
+
 // Prints a command's result, as JSON with --json, and exits with its code
 function report({code, text, data}) {
     if (options.json) console.log(JSON.stringify(data, null, 2));
@@ -119,9 +128,11 @@ switch (command) {
     case "dev": {
         const args = ["dev", "--port", options.port ?? "3000", ...(options.host ? ["--host"] : [])];
         if (options.verbose) {
+            await generate();
             nuxt(args);
         } else {
             const progress = createProgress(`Clay ${version} · dev`, {mode: "serve", hint: 'Run "clay dev --verbose" for the full output.'});
+            await generate(progress);
             const parse = createDevParser();
             nuxt(args, {onLine: line => parse(line).forEach(progress.apply), onClose: progress.finish});
         }
@@ -129,9 +140,11 @@ switch (command) {
     }
     case "build":
         if (options.verbose) {
+            await generate();
             nuxt(["generate"]);
         } else {
             const progress = createProgress(`Clay ${version}`);
+            await generate(progress);
             const parse = createBuildParser();
             nuxt(["generate"], {onLine: line => parse(line).forEach(progress.apply), onClose: progress.finish});
         }
@@ -179,6 +192,11 @@ switch (command) {
         break;
     }
     case "check": {
+        // Generated docs are checked too; with --json, a failing command is a problem in the result
+        const {runGenerate} = await jiti.import("../lib/generate.ts");
+        const failed = [];
+        const apply = options.json ? event => event.type === "error" && failed.push(event.text) : undefined;
+        if (!await runGenerate(root, {apply})) report({code: 1, text: "", data: {ok: false, problems: failed}});
         const commands = await jiti.import("../lib/commands.ts");
         report(commands.runCheck(root));
         break;
