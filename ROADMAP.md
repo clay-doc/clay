@@ -5,11 +5,6 @@ impact.
 
 ## Features
 
-- **Theme**: `theme:` in `clay.yaml` for the site's own look: the primary color, the light and dark
-  backgrounds, the corner radius and the font. The social images take the same colors.
-- **Analytics**: `analytics:` in `clay.yaml` for Plausible, Umami, GoatCounter and Google Analytics. Only in
-  `clay build`, one page view per navigation (Clay switches pages without reloading), and events for searches
-  without results, copied code and the page menu.
 - **Redirects**: `redirects:` in front matter for the old addresses of a page; `clay edit move` and `rename`
   add them.
 
