@@ -1,5 +1,17 @@
 # Changelog
 
+## [4.1.0](https://github.com/clay-doc/clay/compare/v4.0.0...v4.1.0) (2026-10-16)
+
+
+### Features
+
+* **seo:** draw social images with Skia, in every script and with emoji ([81f9061](https://github.com/clay-doc/clay/commit/81f9061a29b6b3aa5f68134a62012d2a1bcc7690))
+
+
+### Bug Fixes
+
+* **versions:** fill in variables when saving a version ([bee3367](https://github.com/clay-doc/clay/commit/bee33674afc44e1ffe60df49251aa451a4d66570))
+
 ## [4.0.0](https://github.com/clay-doc/clay/compare/v3.1.0...v4.0.0) (2026-10-16)
 
 
