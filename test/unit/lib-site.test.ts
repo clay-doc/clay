@@ -133,3 +133,23 @@ describe("collectPages", () => {
         expect(pages[1]).toMatchObject({source: "dir/index.md", markdown: "# Directory\n\nAbout it.", children: [{title: "B", route: "/dir/b"}]});
     });
 });
+
+describe("settings in files of their own", () => {
+    it("are read from the files clay.yaml names, and checked like clay.yaml", () => {
+        const root = mkdtempSync(join(tmpdir(), "clay-split-"));
+        mkdirSync(join(root, "config"));
+        writeFileSync(join(root, "clay.yaml"), 'title: Docs\nvariables: config/variables.yaml\nhead: head.yml\nnavbar: ../outside.yaml\nmessages: gone.yaml\n');
+        writeFileSync(join(root, "config/variables.yaml"), 'version: "4.0"\n');
+        writeFileSync(join(root, "head.yml"), 'meta:\n  - name: x\n    content: y\nscirpt: []\n');
+        const {config, warnings, files} = loadConfig(root, {});
+        expect(config.variables).toEqual({version: "4.0"});
+        expect(config.head?.meta).toEqual([{name: "x", content: "y"}]);
+        expect(config.navbar).toBeUndefined();
+        expect(files).toEqual([join("config", "variables.yaml"), "head.yml"]);
+        expect(warnings).toEqual([
+            'clay.yaml: "navbar" names ../outside.yaml, which is outside the project; it is ignored',
+            'clay.yaml: "messages" names gone.yaml, which does not exist; it is ignored',
+            'clay.yaml: unknown key "head.scirpt" is ignored (typo?)',
+        ]);
+    });
+});

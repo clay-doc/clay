@@ -1,5 +1,5 @@
 import {existsSync, readdirSync, readFileSync} from "node:fs";
-import {basename, join} from "node:path";
+import {basename, isAbsolute, join, relative, resolve} from "node:path";
 import {load} from "js-yaml";
 import {Marked} from "marked";
 import {componentSyntax} from "../common/markdown-components";
@@ -78,7 +78,7 @@ export type Site = {
     languages: LanguageInfo[]; // the default language first
     editions: SiteEdition[];
     pages: Page[]; // of all editions; routes start with their prefix, e.g. "/1.x/de"
-    included: string[]; // files included into pages (expand.ts), relative to root
+    included: string[]; // files included into pages (expand.ts) and settings files of clay.yaml, relative to root
     warnings: string[];
 };
 
@@ -313,13 +313,38 @@ const envOverrides: [string, keyof Configuration][] = [
     ["CLAY_FONTAWESOME_KIT", "fontawesomeKit"],
 ];
 
-export function loadConfig(root: string, env: Record<string, string | undefined> = process.env): { config: Configuration, warnings: string[] } {
+// Settings that can live in a file of their own, e.g. "variables: variables.yaml"
+const SPLITTABLE = new Set(["navbar", "messages", "variables", "head", "analytics", "theme", "generate", "languages"]);
+
+// The settings named by file in clay.yaml, read from those files (relative to
+// clay.yaml, inside the project); files lists them for reloads during development
+function readSplitFiles(root: string, config: Record<string, unknown>, warnings: string[], files: string[]) {
+    for (const [key, value] of Object.entries(config)) {
+        if (!SPLITTABLE.has(key) || typeof value !== "string" || !/\.ya?ml$/i.test(value)) continue;
+        const file = resolve(root, value);
+        const inside = relative(root, file);
+        delete config[key];
+        if (inside.startsWith("..") || isAbsolute(inside)) {
+            warnings.push(`clay.yaml: "${key}" names ${value}, which is outside the project; it is ignored`);
+        } else if (!existsSync(file)) {
+            warnings.push(`clay.yaml: "${key}" names ${value}, which does not exist; it is ignored`);
+        } else {
+            config[key] = load(readFileSync(file, "utf8"));
+            files.push(inside);
+        }
+    }
+}
+
+export function loadConfig(root: string, env: Record<string, string | undefined> = process.env): { config: Configuration, warnings: string[], files: string[] } {
     const path = join(root, "clay.yaml");
     if (!existsSync(path)) throw new Error(`No clay.yaml found in ${root}`);
 
     const text = readFileSync(path, "utf8");
     const config = (load(text) ?? {}) as Configuration;
-    const warnings = unknownKeys(load(text), configSchema).map(key => `clay.yaml: unknown key "${key}" is ignored (typo?)`);
+    const warnings: string[] = [];
+    const files: string[] = [];
+    readSplitFiles(root, config as Record<string, unknown>, warnings, files);
+    warnings.push(...unknownKeys(config, configSchema).map(key => `clay.yaml: unknown key "${key}" is ignored (typo?)`));
     if (!config.title) warnings.push(`clay.yaml: "title" is not set`);
     if (config.langs) warnings.push(`clay.yaml: "langs" is no longer needed and is ignored; code languages are detected automatically`);
     if ((config as Record<string, unknown>).index) warnings.push(`clay.yaml: "index" is no longer read since Clay 3; write the start page in docs/index.md`);
@@ -328,7 +353,7 @@ export function loadConfig(root: string, env: Record<string, string | undefined>
         const value = env[name];
         if (value) (config as Record<string, unknown>)[key] = value;
     }
-    return {config, warnings};
+    return {config, warnings, files};
 }
 
 export type LoadOptions = {
@@ -431,7 +456,7 @@ function loadVersion(docsDir: string, info: VersionInfo, gitDates: boolean, lang
 // Loads everything Clay needs from a project: config, directory metadata and
 // docs, for the current docs and every older version, in every language
 export function loadSite(root: string, {env = process.env, gitDates = true}: LoadOptions = {}): Site {
-    const {config: raw, warnings} = loadConfig(root, env);
+    const {config: raw, warnings, files: configFiles} = loadConfig(root, env);
     const {languages, warnings: languageWarnings} = siteLanguages(raw);
     warnings.push(...languageWarnings);
     const codes = languages.map(language => language.code);
@@ -467,7 +492,7 @@ export function loadSite(root: string, {env = process.env, gitDates = true}: Loa
         versions: [current.version, ...older.map(o => o.version)],
         editions: [current.editions, ...older.map(o => o.editions)].flat(),
         pages: [current.pages, ...older.map(o => o.pages)].flat(),
-        included: [...expander.included],
+        included: [...expander.included, ...configFiles],
         warnings,
     };
 }

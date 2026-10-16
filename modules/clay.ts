@@ -155,7 +155,7 @@ export default defineNuxtModule({
             const watcher = watch(root, {recursive: true}, (_event, file) => {
                 const name = String(file ?? "");
                 if (!name || name.startsWith(".clay") || name.startsWith("publish") || name.startsWith("node_modules")) return;
-                // Files included into pages (lib/expand.ts) may live outside docs/
+                // Files included into pages (lib/expand.ts) and settings files of clay.yaml may live outside docs/
                 if (!name.startsWith("docs") && name !== "clay.yaml" && !site.included.includes(name) && !name.match(/\.(svg|png|ico|jpe?g|webp)$/i)) return;
 
                 clearTimeout(timer);
