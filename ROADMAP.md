@@ -7,8 +7,6 @@ impact.
 
 - **OpenAPI**: full support for OpenAPI documents. Pages for every operation and schema, generated from the
   spec, in the navigation, search, link checks and the Markdown for agents.
-- Before work on Clay 5 starts, save the Clay 4 docs of the example repo as an older version
-  (`npx clay version 4.x`), so the docs of both stay online.
 
 A plugin system is not planned: the features above cover what plugins are used for in other tools. It comes
 back if users need something they do not.
@@ -18,6 +16,11 @@ back if users need something they do not.
 - `npm audit` reports braces and node-forge, both in Nuxt's dev tooling and without a fix yet; they go away
   when Nuxt updates them. It also reports fflate, which satori uses to read fonts (Clay only gives it its own font
   files), and postcss-selector-parser in @tailwindcss/typography.
+- Older versions share `variables` and files included from outside `docs/` with the latest docs: once the example
+  repo's `config/variables.yaml` says `major: "5"`, its 4.x pages say so too. `clay version` could fill both in
+  when it saves a version, since a saved version does not change anymore.
+- jsdom stays on 29: jsdom 30 needs Node.js 22.22, and Clay supports Node.js 20.19 and newer. Node.js 20 is out of
+  support since April 2026; requiring Node.js 22 is a change for Clay 5.
 - satori stays on 0.33: dozens of releases came out in the days before Clay 4; move up once they have settled.
 - Social images draw Latin, Greek, Cyrillic, Chinese, Japanese and Korean letters (the CJK fonts come from Google
   Fonts during the build). Pages in other scripts, like Arabic, Hebrew, Thai or Hindi, and titles with emoji get
