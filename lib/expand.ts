@@ -14,7 +14,7 @@ import {stripFrontMatter} from "./front-matter";
 
 export const INCLUDE = /^([ \t]*)(\\?)<!--\s*@include:\s*(.+?)\s*-->[ \t]*$/gm;
 export const TARGET = /^(.+?)(?:\{(\d*),(\d*)\}|#([\w.-]+))?$/;
-const VARIABLE = /(\\?)\{\{\s*([A-Za-z_][\w-]*)\s*\}\}/g;
+export const VARIABLE = /(\\?)\{\{\s*([A-Za-z_][\w-]*)\s*\}\}/g;
 const REGION_MARK = /#(?:end)?region\b/;
 
 export type Variables = Record<string, string | number | boolean>;

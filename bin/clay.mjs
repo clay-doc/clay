@@ -190,6 +190,11 @@ switch (command) {
             if (name) {
                 const saved = versions.saveVersion(root, name);
                 console.log(`Saved docs/latest/ as version ${name} in ${saved.dir}/ (${saved.files} files), at /${name}.`);
+                const {variables, includes, warnings} = saved.frozen;
+                if (variables || includes) {
+                    console.log(`So that it keeps today's text, the copy has ${variables} variable(s) filled in, and ${includes} include(s) of files outside docs/latest/ written out.`);
+                }
+                for (const warning of warnings) console.warn(`  ${warning}`);
                 console.log(`docs/latest/ stays the latest version. Update it for the next release, and set "version" in clay.yaml to its label.`);
             }
         } catch (error) {

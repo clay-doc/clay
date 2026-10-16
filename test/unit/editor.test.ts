@@ -158,7 +158,7 @@ describe("versions", () => {
         expect(existsSync(join(root, "docs-archive"))).toBe(false);
         expect(planLayout(root)).toBeUndefined();
 
-        expect(saveVersion(root, "2.x")).toEqual({dir: "docs/2.x", files: 8});
+        expect(saveVersion(root, "2.x")).toMatchObject({dir: "docs/2.x", files: 8});
         expect(read("docs/2.x/intro.de.md")).toBe(read("docs/latest/intro.de.md"));
         expect(existsSync(join(root, "docs/2.x/.DS_Store"))).toBe(false);
         expect(names(loadDocsTree(root, {version: "2.x", language: "en"}))).toEqual(names(loadDocsTree(root, en)));

@@ -16,9 +16,6 @@ back if users need something they do not.
 - `npm audit` reports braces and node-forge, both in Nuxt's dev tooling and without a fix yet; they go away
   when Nuxt updates them. It also reports fflate, which satori uses to read fonts (Clay only gives it its own font
   files), and postcss-selector-parser in @tailwindcss/typography.
-- Older versions share `variables` and files included from outside `docs/` with the latest docs: once the example
-  repo's `config/variables.yaml` says `major: "5"`, its 4.x pages say so too. `clay version` could fill both in
-  when it saves a version, since a saved version does not change anymore.
 - jsdom stays on 29: jsdom 30 needs Node.js 22.22, and Clay supports Node.js 20.19 and newer. Node.js 20 is out of
   support since April 2026; requiring Node.js 22 is a change for Clay 5.
 - satori stays on 0.33: dozens of releases came out in the days before Clay 4; move up once they have settled.

@@ -2,7 +2,7 @@ import {mkdirSync, mkdtempSync, readFileSync, writeFileSync} from "node:fs";
 import {tmpdir} from "node:os";
 import {dirname, join} from "node:path";
 import {describe, expect, it} from "vitest";
-import {applyLayout, describePlan, fixPaths, planLayout, type FixedPath} from "../../lib/versions";
+import {applyLayout, describePlan, fixPaths, planLayout, saveVersion, type FixedPath} from "../../lib/versions";
 
 function project(files: Record<string, string>): string {
     const root = mkdtempSync(join(tmpdir(), "clay-layout-"));
@@ -66,5 +66,41 @@ describe("planLayout", () => {
     it("stops before a Clay 3 version whose name cannot be used", () => {
         const root = project({"clay.yaml": "title: T\n", "docs/index.md": "# Home\n", "docs-archive/latest/a.md": "# A\n"});
         expect(() => planLayout(root)).toThrow(/can't be used in URLs/);
+    });
+});
+
+describe("saveVersion", () => {
+    it("fills in variables and includes from outside the version, so the copy keeps today's text", () => {
+        const root = project({
+            "clay.yaml": "title: T\nlanguages: [en, de]\nvariables: config/variables.yaml\n",
+            "config/variables.yaml": "major: \"4\"\nproduct: {en: Docs, de: Doku}\n",
+            "src/client.ts": "// #region setup\nconst client = create();\n// #endregion\n",
+            "docs/_shared/note.md": "Shared by {{product}}\n",
+            "docs/latest/_snippets/local.md": "Clay {{major}}\n",
+            "docs/latest/guide.md": [
+                "# Clay {{major}} and \\{{major}}",
+                "<!--@include: ../../src/client.ts#setup-->",
+                "<!--@include: ../_shared/note.md-->",
+                "<!--@include: _snippets/local.md-->",
+                "\\<!--@include: ../../src/client.ts-->",
+                "{{unknown}}",
+            ].join("\n") + "\n",
+            "docs/latest/guide.de.md": "{{product}} {{major}}\n<!--@include: ../_shared/note.md-->\n",
+        });
+        const {frozen} = saveVersion(root, "4.x");
+        const read = (path: string) => readFileSync(join(root, path), "utf8");
+        expect(read("docs/4.x/guide.md")).toBe([
+            "# Clay 4 and \\{{major}}",
+            "const client = create();",
+            "Shared by Docs",
+            "<!--@include: _snippets/local.md-->",
+            "\\<!--@include: ../../src/client.ts-->",
+            "{{unknown}}",
+        ].join("\n") + "\n");
+        expect(read("docs/4.x/guide.de.md")).toBe("Doku 4\nShared by Doku\n");
+        expect(read("docs/4.x/_snippets/local.md")).toBe("Clay 4\n");
+        // The latest docs keep their variables
+        expect(read("docs/latest/guide.md")).toContain("# Clay {{major}}");
+        expect(frozen).toEqual({variables: 6, includes: 3, warnings: []});
     });
 });

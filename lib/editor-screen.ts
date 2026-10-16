@@ -450,7 +450,8 @@ export async function edit(root: string) {
             layout.checkVersionName(root, name);
             const save = () => {
                 const saved = layout.saveVersion(root, name);
-                done(`Saved docs/latest/ as version ${name}`, [`${saved.dir}/`]);
+                const filled = saved.frozen.variables + saved.frozen.includes;
+                done(`Saved docs/latest/ as version ${name}${filled ? `, with ${filled} variable(s) and include(s) filled in` : ""}`, [`${saved.dir}/`]);
                 ({versions, languages} = editor.editorContext(root));
             };
             const plan = layout.planLayout(root);

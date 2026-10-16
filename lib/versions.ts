@@ -1,7 +1,7 @@
 import {cpSync, existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, writeFileSync} from "node:fs";
 import {basename, dirname, join, relative, resolve, sep} from "node:path";
-import {INCLUDE, TARGET} from "./expand";
-import {isMarkdown, isVersioned, LATEST, RESERVED_NAMES, VERSION_NAME} from "./site";
+import {createExpander, INCLUDE, TARGET, VARIABLE, type Variables} from "./expand";
+import {isMarkdown, isVersioned, LATEST, loadConfig, localize, RESERVED_NAMES, siteLanguages, translationOf, VERSION_NAME} from "./site";
 import {getSetting, loadSettings, saveSettings, setSetting} from "./editor";
 
 // "clay version": saves the latest docs as an older version. Without versions,
@@ -184,13 +184,51 @@ export function checkVersionName(root: string, name: string) {
     if (existsSync(join(root, "docs-archive", name))) throw new Error(`docs-archive/${name} already exists`);
 }
 
-// Copies docs/latest/ to docs/<name>/; the docs must have versions (applyLayout)
-export function saveVersion(root: string, name: string): { dir: string, files: number } {
+// What saving a version filled in, so the copy keeps today's text
+export type Frozen = { variables: number, includes: number, warnings: string[] };
+
+// Fills in the variables of a docs file of a saved version, and the includes of
+// files outside the version's folder (versionDir), like config/ or docs/_snippets/:
+// the latest docs go on changing them, a saved version keeps what they said.
+// Escaped variables and includes stay as written, so do includes within the version.
+export function freezeFile(text: string, file: string, versionDir: string, root: string, variables: Variables,
+                           frozen: Frozen): string {
+    const expander = createExpander(root, frozen.warnings);
+    const included = text.replace(INCLUDE, (line, _indent: string, escaped: string, target: string) => {
+        if (escaped) return line;
+        const path = TARGET.exec(target)![1]!;
+        if (!relative(versionDir, resolve(dirname(file), path)).startsWith("..")) return line;
+        frozen.includes++;
+        // The included text with its own includes, without variables yet
+        return expander.expand(line, file, {});
+    });
+    return included.replace(VARIABLE, (match, escaped: string, key: string) => {
+        if (escaped || !(key in variables)) return match;
+        frozen.variables++;
+        return String(variables[key]);
+    });
+}
+
+// Copies docs/latest/ to docs/<name>/, with variables and outside includes filled
+// in (freezeFile); the docs must have versions (applyLayout)
+export function saveVersion(root: string, name: string): { dir: string, files: number, frozen: Frozen } {
     checkVersionName(root, name);
     if (!isVersioned(root)) throw new Error(`The docs have no versions yet; run "clay version ${name}"`);
     const target = join(root, "docs", name);
     cpSync(join(root, "docs", LATEST), target, {recursive: true, filter: source => !basename(source).startsWith(".")});
-    return {dir: `docs/${name}`, files: countFiles(target)};
+
+    const {config} = loadConfig(root, {});
+    const codes = siteLanguages(config).languages.map(language => language.code);
+    const frozen: Frozen = {variables: 0, includes: 0, warnings: []};
+    for (const file of markdownFiles(target)) {
+        const language = translationOf(basename(file), codes.slice(1)) ?? codes[0]!;
+        const variables = localize(config, language, codes).variables ?? {};
+        const path = join(target, file);
+        const text = readFileSync(path, "utf8");
+        const updated = freezeFile(text, path, target, root, variables, frozen);
+        if (updated !== text) writeFileSync(path, updated);
+    }
+    return {dir: `docs/${name}`, files: countFiles(target), frozen};
 }
 
 // What "clay version" is about to do, for the author to confirm
