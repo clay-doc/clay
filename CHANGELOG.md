@@ -1,5 +1,58 @@
 # Changelog
 
+## [4.0.0](https://github.com/clay-doc/clay/compare/v3.1.0...v4.0.0) (2026-10-16)
+
+
+### ⚠ BREAKING CHANGES
+
+* **versions:** docs-archive/ is no longer read. Run "clay version" to move docs/ into docs/latest/ and docs-archive/<name>/ to docs/<name>/.
+* **markdown:** files and folders whose name starts with "_" are no longer pages; they hold snippets.
+* **front-matter:** the "cards" front matter key, renamed to "list" in Clay 3, is no longer read; rename it to "list".
+
+### Features
+
+* **a11y:** add a skip link, focus rings, better contrast and axe tests ([f093f26](https://github.com/clay-doc/clay/commit/f093f2628b39c89e97842ddc911583b2841bdef1))
+* **agents:** publish every page as Markdown with llms.txt, and a page menu ([6a6a12e](https://github.com/clay-doc/clay/commit/6a6a12e988cdf2803be3fb2e3d8540268b50c738))
+* **alerts:** draw the alert's color as a bar beside the box ([ad28d77](https://github.com/clay-doc/clay/commit/ad28d77c45f9263ec11342011bec18a90ffcee64))
+* **analytics:** count page views and events without cookies ([543bc3d](https://github.com/clay-doc/clay/commit/543bc3d3e84c08e3529b13dbc828c50e46e007be))
+* **checks:** report links to missing sections ([b73026f](https://github.com/clay-doc/clay/commit/b73026f01fbdc9affd879cfe7e0f090aa8da16f4))
+* **cli:** add clay edit commands and clay check for scripts and agents ([af9bb7b](https://github.com/clay-doc/clay/commit/af9bb7baaf2811c42b36acd773623fbd8aae6989))
+* **cli:** run "generate" commands before build, dev and check ([5ef7573](https://github.com/clay-doc/clay/commit/5ef7573eba4b89f8eb058e5832373dea93bb1102))
+* **config:** add tags to the head of every page with "head" ([68af545](https://github.com/clay-doc/clay/commit/68af54575e8164a66e8fd00f3536edef9e5be956))
+* **config:** hide entries of the page menu ([544f413](https://github.com/clay-doc/clay/commit/544f413ba9d8d4c427639baaa51e33bc13a687ba))
+* **config:** let settings live in files of their own ([e8694e9](https://github.com/clay-doc/clay/commit/e8694e95c7768f5dcc3da6bd7e1ea27ef33c0abf))
+* **content:** let the navbar and sidebar cast a shadow on the page ([554323f](https://github.com/clay-doc/clay/commit/554323f169fbf0aa6ffe1d56084945058f711a20))
+* **front-matter:** stop reading the "cards" alias of "list" ([f325651](https://github.com/clay-doc/clay/commit/f32565189ddacaec1f09ceff90b01b9f7bf77a1c))
+* **markdown:** add a prompt block for AI assistants and agents ([0f273db](https://github.com/clay-doc/clay/commit/0f273db212cd88c13236faf0954af510ef41ef3e))
+* **markdown:** add snippets and variables ([1fcf98a](https://github.com/clay-doc/clay/commit/1fcf98aa370f7c3d83c17fa8d7018bd003ddfb6c))
+* **markdown:** add tabs, steps, cards, details, badges, math, diagrams and file trees ([4deb503](https://github.com/clay-doc/clay/commit/4deb503b1d8c012ed6e0a732bd991529a8251647))
+* **markdown:** embed videos, designs and code playgrounds ([e417211](https://github.com/clay-doc/clay/commit/e417211c2505b4d49d7d0bdf43c2a49cabf05379))
+* **markdown:** show the file name of a code block ([681b9a8](https://github.com/clay-doc/clay/commit/681b9a85c0ba5373475f9ce2f9924601312d627b))
+* **navbar:** slide new breadcrumbs in ([907f05c](https://github.com/clay-doc/clay/commit/907f05c24180377fd6ed67297dfbaaa802df97e7))
+* **pages:** fade a page in after navigating to it ([943a767](https://github.com/clay-doc/clay/commit/943a76786eff8a289c94b61e4e0f4ccc7b047674))
+* **redirects:** keep old addresses of moved pages ([4e2e0b4](https://github.com/clay-doc/clay/commit/4e2e0b4da43afae6c9bba098b185a473c2dd8e41))
+* **search:** group results by page and filter them by section ([574e872](https://github.com/clay-doc/clay/commit/574e872c16479834de5d7c866bae5124300cb7ce))
+* **seo:** draw a social image for every page ([16e35c1](https://github.com/clay-doc/clay/commit/16e35c178c7063f8dc79a5f431e154638ba5da78))
+* **seo:** draw Chinese, Japanese and Korean in social images ([851c462](https://github.com/clay-doc/clay/commit/851c462ad2a5848a5b412cbef1036b15a240c288))
+* **seo:** point sites under a path to their sitemap ([8db0994](https://github.com/clay-doc/clay/commit/8db09940d8d01d79464a5759c8d2899b13445c75))
+* **sidebar:** grow the highlight when it jumps between folder levels ([8f2ad2f](https://github.com/clay-doc/clay/commit/8f2ad2fbc5f842a9ce4446f9e5029291d84a3205))
+* **theme:** add your own colors, corners and fonts ([3d28a10](https://github.com/clay-doc/clay/commit/3d28a10bd45714fd93e9659b277cfcfc3fffc560))
+* **toc:** fold the contents up above the page on narrow screens ([693059c](https://github.com/clay-doc/clay/commit/693059c12b75adcea0ecc1682231ab6ffaecb953))
+* **versions:** keep every version in a folder of its own in docs/ ([e9a4e24](https://github.com/clay-doc/clay/commit/e9a4e2475c4aa117046c0c81a9693782249a067f))
+
+
+### Bug Fixes
+
+* **app:** block only /docs/ addresses and drop the old .md redirect ([5953c7e](https://github.com/clay-doc/clay/commit/5953c7e8706e57a854b195743ab8732f70bc3488))
+* **checks:** check files and links written in HTML ([a40db81](https://github.com/clay-doc/clay/commit/a40db81a417e2d557e89cf2b7a8c69b4fca8e916))
+* **checks:** check the links of folder and start pages ([73b83bd](https://github.com/clay-doc/clay/commit/73b83bd10241a2d76d1d98390360ce48d9a409f7))
+* **cli:** keep bin/clay.mjs executable ([f82f0e3](https://github.com/clay-doc/clay/commit/f82f0e3ac871000c42a37e8e9a7a7ffc1c4f2e85))
+* **cli:** name the cause when pages fail to render ([48297bc](https://github.com/clay-doc/clay/commit/48297bcd8450ed0765d5de65c64da590ee42cf9d))
+* **layout:** only show scrollbars when the page scrolls ([43bb61d](https://github.com/clay-doc/clay/commit/43bb61d5835621e0de6bf5a29cd702b2615e20e9))
+* **markdown:** leave badges out of heading links ([9e0d555](https://github.com/clay-doc/clay/commit/9e0d5555e76faa017d2531bdf6a1173ebf9f0ded))
+* **search:** drop alert markers from indexed text ([3f363f8](https://github.com/clay-doc/clay/commit/3f363f85029c7b1201ef5a61596728607ef85cfc))
+* **types:** satisfy the stricter head and token types ([eaba789](https://github.com/clay-doc/clay/commit/eaba7894e8d651e78d2fc2bfad13fb27e005ed18))
+
 ## [3.1.0](https://github.com/clay-doc/clay/compare/v3.0.0...v3.1.0) (2026-10-15)
 
 
