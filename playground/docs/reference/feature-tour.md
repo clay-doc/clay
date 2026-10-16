@@ -24,7 +24,7 @@ const answer: number = 42; // [!code highlight]
 console.log(`answer: ${answer}`);
 ```
 
-```go
+```go [main.go]
 fmt.Println("hello")
 ```
 

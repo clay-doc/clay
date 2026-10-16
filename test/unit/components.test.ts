@@ -63,6 +63,34 @@ describe("code groups", () => {
     });
 });
 
+describe("code block file names", () => {
+    it("show the name in brackets above the code, highlighted in the language", async () => {
+        const root = await dom("```yaml [clay.yaml] {2}\ntitle: Docs\nlang: en\n```");
+        expect(root.querySelector(".code-block.has-title > .code-title")!.textContent).toBe("clay.yaml");
+        expect(root.querySelector("pre.shiki")!.textContent).toBe("title: Docs\nlang: en");
+        // The rest of the info string still works
+        expect(root.querySelectorAll(".line.highlighted")).toHaveLength(1);
+    });
+
+    it("keep slashes and spaces of the name out of the line notations", async () => {
+        const root = await dom("```md [docs/guides/my page.md]\nsee guides here\n```");
+        expect(root.querySelector(".code-title")!.textContent).toBe("docs/guides/my page.md");
+        expect(root.querySelector(".highlighted-word")).toBeNull();
+    });
+
+    it("work without a language", async () => {
+        const root = await dom("``` [notes.txt]\nplain\n```");
+        expect(root.querySelector(".code-title")!.textContent).toBe("notes.txt");
+        expect(root.querySelector("pre")!.textContent).toBe("plain");
+    });
+
+    it("leave blocks without a name as they were", async () => {
+        const root = await dom("```ts\nconst a = 1;\n```");
+        expect(root.querySelector(".code-title")).toBeNull();
+        expect(root.querySelector(".code-block")!.className).toBe("code-block");
+    });
+});
+
 describe("containers", () => {
     it("steps wrap their list", async () => {
         const root = await dom("::: steps\n1. Install\n2. Build\n:::");

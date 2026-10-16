@@ -13,12 +13,12 @@ import markedShiki from "marked-shiki";
 import markedAlert from "marked-alert";
 import {headingIds} from "../../common/markdown-text";
 import {messagesFor, type Messages} from "../../common/i18n";
-import {transformerCopyButton} from "./code-block";
+import {codeTitle, transformerCopyButton} from "./code-block";
 import {componentSyntax} from "../../common/markdown-components";
 import {componentRenderers, fileTree, mermaidDiagram} from "./components";
 
 
-const transformers = (messages: Messages): ShikiTransformer[] => [
+const transformers = (messages: Messages, title?: string): ShikiTransformer[] => [
     transformerNotationDiff({matchAlgorithm: "v3"}),
     transformerNotationHighlight({matchAlgorithm: "v3"}),
     transformerNotationWordHighlight({matchAlgorithm: "v3"}),
@@ -26,7 +26,7 @@ const transformers = (messages: Messages): ShikiTransformer[] => [
     transformerNotationErrorLevel({matchAlgorithm: "v3"}),
     transformerMetaHighlight(),
     transformerMetaWordHighlight(),
-    transformerCopyButton(messages.copyCode)
+    transformerCopyButton(messages.copyCode, title)
 ];
 
 type Highlighter = Awaited<ReturnType<typeof createHighlighter>>;
@@ -38,7 +38,7 @@ const isLoaded = (highlighter: Highlighter, lang: string) => highlighter.getLoad
 async function loadLanguages(highlighter: Highlighter, tokens: Token[], lexer: Marked) {
     const langs = new Set<string>();
     lexer.walkTokens(tokens, token => {
-        if (token.type === "code" && token.lang) langs.add(token.lang.split(/\s/)[0]!);
+        if (token.type === "code" && token.lang) langs.add(codeTitle(token.lang).lang);
     });
     for (const lang of langs) {
         if (isLoaded(highlighter, lang)) continue;
@@ -67,7 +67,8 @@ function createRenderer(highlighter: Highlighter, messages: Messages) {
         ]
     }))
     .use(markedShiki({
-        highlight(code, lang, props) {
+        highlight(code, info, props) {
+            const {title, lang, meta} = codeTitle([info, ...props].join(" "));
             // Code blocks that are drawn instead of highlighted
             if (lang === "mermaid") return mermaidDiagram(code, ++diagrams);
             if (lang === "tree") return fileTree(code);
@@ -77,8 +78,8 @@ function createRenderer(highlighter: Highlighter, messages: Messages) {
                 themes: {light: "light-plus", dark: "dark-plus"},
                 colorReplacements: {"light-plus": LIGHT_PLUS_CONTRAST},
                 defaultColor: false,
-                meta: {__raw: props.join(" ")},
-                transformers: transformers(messages)
+                meta: {__raw: meta},
+                transformers: transformers(messages, title)
             });
         }
     }));

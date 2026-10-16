@@ -126,6 +126,19 @@ test.describe("in the browser", () => {
         if (readable) expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(await block.locator("pre").textContent());
     });
 
+    test("code blocks show their file name, which is not copied", async ({page, context, browserName}) => {
+        const readable = browserName === "chromium";
+        if (readable) await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+        await page.goto("reference/feature-tour/");
+        await hydrated(page);
+
+        const block = page.locator(".prose .code-block.has-title");
+        await expect(block.locator(".code-title")).toHaveText("main.go");
+        await block.hover();
+        await block.locator("button.copy-code").click();
+        if (readable) expect(await page.evaluate(() => navigator.clipboard.readText())).toBe('fmt.Println("hello")');
+    });
+
     test("pages show a table of contents, prev/next links and an edit link", async ({page}) => {
         await page.goto("reference/feature-tour/");
 

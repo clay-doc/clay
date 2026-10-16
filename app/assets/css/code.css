@@ -1,4 +1,4 @@
-/* Code blocks: highlighting in both themes, the copy button and the line notations */
+/* Code blocks: highlighting in both themes, file names, the copy button and the line notations */
 
 /* Code is highlighted in both themes (as CSS variables); show the one matching the site theme */
 .shiki,
@@ -29,6 +29,27 @@
 .code-block:hover .copy-code,
 .copy-code:focus-visible {
     @apply opacity-100;
+}
+
+/* The file name of a code block (```yaml [clay.yaml]) in a bar on top of it */
+.code-block.has-title {
+    @apply mt-6;
+}
+
+.code-title {
+    @apply flex items-center gap-2 rounded-t-md border-b border-base-300 bg-base-200 px-4 py-2 pe-12 font-mono text-[0.8125rem] text-base-content/70;
+}
+
+.code-title > span {
+    @apply min-w-0 truncate;
+}
+
+.code-block.has-title > pre.shiki {
+    @apply mt-0 rounded-t-none!;
+}
+
+.code-block.has-title > .copy-code {
+    @apply top-1;
 }
 
 /* Touch screens have no hover, keep the button visible */
