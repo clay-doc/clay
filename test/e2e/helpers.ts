@@ -4,6 +4,9 @@ import {expect, type Page} from "@playwright/test";
 export function watchConsole(page: Page): string[] {
     const messages: string[] = [];
     page.on("console", message => {
+        // WebKit warns about the preloaded page data when hydration takes more
+        // than a few seconds, as on a busy CI runner; that is no problem of the page
+        if (/was preloaded using link preload but not used/.test(message.text())) return;
         if (message.type() === "error" || message.type() === "warning") messages.push(`${message.type()}: ${message.text()}`);
     });
     page.on("pageerror", error => messages.push(`pageerror: ${error.message}`));
