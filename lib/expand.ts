@@ -12,8 +12,8 @@ import {stripFrontMatter} from "./front-matter";
 //
 // A backslash keeps them as written: \<!--@include: x--> and \{{version}}.
 
-const INCLUDE = /^([ \t]*)(\\?)<!--\s*@include:\s*(.+?)\s*-->[ \t]*$/gm;
-const TARGET = /^(.+?)(?:\{(\d*),(\d*)\}|#([\w.-]+))?$/;
+export const INCLUDE = /^([ \t]*)(\\?)<!--\s*@include:\s*(.+?)\s*-->[ \t]*$/gm;
+export const TARGET = /^(.+?)(?:\{(\d*),(\d*)\}|#([\w.-]+))?$/;
 const VARIABLE = /(\\?)\{\{\s*([A-Za-z_][\w-]*)\s*\}\}/g;
 const REGION_MARK = /#(?:end)?region\b/;
 

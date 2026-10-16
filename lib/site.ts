@@ -1,4 +1,4 @@
-import {existsSync, readdirSync, readFileSync} from "node:fs";
+import {existsSync, readdirSync, readFileSync, statSync} from "node:fs";
 import {basename, isAbsolute, join, relative, resolve} from "node:path";
 import {load} from "js-yaml";
 import {Marked} from "marked";
@@ -57,7 +57,7 @@ export type Page = {
 // An old address of a page, from its front matter, e.g. "/guides/install" to "/guides/setup"
 export type Redirect = { from: string, to: string, title: string, language: string };
 
-// One version of the docs: the current docs/ (name "") or docs-archive/<name>/
+// One version of the docs: the latest (name "") or an older one, see docsLayout
 export type SiteVersion = VersionInfo & {
     docsDir: string;
     tree: DocNode;
@@ -373,22 +373,45 @@ export type LoadOptions = {
 
 // Version names become the first segment of their URLs
 export const VERSION_NAME = /^[A-Za-z0-9][\w.-]*$/;
-export const RESERVED_NAMES = new Set(["docs", "_clay", "_nuxt"]);
+export const LATEST = "latest";
+export const RESERVED_NAMES = new Set(["docs", "_clay", "_nuxt", LATEST]);
 
-// Older versions: the folders in docs-archive/, newest first
+// Where the docs are. Without versions, docs/ holds the pages. With versions,
+// docs/latest/ holds the latest docs and docs/<name>/ each older one, all at the
+// same depth, so paths that lead out of a version work in every copy of it.
+// "clay version" moves docs/ into docs/latest/ when the first version is saved.
+export const isVersioned = (root: string) => {
+    const latest = join(root, "docs", LATEST);
+    return existsSync(latest) && statSync(latest).isDirectory();
+};
+
+// The folder of a version ("" is the latest)
+export function versionDir(root: string, name: string): string {
+    if (name) return join(root, "docs", name);
+    return isVersioned(root) ? join(root, "docs", LATEST) : join(root, "docs");
+}
+
+// The folder of a version relative to the project, e.g. "docs/latest"
+const versionPath = (root: string, name: string) => relative(root, versionDir(root, name)).split("\\").join("/");
+
+// Older versions: the folders next to docs/latest/, newest first
 export function listVersions(root: string): { names: string[], warnings: string[] } {
     const warnings: string[] = [];
     if (existsSync(join(root, "versions"))) {
-        warnings.push(`versions/ is no longer read since Clay 3; move versions/<name>/docs/ to docs-archive/<name>/`);
+        warnings.push(`versions/ is no longer read since Clay 3; move versions/<name>/docs/ to docs-archive/<name>/ and run "clay version"`);
     }
-    const dir = join(root, "docs-archive");
-    if (!existsSync(dir)) return {names: [], warnings};
+    if (existsSync(join(root, "docs-archive"))) {
+        warnings.push(`docs-archive/ is no longer read since Clay 4; run "clay version" to move its versions into docs/`);
+    }
+    if (!isVersioned(root)) return {names: [], warnings};
 
     const names: string[] = [];
-    for (const entry of readdirSync(dir, {withFileTypes: true})) {
-        if (!entry.isDirectory() || isHidden(entry.name)) continue;
-        if (!VERSION_NAME.test(entry.name) || RESERVED_NAMES.has(entry.name)) {
-            warnings.push(`docs-archive/${entry.name}: not usable as a version name in URLs; the folder is skipped`);
+    for (const entry of readdirSync(join(root, "docs"), {withFileTypes: true})) {
+        if (entry.name === LATEST || isHidden(entry.name)) continue;
+        if (!entry.isDirectory()) {
+            if (isMarkdown(entry.name)) warnings.push(`docs/${entry.name}: with versions, pages belong in docs/latest/; the file is skipped`);
+        } else if (!VERSION_NAME.test(entry.name) || RESERVED_NAMES.has(entry.name)) {
+            warnings.push(`docs/${entry.name}: not usable as a version name in URLs; the folder is skipped`);
         } else {
             names.push(entry.name);
         }
@@ -396,12 +419,13 @@ export function listVersions(root: string): { names: string[], warnings: string[
     return {names: names.sort((a, b) => b.localeCompare(a, undefined, {numeric: true})), warnings};
 }
 
-// The docs of one version in every language: docs/, or docs-archive/<name>/.
+// The docs of one version in every language, from its folder (versionDir).
 // Translations ("setup.de.md") replace their original in their language;
 // pages without one show the original there.
-function loadVersion(docsDir: string, info: VersionInfo, gitDates: boolean, languages: LanguageInfo[], expand: Expand): {
+function loadVersion(root: string, info: VersionInfo, gitDates: boolean, languages: LanguageInfo[], expand: Expand): {
     version: SiteVersion, editions: SiteEdition[], pages: Page[], warnings: string[]
 } {
+    const docsDir = versionDir(root, info.name);
     const codes = languages.map(language => language.code);
     const warnings: string[] = [];
     const translations = new Map<string, DocNode>();
@@ -430,7 +454,7 @@ function loadVersion(docsDir: string, info: VersionInfo, gitDates: boolean, lang
 
     let dates: Map<string, string> | undefined;
     if (gitDates) {
-        const result = lastUpdated(docsDir);
+        const result = lastUpdated(docsDir, root);
         dates = result.dates;
         if (dates) applyDates([tree], dates);
         else if (result.reason) warnings.push(result.reason);
@@ -472,7 +496,7 @@ export function collectRedirects(pages: Page[], defaultLanguage: string): { redi
     const warnings: string[] = [];
     for (const page of pages) {
         const report = page.language === defaultLanguage;
-        const source = page.version ? `docs-archive/${page.version}/${page.source}` : page.source;
+        const source = page.version ? `docs/${page.version}/${page.source}` : page.source;
         for (const old of page.frontMatter.redirects ?? []) {
             const problem = (reason: string) => report && warnings.push(`${source}: redirects "${old}", ${reason}; it is skipped`);
             if (/^[a-z][a-z\d+.-]*:|^\/\/|[?#]|(^|\/)\.\.?(\/|$)/i.test(old)) {
@@ -510,20 +534,21 @@ export function loadSite(root: string, {env = process.env, gitDates = true}: Loa
     }
     const expander = createExpander(root, warnings);
     const expand: Expand = (markdown, file, language) => expander.expand(markdown, file, configs[language]?.variables ?? {});
-    const current = loadVersion(join(root, "docs"), {name: "", label: config.version || "Latest"}, gitDates, languages, expand);
+    const latest = versionPath(root, "");
+    const current = loadVersion(root, {name: "", label: config.version || "Latest", dir: latest}, gitDates, languages, expand);
     warnings.push(...current.warnings);
 
     const {names, warnings: versionWarnings} = listVersions(root);
     warnings.push(...versionWarnings);
     const topLevel = new Set(current.pages.filter(page => page.parents.length === 0 && !page.prefix && page.route !== "/").map(page => page.route.slice(1)));
     for (const code of codes.slice(1)) {
-        if (topLevel.has(code)) warnings.push(`docs/${code} has the same URL as the language ${code}; rename the folder`);
+        if (topLevel.has(code)) warnings.push(`${latest}/${code} has the same URL as the language ${code}; rename the folder`);
     }
     const older = names.map(name => {
-        if (topLevel.has(name)) warnings.push(`docs-archive/${name}: docs/${name} has the same URL as this version; rename one of them`);
-        const loaded = loadVersion(join(root, "docs-archive", name), {name, label: name}, gitDates, languages, expand);
+        if (topLevel.has(name)) warnings.push(`docs/${name}: ${latest}/${name} has the same URL as this version; rename one of them`);
+        const loaded = loadVersion(root, {name, label: name, dir: versionPath(root, name)}, gitDates, languages, expand);
         // Git history is reported once, for the current docs
-        warnings.push(...loaded.warnings.filter(w => !w.includes("last-updated")).map(w => `docs-archive/${name}/${w}`));
+        warnings.push(...loaded.warnings.filter(w => !w.includes("last-updated")).map(w => `docs/${name}/${w}`));
         return loaded;
     });
 

@@ -53,6 +53,30 @@ describe.skipIf(!hasGit)("lastUpdated", () => {
         });
     });
 
+    it("keeps the dates of files that moved, like docs/ into docs/latest/", () => {
+        const repo = mkdtempSync(join(tmpdir(), "clay-git-"));
+        git(repo, "2026-01-01T10:00:00Z", "init", "-q");
+        write(join(repo, "docs", "a.md"), "a");
+        write(join(repo, "docs", "b.md"), "b");
+        write(join(repo, "docs-archive", "1.x", "c.md"), "c");
+        git(repo, "2026-01-01T10:00:00Z", "add", ".");
+        git(repo, "2026-01-01T10:00:00Z", "commit", "-q", "-m", "one");
+        git(repo, "2026-02-02T12:00:00Z", "mv", "docs", "latest");
+        git(repo, "2026-02-02T12:00:00Z", "mv", "docs-archive/1.x", "1.x");
+        mkdirSync(join(repo, "docs"));
+        git(repo, "2026-02-02T12:00:00Z", "mv", "latest", "1.x", "docs/");
+        // A moved file that also changed counts as changed
+        write(join(repo, "docs", "latest", "b.md"), "b, with one more line\nb");
+        git(repo, "2026-02-02T12:00:00Z", "add", ".");
+        git(repo, "2026-02-02T12:00:00Z", "commit", "-q", "-m", "versions");
+
+        expect(Object.fromEntries(lastUpdated(join(repo, "docs", "latest"), repo).dates!)).toEqual({
+            "a.md": "2026-01-01T10:00:00Z",
+            "b.md": "2026-02-02T12:00:00Z",
+        });
+        expect(Object.fromEntries(lastUpdated(join(repo, "docs", "1.x"), repo).dates!)).toEqual({"c.md": "2026-01-01T10:00:00Z"});
+    });
+
     it("explains when there is no repository", () => {
         expect(lastUpdated(mkdtempSync(join(tmpdir(), "clay-nogit-")))).toEqual({reason: expect.stringContaining("not in a git repository")});
     });

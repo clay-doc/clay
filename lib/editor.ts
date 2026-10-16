@@ -1,10 +1,10 @@
-import {copyFileSync, cpSync, existsSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, writeFileSync} from "node:fs";
-import {basename, dirname, join, posix, relative as relativePath} from "node:path";
+import {copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, writeFileSync} from "node:fs";
+import {dirname, join, posix, relative as relativePath} from "node:path";
 import {Document, isMap, isScalar, isSeq, parseDocument, type YAMLSeq} from "yaml";
 import {parseFrontMatter, setFrontMatter, type FrontMatter} from "./front-matter";
 import {
-    attachIndexes, hasPages, isMarkdown, listVersions, loadConfig, loadSite, loadTree, prettyName, RESERVED_NAMES, siteLanguages,
-    sortTree, translationOf, VERSION_NAME, type DocNode,
+    attachIndexes, hasPages, isMarkdown, listVersions, loadConfig, loadSite, loadTree, prettyName, siteLanguages,
+    sortTree, translationOf, versionDir, type DocNode,
 } from "./site";
 import {brokenLinks} from "./checks";
 
@@ -37,19 +37,7 @@ export function editorContext(root: string): { versions: string[], languages: st
     };
 }
 
-export const docsDirOf = (root: string, version: string) => version ? join(root, "docs-archive", version) : join(root, "docs");
-
-// Saves the current docs as an older version: copies docs/ to docs-archive/<name>/
-export function createVersion(root: string, name: string): string {
-    if (!name) throw new Error(`Name the version, e.g. "1.x"`);
-    if (!VERSION_NAME.test(name) || RESERVED_NAMES.has(name)) {
-        throw new Error(`"${name}" can't be used in URLs; use letters, digits, ".", "-" and "_"`);
-    }
-    const target = join(root, "docs-archive", name);
-    if (existsSync(target)) throw new Error(`docs-archive/${name} already exists`);
-    cpSync(join(root, "docs"), target, {recursive: true, filter: source => !basename(source).startsWith(".")});
-    return relative(root, target);
-}
+export const docsDirOf = versionDir;
 
 const translationPath = (path: string, language: string, defaultLanguage: string) =>
     language === defaultLanguage ? path : path.replace(/\.md$/i, `.${language}.md`);

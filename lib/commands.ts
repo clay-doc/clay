@@ -30,7 +30,7 @@ export const EDIT_HELP = `clay edit - change the docs from the command line
 Without a command, "clay edit" opens the interactive editor (needs a terminal).
 With a command, it does one change and exits, for scripts and AI agents.
 
-Paths are relative to docs/ (or docs-archive/<name>/ with --docs-version):
+Paths are relative to the docs: docs/, or with versions docs/latest/ (docs/<name>/ with --docs-version):
   guides/setup.md   a page            ".md" may be left out: guides/setup
   guides            a folder          its title and order live in guides/index.md
   index.md          the start page    docs/index.md
@@ -59,7 +59,7 @@ Commands:
 Options:
   --json                Print the result as JSON (see below) instead of text
   --lang <code>         Work in a language other than the default (set, show, list, translate, config)
-  --docs-version <name> Work in an older version in docs-archive/<name>/
+  --docs-version <name> Work in an older version in docs/<name>/
   --slug <name>         File or folder name for new and move (default: from the title or unchanged)
   --yes                 Confirm delete
   --redirect            move and rename: add the old address to the page's "redirects"
@@ -124,7 +124,7 @@ const nameOf = (node: EditorNode) => posix.basename(node.path).replace(/\.md$/i,
 function editionOf(root: string, options: CommandOptions): Edition & { defaultLanguage: string, prefix: string } {
     const {versions, languages} = editorContext(root);
     const version = options.docsVersion ?? "";
-    if (!versions.includes(version)) throw new Error(`No version "${version}" in docs-archive/; versions: ${versions.filter(Boolean).join(", ") || "none"}`);
+    if (!versions.includes(version)) throw new Error(`No version "${version}" in docs/; versions: ${versions.filter(Boolean).join(", ") || "none"}`);
     const language = options.lang ?? languages[0]!;
     if (!languages.includes(language)) throw new Error(`"${language}" is not one of the site's languages: ${languages.join(", ")}`);
     const prefix = (version ? `/${version}` : "") + (language === languages[0] ? "" : `/${language}`);

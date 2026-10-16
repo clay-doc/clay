@@ -58,15 +58,15 @@ export type NavbarConfiguration = {
 }
 
 
-// Link to edit a doc in its repository, e.g. editURL + "guides/setup.md". Docs
-// of an older version are in docs-archive/<name>/, next to docs/, so editURL
-// has to end in "docs/" to find them.
-export function editLink(config: Configuration | undefined, docLink: string, version = ""): string | undefined {
+// Link to edit a doc in its repository, e.g. editURL + "guides/setup.md". With
+// versions, the docs are in docs/latest/ and docs/<name>/ (dir, see VersionInfo),
+// so editURL has to end in "docs/" to find them.
+export function editLink(config: Configuration | undefined, docLink: string, dir = "docs"): string | undefined {
     if (!config?.editURL) return undefined;
     let base = config.editURL.replace(/\/*$/, "/");
-    if (version) {
+    if (dir !== "docs") {
         if (!base.endsWith("/docs/")) return undefined;
-        base = base.replace(/docs\/$/, `docs-archive/${version}/`);
+        base = base.replace(/docs\/$/, `${dir}/`);
     }
     return base + docLink.replace(/^\/+/, "");
 }

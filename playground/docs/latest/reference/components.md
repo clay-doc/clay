@@ -125,7 +125,6 @@ my-project/
       img/
         screen.png
     ...
-  docs-archive/
   clay.yaml  # settings
   package.json
 ```

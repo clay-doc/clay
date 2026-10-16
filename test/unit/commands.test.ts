@@ -8,7 +8,7 @@ import {EDIT_HELP, runCheck, runEdit} from "../../lib/commands";
 let root = "";
 beforeEach(() => {
     root = mkdtempSync(join(tmpdir(), "clay-commands-"));
-    for (const entry of ["clay.yaml", "docs", "docs-archive", "logo.svg"]) cpSync(join("playground", entry), join(root, entry), {recursive: true});
+    for (const entry of ["clay.yaml", "docs", "logo.svg"]) cpSync(join("playground", entry), join(root, entry), {recursive: true});
 });
 afterEach(() => rmSync(root, {recursive: true, force: true}));
 
@@ -26,7 +26,7 @@ describe("clay edit commands", () => {
 
     it("set front matter fields, typed, and remove them with an empty value", () => {
         expect(runEdit(root, ["set", "reference/security", "title=Safety", "order=7", "description="]).code).toBe(0);
-        const text = read("docs/reference/security.md");
+        const text = read("docs/latest/reference/security.md");
         expect(text).toMatch(/title: Safety/);
         expect(text).toMatch(/order: 7/);
         expect(runEdit(root, ["show", "reference/security.md"]).data.entry).toMatchObject({title: "Safety", order: 7});
@@ -39,26 +39,26 @@ describe("clay edit commands", () => {
     });
 
     it("create, order, move, rename and delete pages, and report links that broke", () => {
-        expect(runEdit(root, ["new", "page", "reference", "Glossary"]).data.written).toEqual(["docs/reference/glossary.md"]);
+        expect(runEdit(root, ["new", "page", "reference", "Glossary"]).data.written).toEqual(["docs/latest/reference/glossary.md"]);
         runEdit(root, ["order", "reference/glossary", "1"]);
-        expect(read("docs/reference/glossary.md")).toMatch(/order: 1/);
+        expect(read("docs/latest/reference/glossary.md")).toMatch(/order: 1/);
 
         expect(runEdit(root, ["move", "reference/security.md", "guides"]).data.broken).toEqual(
             expect.arrayContaining([expect.stringContaining("security")]));
-        expect(existsSync(join(root, "docs/guides/security.md"))).toBe(true);
+        expect(existsSync(join(root, "docs/latest/guides/security.md"))).toBe(true);
 
         runEdit(root, ["rename", "reference/glossary.md", "terms"]);
-        expect(existsSync(join(root, "docs/reference/terms.md"))).toBe(true);
+        expect(existsSync(join(root, "docs/latest/reference/terms.md"))).toBe(true);
 
         expect(runEdit(root, ["delete", "reference/terms"]).code).toBe(2);
         expect(runEdit(root, ["delete", "reference/terms", "--yes"], {yes: true}).data.deleted).toEqual(["reference/terms.md"]);
     });
 
     it("translate and set fields in another language", () => {
-        expect(runEdit(root, ["translate", "reference/security"], {lang: "de"}).data.written).toEqual(["docs/reference/security.de.md"]);
+        expect(runEdit(root, ["translate", "reference/security"], {lang: "de"}).data.written).toEqual(["docs/latest/reference/security.de.md"]);
         runEdit(root, ["set", "reference/security", "title=Sicherheit"], {lang: "de"});
-        expect(read("docs/reference/security.de.md")).toMatch(/title: Sicherheit/);
-        expect(read("docs/reference/security.md")).not.toMatch(/Sicherheit/);
+        expect(read("docs/latest/reference/security.de.md")).toMatch(/title: Sicherheit/);
+        expect(read("docs/latest/reference/security.md")).not.toMatch(/Sicherheit/);
         expect(runEdit(root, ["order", "reference/security", "1"], {lang: "de"}).code).toBe(1);
     });
 

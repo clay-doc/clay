@@ -1,10 +1,11 @@
 import {getCurrentDocItemFromRoute, type DocItem} from "./nav";
 import {normalizePath} from "./route-path";
 
-// The docs come in editions: a version (the current docs/ has the name "", older
-// ones live in docs-archive/<name>/) in a language. The current version and the
-// default language have no URL prefix; others add theirs: /1.x, /de, /1.x/de.
-export type VersionInfo = { name: string, label: string };
+// The docs come in editions: a version (the latest has the name "", older ones
+// are named after their folder in docs/) in a language. The latest version and
+// the default language have no URL prefix; others add theirs: /1.x, /de, /1.x/de.
+// dir is the version's folder in the project: "docs", "docs/latest" or "docs/1.x".
+export type VersionInfo = { name: string, label: string, dir: string };
 export type LanguageInfo = { code: string, label: string };
 export type Edition = { version: VersionInfo, language: LanguageInfo, prefix: string };
 

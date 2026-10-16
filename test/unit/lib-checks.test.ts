@@ -67,8 +67,8 @@ describe("brokenLinks", () => {
         ];
 
         expect(brokenLinks(pages, {"": docs, "1.x": old})).toEqual([
-            'docs-archive/1.x/guides/setup.md: "shot.png" points to a missing file',
-            'docs-archive/1.x/guides/setup.md: "old.md" points to a missing page (/1.x/guides/old)',
+            'docs/1.x/guides/setup.md: "shot.png" points to a missing file',
+            'docs/1.x/guides/setup.md: "old.md" points to a missing page (/1.x/guides/old)',
         ]);
     });
 

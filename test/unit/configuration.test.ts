@@ -12,11 +12,12 @@ describe("editLink", () => {
         expect(editLink(config({editURL}), link)).toBe(expected);
     });
 
-    it("points into docs-archive/<name>/ for older versions", () => {
-        expect(editLink(config({editURL: "https://github.com/o/r/edit/main/docs/"}), "/a.md", "1.x"))
-            .toBe("https://github.com/o/r/edit/main/docs-archive/1.x/a.md");
+    it("points into the version's folder when the docs have versions", () => {
+        const editURL = "https://github.com/o/r/edit/main/docs/";
+        expect(editLink(config({editURL}), "/a.md", "docs/1.x")).toBe("https://github.com/o/r/edit/main/docs/1.x/a.md");
+        expect(editLink(config({editURL}), "/a.md", "docs/latest")).toBe("https://github.com/o/r/edit/main/docs/latest/a.md");
         // Where the versions are is unknown when editURL does not end in docs/
-        expect(editLink(config({editURL: "https://github.com/o/r/edit/main/content/"}), "/a.md", "1.x")).toBeUndefined();
+        expect(editLink(config({editURL: "https://github.com/o/r/edit/main/content/"}), "/a.md", "docs/1.x")).toBeUndefined();
     });
 
     it("is unset without editURL", () => {

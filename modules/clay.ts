@@ -103,7 +103,7 @@ export default defineNuxtModule({
             getContents: () => [
                 `export const config = ${JSON.stringify(site.config)};`,
                 `export const nav = ${JSON.stringify(site.nav)};`,
-                `export const versions = ${JSON.stringify(site.versions.map(({name, label}) => ({name, label})))};`,
+                `export const versions = ${JSON.stringify(site.versions.map(({name, label, dir}) => ({name, label, dir})))};`,
                 `export const languages = ${JSON.stringify(site.languages)};`,
                 `export const navs = ${JSON.stringify(Object.fromEntries(site.editions.map(e => [e.prefix, e.nav])))};`,
                 `export const configs = ${JSON.stringify(site.configs)};`,

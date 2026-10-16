@@ -138,9 +138,9 @@ describe("redirects", () => {
     it("lead from old addresses to the page, in every version and language", () => {
         const root = project({
             "clay.yaml": "title: Docs\nlanguages: [en, de]\n",
-            "docs/setup.md": "---\nredirects: [/install, guides/install.md/, \"/start/\"]\n---\n# Setup\n",
-            "docs/setup.de.md": "---\ntitle: Einrichtung\nredirects: [/ignored]\n---\n",
-            "docs-archive/1.x/setup.md": "---\nredirects: [/install]\n---\n# Setup\n",
+            "docs/latest/setup.md": "---\nredirects: [/install, guides/install.md/, \"/start/\"]\n---\n# Setup\n",
+            "docs/latest/setup.de.md": "---\ntitle: Einrichtung\nredirects: [/ignored]\n---\n",
+            "docs/1.x/setup.md": "---\nredirects: [/install]\n---\n# Setup\n",
         });
         const {redirects, warnings} = loadSite(root, {gitDates: false, env: {}});
         expect(redirects.map(r => `${r.from} → ${r.to}`)).toEqual([

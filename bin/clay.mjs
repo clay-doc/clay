@@ -29,7 +29,7 @@ Commands:
   edit      Edit pages, folders, their front matter and order, and clay.yaml: interactively,
             or one change per command for scripts and AI agents ("clay edit help")
   check     Check links, translations and settings without building; --json for programs
-  version   Save the current docs as an older version in docs-archive/: clay version <name>
+  version   Save the latest docs as an older version in docs/<name>/: clay version <name>
 
 Options:
   --root <dir>   Docs project with clay.yaml and docs/ (default: current directory)
@@ -39,6 +39,7 @@ Options:
   --strict       build: fail on warnings such as broken links or config typos
   --verbose      build and dev: show the full Nuxt output instead of the progress
   --json         edit and check: print the result as JSON
+  --yes          version: move docs/ into docs/latest/ without asking (the first version)
   -h, --help     Show this help (clay edit --help: the edit commands)
   -v, --version  Show the version
 
@@ -154,17 +155,49 @@ switch (command) {
         const {preview} = await jiti.import("../lib/preview.ts");
         await preview({root, out, port: Number(options.port ?? 4173), host: options.host ? "0.0.0.0" : "127.0.0.1", title: `Clay ${version} · preview`});
         break;
-    case "version":
-        // Copies docs/ to docs-archive/<name>; docs/ stays the latest version
+    case "version": {
+        // Copies docs/latest/ to docs/<name>/. The first version moves docs/ into
+        // docs/latest/ (lib/versions.ts), which is explained and confirmed first.
+        const name = positionals[1];
         try {
-            const editor = await jiti.import("../lib/editor.ts");
-            console.log(`Saved the current docs as version ${positionals[1]} in ${editor.createVersion(root, positionals[1] ?? "")}.`);
-            console.log(`docs/ stays the latest version; the switcher calls it "Latest" unless clay.yaml sets "version".`);
+            const versions = await jiti.import("../lib/versions.ts");
+            const plan = versions.planLayout(root);
+            if (!name && !plan?.archived.length) versions.checkVersionName(root, "");
+            if (name) versions.checkVersionName(root, name);
+            if (plan) {
+                console.log(versions.describePlan(plan, name) + "\n");
+                if (!options.yes) {
+                    if (!process.stdin.isTTY) {
+                        console.error(`Nothing was changed. Run "clay version${name ? ` ${name}` : ""} --yes" to go ahead.`);
+                        process.exit(1);
+                    }
+                    const answer = await new Promise(done => {
+                        const prompt = createInterface({input: process.stdin, output: process.stdout});
+                        prompt.question("Go ahead? (y/N) ", reply => {
+                            prompt.close();
+                            done(reply);
+                        });
+                    });
+                    if (!/^y(es)?$/i.test(String(answer).trim())) {
+                        console.log("Nothing was changed.");
+                        break;
+                    }
+                }
+                versions.applyLayout(root, plan);
+                console.log(`Moved docs/ into docs/latest/${plan.archived.map(v => `, and docs-archive/${v}/ to docs/${v}/`).join("")}.`);
+                if (plan.fixed.length + plan.settings.length) console.log(`Changed ${plan.fixed.length + plan.settings.length} path(s) that lead out of docs/.`);
+            }
+            if (name) {
+                const saved = versions.saveVersion(root, name);
+                console.log(`Saved docs/latest/ as version ${name} in ${saved.dir}/ (${saved.files} files), at /${name}.`);
+                console.log(`docs/latest/ stays the latest version. Update it for the next release, and set "version" in clay.yaml to its label.`);
+            }
         } catch (error) {
             console.error(error.message);
             process.exit(1);
         }
         break;
+    }
     case "edit": {
         const commands = await jiti.import("../lib/commands.ts");
         if (editHelp) {

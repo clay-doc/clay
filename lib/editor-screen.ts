@@ -5,6 +5,7 @@
 import {emitKeypressEvents, type Key} from "node:readline";
 import {GRAY, MINT, SAGE, rgb} from "./colors";
 import * as editor from "./editor";
+import * as layout from "./versions";
 import type {EditorNode, SettingRow} from "./editor";
 import type {FrontMatter} from "./front-matter";
 
@@ -441,12 +442,31 @@ export async function edit(root: string) {
         }
     }
 
-    // V saves docs/ as a new version in docs-archive/
+    // V saves the latest docs as a new version in docs/<name>/. The first one
+    // moves docs/ into docs/latest/ (lib/versions.ts), after asking.
     function newVersion() {
-        ask("Save the current docs as version", "", "e.g. 2.x", name => {
+        ask("Save the latest docs as version", "", "e.g. 2.x", name => {
             if (!name) return;
-            done("Saved", [editor.createVersion(root, name)]);
-            ({versions, languages} = editor.editorContext(root));
+            layout.checkVersionName(root, name);
+            const save = () => {
+                const saved = layout.saveVersion(root, name);
+                done(`Saved docs/latest/ as version ${name}`, [`${saved.dir}/`]);
+                ({versions, languages} = editor.editorContext(root));
+            };
+            const plan = layout.planLayout(root);
+            if (!plan) return save();
+            const changes = plan.fixed.length + plan.settings.length;
+            confirm = {
+                question: `Versions live in docs/latest/ and docs/<name>/: move docs/ into docs/latest/`
+                    + (plan.archived.length ? ` and docs-archive/ into docs/` : "")
+                    + (changes ? `, changing ${changes} path(s) that lead out of docs/` : "")
+                    + `? ("clay version" shows the details)`,
+                yes: () => {
+                    layout.applyLayout(root, plan);
+                    save();
+                    if (plan.unchanged.length) message += ` · ${yellow(`check ${plan.unchanged.length} mention(s) of docs/`)}: ${plan.unchanged[0]}`;
+                },
+            };
         });
     }
 

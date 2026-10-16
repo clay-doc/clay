@@ -3,10 +3,11 @@ import {tmpdir} from "node:os";
 import {dirname, join} from "node:path";
 import {beforeEach, describe, expect, it} from "vitest";
 import {
-    addLink, createFolder, createPage, createTranslation, createVersion, deleteEntry, getSetting, loadDocsTree, loadSettings, moveEntry,
+    addLink, createFolder, createPage, createTranslation, deleteEntry, getSetting, loadDocsTree, loadSettings, moveEntry,
     removeLink, reorder, saveSettings, setFields, setSetting, settingRows, settingsChanged, slugify, type EditorNode,
 } from "../../lib/editor";
 import {setFrontMatter} from "../../lib/front-matter";
+import {applyLayout, checkVersionName, planLayout, saveVersion} from "../../lib/versions";
 
 let root = "";
 const write = (files: Record<string, string>) => {
@@ -32,7 +33,6 @@ beforeEach(() => {
         "docs/guides/first.md": "---\nicon: fa-solid fa-star # favourite\n---\n# First\n",
         "docs/guides/img/diagram.png": "",
         "docs/empty/notes.txt": "",
-        "docs-archive/1.x/old.md": "# Old\n",
     });
 });
 
@@ -73,8 +73,11 @@ describe("docs tree", () => {
         expect(tree[3]).toMatchObject({file: "setup.de.md", exists: false, fallbackTitle: "Setup"});
     });
 
-    it("shows older versions", () => {
+    it("shows older versions, and edits the latest in docs/latest/", () => {
+        applyLayout(root, planLayout(root)!);
+        write({"docs/1.x/old.md": "# Old\n"});
         expect(names(loadDocsTree(root, {version: "1.x", language: "en"}))).toEqual(["index.md", "old.md"]);
+        expect(setFields(root, en, loadDocsTree(root, en)[1]!, {order: 5})).toBe("docs/latest/intro.md");
     });
 });
 
@@ -135,15 +138,33 @@ describe("creating", () => {
 });
 
 describe("versions", () => {
-    it("saves docs/ as an older version in docs-archive/", () => {
-        write({"docs/.DS_Store": "junk"});
-        expect(createVersion(root, "2.x")).toBe("docs-archive/2.x");
-        expect(read("docs-archive/2.x/intro.de.md")).toBe(read("docs/intro.de.md"));
-        expect(existsSync(join(root, "docs-archive/2.x/.DS_Store"))).toBe(false);
+    it("move docs/ into docs/latest/ with the first one, then copy docs/latest/ to docs/<name>/", () => {
+        write({
+            "docs/.DS_Store": "junk",
+            "docs-archive/1.x/old.md": "# Old\n",
+            "docs/guides/first.md": "# First\n\n<!--@include: ../../clay.yaml{1,2}-->\n\n![Logo](../../logo.svg) [Setup](../setup.md)\n",
+        });
+        const plan = planLayout(root)!;
+        expect(plan.archived).toEqual(["1.x"]);
+        expect(plan.fixed).toEqual([
+            {file: "docs/latest/guides/first.md", from: "../../clay.yaml{1,2}", to: "../../../clay.yaml{1,2}"},
+            {file: "docs/latest/guides/first.md", from: "../../logo.svg", to: "../../../logo.svg"},
+        ]);
+        expect(plan.settings).toEqual([]);
+
+        applyLayout(root, plan);
+        expect(read("docs/latest/guides/first.md")).toBe("# First\n\n<!--@include: ../../../clay.yaml{1,2}-->\n\n![Logo](../../../logo.svg) [Setup](../setup.md)\n");
+        expect(read("docs/1.x/old.md")).toBe("# Old\n");
+        expect(existsSync(join(root, "docs-archive"))).toBe(false);
+        expect(planLayout(root)).toBeUndefined();
+
+        expect(saveVersion(root, "2.x")).toEqual({dir: "docs/2.x", files: 8});
+        expect(read("docs/2.x/intro.de.md")).toBe(read("docs/latest/intro.de.md"));
+        expect(existsSync(join(root, "docs/2.x/.DS_Store"))).toBe(false);
         expect(names(loadDocsTree(root, {version: "2.x", language: "en"}))).toEqual(names(loadDocsTree(root, en)));
-        expect(() => createVersion(root, "2.x")).toThrow(/already exists/);
-        expect(() => createVersion(root, "bad name")).toThrow(/can't be used in URLs/);
-        expect(() => createVersion(root, "docs")).toThrow(/can't be used in URLs/);
+        expect(() => saveVersion(root, "2.x")).toThrow(/already exists/);
+        expect(() => checkVersionName(root, "bad name")).toThrow(/can't be used in URLs/);
+        expect(() => checkVersionName(root, "latest")).toThrow(/can't be used in URLs/);
     });
 });
 

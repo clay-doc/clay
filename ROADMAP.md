@@ -8,8 +8,7 @@ impact.
 - **OpenAPI**: full support for OpenAPI documents. Pages for every operation and schema, generated from the
   spec, in the navigation, search, link checks and the Markdown for agents.
 - Before work on Clay 5 starts, save the Clay 4 docs of the example repo as an older version
-  (`npx clay version 4.x`), so the docs of both stay online. In the copy, the include of `clay.yaml` on
-  `writing/snippets-and-variables` needs one more `../`.
+  (`npx clay version 4.x`), so the docs of both stay online.
 
 A plugin system is not planned: the features above cover what plugins are used for in other tools. It comes
 back if users need something they do not.

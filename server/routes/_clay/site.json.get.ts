@@ -6,7 +6,7 @@ export default defineEventHandler(() => {
     const {config, configs, nav, versions, languages, editions} = useClaySite();
     return {
         config, configs, nav, languages,
-        versions: versions.map(({name, label}) => ({name, label})),
+        versions: versions.map(({name, label, dir}) => ({name, label, dir})),
         navs: Object.fromEntries(editions.map(edition => [edition.prefix, edition.nav])),
     };
 });

@@ -14,8 +14,8 @@ function project(files: Record<string, string>): string {
     return root;
 }
 
-const current: VersionInfo = {name: "", label: "2.x"};
-const old: VersionInfo = {name: "1.x", label: "1.x"};
+const current: VersionInfo = {name: "", label: "2.x", dir: "docs/latest"};
+const old: VersionInfo = {name: "1.x", label: "1.x", dir: "docs/1.x"};
 const versions = [current, old];
 const languages: LanguageInfo[] = [{code: "en", label: "English"}, {code: "de", label: "Deutsch"}];
 
@@ -38,9 +38,9 @@ describe("edition routes", () => {
     it("switches to the same page, or the start page of the other version", () => {
         const site = loadSite(project({
             "clay.yaml": "title: T",
-            "docs/setup.md": "# Setup",
-            "docs/new.md": "# New",
-            "docs-archive/1.x/setup.md": "# Setup",
+            "docs/latest/setup.md": "# Setup",
+            "docs/latest/new.md": "# New",
+            "docs/1.x/setup.md": "# Setup",
         }), {gitDates: false, env: {}});
         const navs = Object.fromEntries(site.editions.map(edition => [edition.prefix, edition.nav]));
 
@@ -55,14 +55,17 @@ describe("loadSite with versions", () => {
     it("loads older versions under their prefix, newest first", () => {
         const site = loadSite(project({
             "clay.yaml": "title: T\nversion: \"3.x\"",
-            "docs/a.md": "# A",
-            "docs-archive/1.x/guides/b.md": "# B",
-            "docs-archive/1.x/guides/index.md": "---\ntitle: Old guides\n---\n",
-            "docs-archive/2.x/c.md": "# C",
-            "docs-archive/10.x/d.md": "# D",
+            "docs/latest/a.md": "# A",
+            "docs/1.x/guides/b.md": "# B",
+            "docs/1.x/guides/index.md": "---\ntitle: Old guides\n---\n",
+            "docs/2.x/c.md": "# C",
+            "docs/10.x/d.md": "# D",
+            "docs/_snippets/shared.md": "Shared by all versions",
         }), {gitDates: false, env: {}});
 
-        expect(site.versions.map(({name, label}) => [name, label])).toEqual([["", "3.x"], ["10.x", "10.x"], ["2.x", "2.x"], ["1.x", "1.x"]]);
+        expect(site.versions.map(({name, label, dir}) => [name, label, dir])).toEqual([
+            ["", "3.x", "docs/latest"], ["10.x", "10.x", "docs/10.x"], ["2.x", "2.x", "docs/2.x"], ["1.x", "1.x", "docs/1.x"],
+        ]);
         expect(site.pages.map(page => [page.route, page.version])).toEqual([
             ["/a", ""], ["/10.x/d", "10.x"], ["/2.x/c", "2.x"], ["/1.x/guides", "1.x"], ["/1.x/guides/b", "1.x"],
         ]);
@@ -73,19 +76,29 @@ describe("loadSite with versions", () => {
     it("skips unusable folders and reports URL clashes", () => {
         const root = project({
             "clay.yaml": "title: T",
+            "docs/latest/1.x/a.md": "# A",
             "docs/1.x/a.md": "# A",
-            "docs-archive/1.x/a.md": "# A",
-            "docs-archive/docs/a.md": "# A",
-            "docs-archive/with space/a.md": "# A",
+            "docs/docs/a.md": "# A",
+            "docs/with space/a.md": "# A",
+            "docs/stray.md": "# Stray",
+            "docs-archive/2.x/a.md": "# A",
             "versions/1.x/docs/a.md": "# A",
         });
         expect(listVersions(root).names).toEqual(["1.x"]);
         expect(loadSite(root, {gitDates: false, env: {}}).warnings).toEqual([
-            "versions/ is no longer read since Clay 3; move versions/<name>/docs/ to docs-archive/<name>/",
-            "docs-archive/docs: not usable as a version name in URLs; the folder is skipped",
-            "docs-archive/with space: not usable as a version name in URLs; the folder is skipped",
-            "docs-archive/1.x: docs/1.x has the same URL as this version; rename one of them",
+            'versions/ is no longer read since Clay 3; move versions/<name>/docs/ to docs-archive/<name>/ and run "clay version"',
+            'docs-archive/ is no longer read since Clay 4; run "clay version" to move its versions into docs/',
+            "docs/docs: not usable as a version name in URLs; the folder is skipped",
+            "docs/stray.md: with versions, pages belong in docs/latest/; the file is skipped",
+            "docs/with space: not usable as a version name in URLs; the folder is skipped",
+            "docs/1.x: docs/latest/1.x has the same URL as this version; rename one of them",
         ]);
+    });
+
+    it("has no versions while the docs are right in docs/", () => {
+        const site = loadSite(project({"clay.yaml": "title: T", "docs/a.md": "# A", "docs/1.x/b.md": "# B"}), {gitDates: false, env: {}});
+        expect(site.versions.map(({name, dir}) => [name, dir])).toEqual([["", "docs"]]);
+        expect(site.pages.map(page => page.route)).toEqual(["/1.x", "/1.x/b", "/a"]);
     });
 });
 

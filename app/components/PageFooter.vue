@@ -14,7 +14,7 @@ const t = useMessages();
 const doc = computed(() => currentDocItem.value?.displayLink === props.url && (!currentDocItem.value.children || currentDocItem.value.hasIndex)
     ? currentDocItem.value : undefined);
 // The file the page is read from, which is the translation in other languages
-const edit = computed(() => doc.value?.source ? editLink(config.value, doc.value.source, edition.value.version.name) : undefined);
+const edit = computed(() => doc.value?.source ? editLink(config.value, doc.value.source, edition.value.version.dir) : undefined);
 const updated = computed(() => {
   const date = doc.value?.updated ? new Date(doc.value.updated) : undefined;
   if (!date || isNaN(date.getTime())) return undefined;

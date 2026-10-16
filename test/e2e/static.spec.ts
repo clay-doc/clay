@@ -155,7 +155,7 @@ test.describe("in the browser", () => {
         await expect(toc.getByRole("link")).toHaveText(["Links", "Images and files", "Code", "Alerts", "Tables"]);
         await expect(page.locator("footer a[rel=next]")).toContainText("Security");
         await expect(page.locator("footer a", {hasText: "Edit this page"}))
-            .toHaveAttribute("href", "https://github.com/clay-doc/clay/edit/main/playground/docs/reference/feature-tour.md");
+            .toHaveAttribute("href", "https://github.com/clay-doc/clay/edit/main/playground/docs/latest/reference/feature-tour.md");
     });
 
     test("the table of contents marks the sections on screen", async ({page}) => {
@@ -218,7 +218,7 @@ test.describe("versions", () => {
         await expect(page.locator(".alert[role=status]")).toContainText("These are the docs for version 1.x.");
         await expect(page.locator(".alert[role=status]").getByRole("link")).toHaveAttribute("href", "/clay/getting-started");
         await expect(page.locator("footer a", {hasText: "Edit this page"}))
-            .toHaveAttribute("href", "https://github.com/clay-doc/clay/edit/main/playground/docs-archive/1.x/getting-started.md");
+            .toHaveAttribute("href", "https://github.com/clay-doc/clay/edit/main/playground/docs/1.x/getting-started.md");
 
         await page.locator(".prose a:not(footer a)", {hasText: "legacy setup"}).click();
         await expect(page).toHaveURL(/\/clay\/1\.x\/guides\/legacy-setup$/);
