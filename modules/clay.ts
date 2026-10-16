@@ -73,7 +73,7 @@ export default defineNuxtModule({
 
         // Problems are reported once per build; with --strict they fail it
         // (missing git history only limits last-updated dates, so it never fails a build)
-        const broken = brokenLinks(site.pages, Object.fromEntries(site.versions.map(v => [v.name, v.docsDir])));
+        const broken = brokenLinks(site.pages, Object.fromEntries(site.versions.map(v => [v.name, v.docsDir])), site.redirects);
         const problems = [...site.warnings.filter(w => !w.includes("last-updated")), ...broken];
         for (const warning of site.warnings) logger.warn(warning);
         for (const link of broken) logger.warn(`Broken link in ${link}`);
@@ -156,6 +156,8 @@ export default defineNuxtModule({
                 "/",
                 ...site.editions.map(edition => edition.prefix).filter(Boolean),
                 ...site.pages.map(page => page.route),
+                // Old addresses of pages (server/middleware/redirects.ts)
+                ...site.redirects.map(redirect => redirect.from),
                 ...site.editions.map(edition => `/_clay${edition.prefix}/search.json`),
                 "/robots.txt",
                 ...(origin ? ["/sitemap.xml"] : []),

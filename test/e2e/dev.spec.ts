@@ -12,6 +12,8 @@ test("the dev server renders pages on the server and in the browser", async ({pa
     expect(await (await request.get("reference/feature-tour")).text()).toContain('<h1 id="feature-tour">Feature Tour</h1>');
     expect((await request.get("does-not-exist")).status()).toBe(404);
     expect((await request.get("1.x/does-not-exist")).status()).toBe(404);
+    // An old address of a page (redirects in its front matter)
+    expect(await (await request.get("quick-start")).text()).toContain('location.replace("/clay/getting-started/"');
 
     // The Markdown of pages and llms.txt, rendered on request like the pages
     const markdown = await request.get("reference/feature-tour.md");

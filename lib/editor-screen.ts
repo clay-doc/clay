@@ -85,7 +85,7 @@ export async function edit(root: string) {
     const selected = {pages: 0, settings: 1, details: 0, pick: 0};
     let scroll = 0;
     let input: Input | null = null;
-    let confirm: { question: string, yes: () => void } | null = null;
+    let confirm: { question: string, yes: () => void, no?: () => void } | null = null;
     let picks: string[] = []; // folders to move an entry into
     let message = "";
 
@@ -122,6 +122,11 @@ export async function edit(root: string) {
     }
 
     const done = (text: string, files: string[] = []) => message = sage(`${text}${files.length ? `: ${files.join(", ")}` : ""}`);
+    const reportRedirects = (redirects: string[]) => redirects.length === 0 ? "" : ` · ${redirects.length === 1 ? `redirect ${redirects[0]}` : `${redirects.length} redirects`}`;
+    // Moves and renames ask whether the old address should keep leading to the page
+    const askRedirect = (move: (redirect: boolean) => void) => {
+        confirm = {question: "Redirect the old address to the new one?", yes: () => move(true), no: () => move(false)};
+    };
     const reportBroken = (broken: string[]) => broken.length === 0 ? "" : ` · ${yellow(`${broken.length} link(s) broke`)}: ${broken[0]}${broken.length > 1 ? " …" : ""}`;
 
     function render() {
@@ -192,7 +197,7 @@ export async function edit(root: string) {
                 : paint("7", " ") + gray(placeholder);
             lines.push(`${gray("└")}  ${label}: ${text}`, `   ${gray("⏎ apply · esc cancel · empty removes")}`);
         } else if (confirm) {
-            lines.push(`${gray("└")}  ${yellow(confirm.question)} ${gray("y yes · n no")}`, "");
+            lines.push(`${gray("└")}  ${yellow(confirm.question)} ${gray(confirm.no ? "y yes · n no · esc cancel" : "y yes · n no")}`, "");
         } else {
             let help = HELP[mode === "list" ? tab : mode]!;
             if (mode === "list" && tab === "pages" && !isDefaultLanguage()) help = `${HELP.translate} · ${help}`;
@@ -331,9 +336,11 @@ export async function edit(root: string) {
             const name = node.kind === "page" ? node.name.replace(/\.md$/i, "") : node.name;
             ask("New file name", name, "", slug => {
                 if (!slug || slug === name) return;
-                const {moved, broken} = editor.moveEntry(root, edition.version, node, folder, editor.slugify(slug));
-                message = sage(`Renamed ${moved.join(", ")}`) + reportBroken(broken);
-                reload(node.kind === "page" ? `${folder ? folder + "/" : ""}${editor.slugify(slug)}.md` : `${folder ? folder + "/" : ""}${editor.slugify(slug)}`);
+                askRedirect(redirect => {
+                    const {moved, broken, redirects} = editor.moveEntry(root, edition.version, node, folder, editor.slugify(slug), redirect);
+                    message = sage(`Renamed ${moved.join(", ")}`) + reportRedirects(redirects) + reportBroken(broken);
+                    reload(node.kind === "page" ? `${folder ? folder + "/" : ""}${editor.slugify(slug)}.md` : `${folder ? folder + "/" : ""}${editor.slugify(slug)}`);
+                });
             });
         } else if (key.name === "o" && movable) {
             const folders = [""];
@@ -391,10 +398,12 @@ export async function edit(root: string) {
             const folder = picks[selected.pick]!;
             mode = "list";
             const slug = node.kind === "page" ? node.name.replace(/\.md$/i, "") : node.name;
-            const {moved, broken} = editor.moveEntry(root, edition.version, node, folder, slug);
-            message = sage(`Moved ${moved.join(", ")}`) + reportBroken(broken);
-            collapsed.delete(folder);
-            reload(node.kind === "page" ? `${folder ? folder + "/" : ""}${node.name}` : `${folder ? folder + "/" : ""}${node.name}`);
+            askRedirect(redirect => {
+                const {moved, broken, redirects} = editor.moveEntry(root, edition.version, node, folder, slug, redirect);
+                message = sage(`Moved ${moved.join(", ")}`) + reportRedirects(redirects) + reportBroken(broken);
+                collapsed.delete(folder);
+                reload(node.kind === "page" ? `${folder ? folder + "/" : ""}${node.name}` : `${folder ? folder + "/" : ""}${node.name}`);
+            });
         }
     }
 
@@ -460,10 +469,13 @@ export async function edit(root: string) {
         message = "";
         if (input) onInput(text, key);
         else if (confirm) {
-            const {yes} = confirm;
+            const {yes, no} = confirm;
             if (key.name === "y") {
                 confirm = null;
                 run(yes);
+            } else if (key.name === "n" && no) {
+                confirm = null;
+                run(no);
             } else if (key.name === "n" || key.name === "escape") confirm = null;
         } else if (mode === "details") run(() => onDetails(key));
         else if (mode === "pick") run(() => onPick(key));

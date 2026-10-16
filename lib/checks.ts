@@ -6,7 +6,7 @@ import {stripFrontMatter} from "./front-matter";
 import {headingText} from "../common/markdown-text";
 import {componentSyntax} from "../common/markdown-components";
 import {docPath} from "../common/route-path";
-import type {Page} from "./site";
+import type {Page, Redirect} from "./site";
 
 // Shape of a YAML document: an object maps keys to their schema, an array
 // describes its items, true accepts any value.
@@ -91,9 +91,11 @@ const isAssetPath = (path: string) => {
 // not exist, resolved like the app resolves them: relative to the page, ".md"
 // dropped. Links to other sites are not checked. docsDirs maps version names to
 // their docs folder ("" for the current docs). Untranslated pages repeat their
-// original, so they are checked once, there.
-export function brokenLinks(pages: Page[], docsDirs: string | Record<string, string>): string[] {
+// original, so they are checked once, there. Links to an old address of a page
+// (redirects) still lead there, but are reported so they can point to the page.
+export function brokenLinks(pages: Page[], docsDirs: string | Record<string, string>, redirects: Redirect[] = []): string[] {
     const dirs = typeof docsDirs === "string" ? {"": docsDirs} : docsDirs;
+    const moved = new Map(redirects.map(redirect => [redirect.from, redirect.to]));
     const routes = new Set(["/", ...pages.map(page => page.prefix).filter(Boolean), ...pages.map(page => page.route)]);
     const markdown = new Map(pages.filter(page => page.markdown).map(page => [page.route, page.markdown!]));
     const ids = new Map<string, Set<string>>();
@@ -110,7 +112,7 @@ export function brokenLinks(pages: Page[], docsDirs: string | Record<string, str
         const version = page.version ?? "";
         for (const ref of markdownRefs(page.markdown)) {
             // A folder's index.md links relative to its folder
-            const reason = checkRef(ref, page.route, docPath(page.route, page.isDir), routes, sectionsOf, dirs[version]!, page.prefix ?? "");
+            const reason = checkRef(ref, page.route, docPath(page.route, page.isDir), routes, sectionsOf, dirs[version]!, page.prefix ?? "", moved);
             const source = version ? `docs-archive/${version}/${page.source}` : page.source;
             if (reason) broken.push(`${source}: "${ref.href}" ${reason}`);
         }
@@ -132,7 +134,8 @@ function checkSection(page: string, fragment: string, sectionsOf: (route: string
 }
 
 function checkRef(ref: { href: string, isImage: boolean }, self: string, route: string, routes: Set<string>,
-                  sectionsOf: (route: string) => Set<string> | undefined, docsDir: string, prefix: string): string | undefined {
+                  sectionsOf: (route: string) => Set<string> | undefined, docsDir: string, prefix: string,
+                  moved: Map<string, string>): string | undefined {
     const href = ref.href;
     if (!href || href.startsWith("//") || /^[a-z][a-z\d+.-]*:/i.test(href)) return undefined;
     const fragment = href.includes("#") ? href.slice(href.indexOf("#") + 1) : "";
@@ -156,5 +159,6 @@ function checkRef(ref: { href: string, isImage: boolean }, self: string, route: 
     }
 
     const page = posix.normalize("/" + resolved.replace(/\.md$/i, "")).replace(/(^|\/)index$/i, "").replace(/\/$/, "") || "/";
+    if (moved.has(page)) return `points to an old address of ${moved.get(page)}; link to the page itself`;
     return routes.has(page) ? checkSection(page, fragment, sectionsOf) : `points to a missing page (${page})`;
 }

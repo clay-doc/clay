@@ -25,6 +25,15 @@ test.describe("pre-rendered pages", () => {
         expect(missing.status()).toBe(404);
     });
 
+    test("old addresses of pages lead to them, keeping the section and the language", async ({page, request}) => {
+        await page.goto("quick-start#prerequisites");
+        await expect(page).toHaveURL(/\/clay\/getting-started\/#prerequisites$/);
+        await page.goto("de/quick-start");
+        await expect(page).toHaveURL(/\/clay\/de\/getting-started\/$/);
+        await expect(page.locator(".prose h1")).toHaveText("Erste Schritte mit Clay");
+        expect(await (await request.get("sitemap.xml")).text()).not.toContain("quick-start");
+    });
+
     test("publish sitemap, robots.txt and the search index", async ({request}) => {
         const sitemap = await (await request.get("sitemap.xml")).text();
         expect(sitemap).toContain("<loc>https://clay-doc.github.io/clay/reference/feature-tour/</loc>");

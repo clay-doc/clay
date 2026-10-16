@@ -3,17 +3,13 @@
 Open work for Clay and the [example repo](https://github.com/clay-doc/clay-example-repo), roughly in order of
 impact.
 
-## Features
-
-- **Redirects**: `redirects:` in front matter for the old addresses of a page; `clay edit move` and `rename`
-  add them.
-
 ## Clay 5
 
 - **OpenAPI**: full support for OpenAPI documents. Pages for every operation and schema, generated from the
   spec, in the navigation, search, link checks and the Markdown for agents.
 - Before work on Clay 5 starts, save the Clay 4 docs of the example repo as an older version
-  (`npx clay version 4.x`), so the docs of both stay online.
+  (`npx clay version 4.x`), so the docs of both stay online. In the copy, the include of `clay.yaml` on
+  `writing/snippets-and-variables` needs one more `../`.
 
 A plugin system is not planned: the features above cover what plugins are used for in other tools. It comes
 back if users need something they do not.

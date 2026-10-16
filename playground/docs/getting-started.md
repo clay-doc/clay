@@ -1,6 +1,7 @@
 ---
 title: Getting Started
 icon: fa-solid fa-play
+redirects: [/quick-start]
 ---
 
 # Getting Started with Clay

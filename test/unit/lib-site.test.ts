@@ -134,6 +134,42 @@ describe("collectPages", () => {
     });
 });
 
+describe("redirects", () => {
+    it("lead from old addresses to the page, in every version and language", () => {
+        const root = project({
+            "clay.yaml": "title: Docs\nlanguages: [en, de]\n",
+            "docs/setup.md": "---\nredirects: [/install, guides/install.md/, \"/start/\"]\n---\n# Setup\n",
+            "docs/setup.de.md": "---\ntitle: Einrichtung\nredirects: [/ignored]\n---\n",
+            "docs-archive/1.x/setup.md": "---\nredirects: [/install]\n---\n# Setup\n",
+        });
+        const {redirects, warnings} = loadSite(root, {gitDates: false, env: {}});
+        expect(redirects.map(r => `${r.from} → ${r.to}`)).toEqual([
+            "/install → /setup", "/guides/install → /setup", "/start → /setup",
+            "/de/install → /de/setup", "/de/guides/install → /de/setup", "/de/start → /de/setup",
+            "/1.x/install → /1.x/setup", "/1.x/de/install → /1.x/de/setup",
+        ]);
+        expect(redirects.find(r => r.from === "/de/install")).toMatchObject({title: "Einrichtung", language: "de"});
+        expect(warnings).toEqual([]);
+    });
+
+    it("are skipped, with a warning, where they cannot work", () => {
+        const root = project({
+            "clay.yaml": "title: Docs\n",
+            "docs/a.md": "---\nredirects: [/b, /old, https://example.com/x, /, /_clay/x, ../up, /q?x=1]\n---\n",
+            "docs/b.md": "---\nredirects: [/old]\n---\n",
+        });
+        expect(loadSite(root, {gitDates: false, env: {}}).warnings).toEqual([
+            'a.md: redirects "/b", which is the address of a page; it is skipped',
+            'a.md: redirects "https://example.com/x", which is not an address of this site; it is skipped',
+            'a.md: redirects "/", which is the start page; it is skipped',
+            'a.md: redirects "/_clay/x", which is reserved for Clay\'s own files; it is skipped',
+            'a.md: redirects "../up", which is not an address of this site; it is skipped',
+            'a.md: redirects "/q?x=1", which is not an address of this site; it is skipped',
+            'b.md: redirects "/old", which already leads to /a; it is skipped',
+        ]);
+    });
+});
+
 describe("settings in files of their own", () => {
     it("are read from the files clay.yaml names, and checked like clay.yaml", () => {
         const root = mkdtempSync(join(tmpdir(), "clay-split-"));

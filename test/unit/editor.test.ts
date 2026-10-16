@@ -48,6 +48,12 @@ describe("setFrontMatter", () => {
         expect(setFrontMatter("# Hi\n", {title: null})).toBe("# Hi\n");
     });
 
+    it("writes lists on one line, replacing a list written below its key", () => {
+        const doc = "---\nredirects:\n  - /a\n  - /b\ntitle: T\n---\n";
+        expect(setFrontMatter(doc, {redirects: ["/a", "/c"]})).toBe('---\nredirects: ["/a", "/c"]\ntitle: T\n---\n');
+        expect(setFrontMatter(doc, {redirects: null})).toBe("---\ntitle: T\n---\n");
+    });
+
     it("keeps Windows line endings", () => {
         expect(setFrontMatter("---\r\ntitle: A\r\n---\r\nBody", {title: "B"})).toBe("---\r\ntitle: B\r\n---\r\nBody");
     });
@@ -149,6 +155,30 @@ describe("moving and deleting", () => {
         expect(moved).toEqual(["intro.md → guides/welcome.md", "intro.de.md → guides/welcome.de.md"]);
         expect(existsSync(join(root, "docs/guides/welcome.de.md"))).toBe(true);
         expect(broken).toEqual(['setup.md: "intro.md" points to a missing page (/intro)']);
+    });
+
+    it("keeps the old address as a redirect when asked to", () => {
+        write({"docs/setup.md": "# Setup\n\nSee the [intro](intro.md).\n"});
+        const {redirects, broken} = moveEntry(root, "", loadDocsTree(root, en)[1]!, "guides", "welcome", true);
+        expect(redirects).toEqual(["/intro → /guides/welcome"]);
+        expect(read("docs/guides/welcome.md")).toBe('---\ntitle: Intro\norder: 1\nredirects: ["/intro"]\n---\n\n# Introduction\n');
+        // Translations share the original's redirects
+        expect(read("docs/guides/welcome.de.md")).not.toContain("redirects");
+        // The link still leads to the page, but should point to it directly
+        expect(broken).toEqual(['setup.md: "intro.md" points to an old address of /guides/welcome; link to the page itself']);
+
+        // Moved back, the page drops the address it has again
+        const welcome = loadDocsTree(root, en).find(node => node.name === "guides")!.children.find(node => node.name === "welcome.md")!;
+        expect(moveEntry(root, "", welcome, "", "intro", true).redirects).toEqual(["/guides/welcome → /intro"]);
+        expect(read("docs/intro.md")).toContain('redirects: ["/guides/welcome"]\n');
+    });
+
+    it("redirects every page of a moved folder, and nothing without being asked", () => {
+        const guides = () => loadDocsTree(root, en).find(node => node.name === "guides" || node.name === "tutorials")!;
+        expect(moveEntry(root, "", guides(), "", "tutorials").redirects).toEqual([]);
+        expect(read("docs/tutorials/first.md")).not.toContain("redirects");
+        expect(moveEntry(root, "", guides(), "", "guides", true).redirects).toEqual(["/tutorials/first → /guides/first", "/tutorials → /guides"]);
+        expect(read("docs/guides/index.md")).toContain('redirects: ["/tutorials"]');
     });
 
     it("moves folders, but not into themselves", () => {

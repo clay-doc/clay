@@ -18,6 +18,7 @@ export type CommandOptions = {
     docsVersion?: string;
     slug?: string;
     position?: string;
+    redirect?: boolean;
 };
 
 export type CommandResult = { code: number, text: string, data: Record<string, unknown> };
@@ -44,6 +45,7 @@ Commands:
   new folder <parent> <title>          Create a folder with an index.md
   move <path> <folder>                 Move a page (with its translations) or a folder
   rename <path> <new-name>             Rename the file or folder (without ".md")
+                                       --redirect: the old address keeps leading to the page
   order <path> <position>              Put an entry at a position (1 = first) in its folder
   delete <path> --yes                  Delete a page with its translations, or a folder
   translate <path> --lang <code>       Start a translation: copy the original to <name>.<code>.md
@@ -60,13 +62,14 @@ Options:
   --docs-version <name> Work in an older version in docs-archive/<name>/
   --slug <name>         File or folder name for new and move (default: from the title or unchanged)
   --yes                 Confirm delete
+  --redirect            move and rename: add the old address to the page's "redirects"
 
 Examples:
   clay edit list --json
   clay edit set guides/setup.md title="Setting up" icon="fa-solid fa-wrench" order=2
   clay edit set guides description=
   clay edit new page guides "Upgrading"
-  clay edit move guides/setup.md reference
+  clay edit move guides/setup.md reference --redirect
   clay edit order guides/setup.md 1
   clay edit set guides/setup.md title=Einrichtung --lang de
   clay edit config set navbar.links.1.icon "fa-solid fa-book"
@@ -79,8 +82,9 @@ Results:
   afterwards: it reports broken links and settings without building the site.
 
   With --json, every command prints one object: {"ok": true, ...} with the
-  command's result ("written": files changed, "broken": links that broke, and
-  "entries", "entry" or "settings" for list, show and config), or
+  command's result ("written": files changed, "broken": links that broke,
+  "moved" and "redirects" for move and rename, and "entries", "entry" or
+  "settings" for list, show and config), or
   {"ok": false, "error": "..."} when it fails.
 
 Exit codes: 0 done, 1 failed or problems found (check), 2 wrong usage.`;
@@ -250,8 +254,9 @@ function edit(root: string, args: string[], options: CommandOptions): CommandRes
             const folder = command === "move" ? normalize(rest[1]!) : parentOf(node);
             if (command === "move" && folder !== "") siblingsOf(tree, folder);
             const slug = command === "rename" ? rest[1]!.replace(/\.md$/i, "") : options.slug ?? nameOf(node);
-            const {moved, broken} = moveEntry(root, edition.version, node, folder, slug);
-            return done([...moved.map(line => `moved ${line}`), changes([], broken)].filter(Boolean).join("\n"), {moved, broken});
+            const {moved, broken, redirects} = moveEntry(root, edition.version, node, folder, slug, options.redirect);
+            return done([...moved.map(line => `moved ${line}`), ...redirects.map(line => `redirect ${line}`), changes([], broken)].filter(Boolean).join("\n"),
+                {moved, redirects, broken});
         }
         case "order": {
             need(2, "order <path> <position>");
@@ -345,7 +350,7 @@ function config(root: string, args: string[], options: CommandOptions): CommandR
 export function runCheck(root: string): CommandResult {
     try {
         const site = loadSite(root, {gitDates: false});
-        const broken = brokenLinks(site.pages, Object.fromEntries(site.versions.map(v => [v.name, v.docsDir])));
+        const broken = brokenLinks(site.pages, Object.fromEntries(site.versions.map(v => [v.name, v.docsDir])), site.redirects);
         const problems = [...site.warnings, ...broken.map(link => `Broken link in ${link}`)];
         return {
             code: problems.length ? 1 : 0,

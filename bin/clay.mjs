@@ -60,6 +60,7 @@ try {
             lang: {type: "string"},
             "docs-version": {type: "string"},
             slug: {type: "string"},
+            redirect: {type: "boolean"},
             help: {type: "boolean", short: "h"},
             version: {type: "boolean", short: "v"},
         },
@@ -188,6 +189,7 @@ switch (command) {
         }
         report(commands.runEdit(root, positionals.slice(1), {
             json: options.json, yes: options.yes, lang: options.lang, docsVersion: options["docs-version"], slug: options.slug,
+            redirect: options.redirect,
         }));
         break;
     }

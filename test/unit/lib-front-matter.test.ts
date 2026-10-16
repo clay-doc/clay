@@ -17,6 +17,9 @@ describe("parseFrontMatter", () => {
         ["order", "---\norder: 2\n---", {order: 2}],
         ["negative order", "---\norder: -1\n---", {order: -1}],
         ["invalid order ignored", "---\norder: first\n---", {}],
+        ["redirects on one line", "---\nredirects: [/old, \"/older/page\"]\n---", {redirects: ["/old", "/older/page"]}],
+        ["redirects as a list", "---\nredirects:\n  - /old\n  - '/older'\ntitle: T\n---", {redirects: ["/old", "/older"], title: "T"}],
+        ["a single redirect", "---\nredirects: /old\n---", {redirects: ["/old"]}],
     ])("%s", (_name, content, expected) => {
         expect(parseFrontMatter(content)).toEqual(expected);
     });

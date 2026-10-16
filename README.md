@@ -27,7 +27,8 @@ site you can host anywhere, such as GitHub Pages. There is no theme to set up an
   text once.
 - **Ready for AI**: every page as Markdown, `llms.txt`, a page menu to ask ChatGPT or Claude, and commands that
   coding agents understand.
-- **Versions and translations**, with switchers that keep the page you are reading.
+- **Versions and translations**, with switchers that keep the page you are reading, and redirects that keep the
+  old addresses of moved pages working.
 - **Your look**: colors, corners and fonts in `clay.yaml`; fonts from Google Fonts are published with the site.
 - **Analytics without cookies**: Plausible, Umami or GoatCounter, with events for searches that found nothing.
 - **SEO**: descriptions, canonical links, structured data, a sitemap, and a social image for every page.

@@ -1,7 +1,7 @@
 import {copyFileSync, cpSync, existsSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, writeFileSync} from "node:fs";
 import {basename, dirname, join, posix, relative as relativePath} from "node:path";
 import {Document, isMap, isScalar, isSeq, parseDocument, type YAMLSeq} from "yaml";
-import {setFrontMatter, type FrontMatter} from "./front-matter";
+import {parseFrontMatter, setFrontMatter, type FrontMatter} from "./front-matter";
 import {
     attachIndexes, hasPages, isMarkdown, listVersions, loadConfig, loadSite, loadTree, prettyName, RESERVED_NAMES, siteLanguages,
     sortTree, translationOf, VERSION_NAME, type DocNode,
@@ -27,7 +27,7 @@ export type EditorNode = {
     children: EditorNode[];
 };
 
-export type FrontMatterUpdates = Record<string, string | number | boolean | null>;
+export type FrontMatterUpdates = Record<string, string | number | boolean | string[] | null>;
 
 export function editorContext(root: string): { versions: string[], languages: string[] } {
     const {config} = loadConfig(root, {});
@@ -175,22 +175,54 @@ function pageFiles(docsDir: string, path: string, languages: string[]): string[]
         .filter(file => existsSync(join(docsDir, file)));
 }
 
+// The address of a page or folder in the default language, e.g. "/guides/setup"
+const routeOf = (path: string) => "/" + path.replace(/(^|\/)index\.md$/i, "").replace(/\.md$/i, "");
+
+// Pages (originals, not translations) in a folder at any depth, with their index.md
+function folderPages(docsDir: string, folder: string, languages: string[]): string[] {
+    return readdirSync(join(docsDir, folder), {withFileTypes: true}).flatMap(entry => {
+        const path = posix.join(folder, entry.name);
+        // Hidden files and snippets ("_") are no pages
+        if (/^[._]/.test(entry.name)) return [];
+        if (entry.isDirectory()) return folderPages(docsDir, path, languages);
+        return isMarkdown(entry.name) && !translationOf(entry.name, languages.slice(1)) ? [path] : [];
+    });
+}
+
+// Adds the old address of a moved page to its "redirects", and drops the new
+// one, which a page moved back may still list
+function addRedirect(docsDir: string, path: string, from: string): string {
+    const file = join(docsDir, path);
+    const content = readFileSync(file, "utf8");
+    const to = routeOf(path);
+    const redirects = [...new Set([...(parseFrontMatter(content).redirects ?? []), from])].filter(old => old !== to);
+    writeFileSync(file, setFrontMatter(content, {redirects}));
+    return `${from} → ${to}`;
+}
+
 // Renames or moves a page with its translations, or a folder with everything in
-// it. Links to it are not rewritten; the result lists the ones that broke.
-export function moveEntry(root: string, version: string, node: EditorNode, folder: string, slug: string): { moved: string[], broken: string[] } {
+// it. Links to it are not rewritten; the result lists the ones that broke. With
+// redirect, each moved page keeps its old address in "redirects", so links from
+// elsewhere and bookmarks still lead to it.
+export function moveEntry(root: string, version: string, node: EditorNode, folder: string, slug: string, redirect = false): {
+    moved: string[], broken: string[], redirects: string[]
+} {
     if (node.kind === "start") throw new Error("The start page cannot be moved");
     const docsDir = docsDirOf(root, version);
     const before = brokenIn(root, version);
     const moved: string[] = [];
+    const redirects: string[] = [];
+    const {languages} = editorContext(root);
     if (node.kind === "folder") {
         const target = posix.join(folder, slug);
         if (target === node.path || target.startsWith(node.path + "/")) throw new Error("A folder cannot move into itself");
         if (existsSync(join(docsDir, target))) throw new Error(`${target}/ already exists`);
+        const pages = redirect ? folderPages(docsDir, node.path, languages) : [];
         mkdirSync(dirname(join(docsDir, target)), {recursive: true});
         renameSync(join(docsDir, node.path), join(docsDir, target));
         moved.push(`${node.path}/ → ${target}/`);
+        for (const page of pages) redirects.push(addRedirect(docsDir, target + page.slice(node.path.length), routeOf(page)));
     } else {
-        const {languages} = editorContext(root);
         const base = node.path.replace(/\.md$/i, "");
         for (const file of pageFiles(docsDir, node.path, languages)) {
             const target = posix.join(folder, slug + file.slice(base.length));
@@ -199,8 +231,9 @@ export function moveEntry(root: string, version: string, node: EditorNode, folde
             renameSync(join(docsDir, file), join(docsDir, target));
             moved.push(`${file} → ${target}`);
         }
+        if (redirect) redirects.push(addRedirect(docsDir, posix.join(folder, slug + node.path.slice(base.length)), routeOf(node.path)));
     }
-    return {moved, broken: brokenIn(root, version).filter(link => !before.includes(link))};
+    return {moved, broken: brokenIn(root, version).filter(link => !before.includes(link)), redirects};
 }
 
 // Deletes a page with its translations, or a folder with everything in it
@@ -229,7 +262,7 @@ export function countFiles(root: string, version: string, folder: string): numbe
 function brokenIn(root: string, version: string): string[] {
     const site = loadSite(root, {gitDates: false, env: {}});
     const pages = site.pages.filter(page => page.version === version);
-    return brokenLinks(pages, Object.fromEntries(site.versions.map(v => [v.name, v.docsDir])));
+    return brokenLinks(pages, Object.fromEntries(site.versions.map(v => [v.name, v.docsDir])), site.redirects);
 }
 
 // A written file, as shown to the user: relative to the project, with forward slashes

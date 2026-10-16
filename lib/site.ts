@@ -54,6 +54,9 @@ export type Page = {
     untranslated?: boolean;
 };
 
+// An old address of a page, from its front matter, e.g. "/guides/install" to "/guides/setup"
+export type Redirect = { from: string, to: string, title: string, language: string };
+
 // One version of the docs: the current docs/ (name "") or docs-archive/<name>/
 export type SiteVersion = VersionInfo & {
     docsDir: string;
@@ -80,6 +83,7 @@ export type Site = {
     languages: LanguageInfo[]; // the default language first
     editions: SiteEdition[];
     pages: Page[]; // of all editions; routes start with their prefix, e.g. "/1.x/de"
+    redirects: Redirect[]; // of all editions, like pages
     included: string[]; // files included into pages (expand.ts) and settings files of clay.yaml, relative to root
     warnings: string[];
 };
@@ -439,8 +443,8 @@ function loadVersion(docsDir: string, info: VersionInfo, gitDates: boolean, lang
         if (!translation) return {...node, untranslated: true};
         return {
             ...node, markdown: translation.markdown, heading: translation.heading, source: translation.path,
-            // The position in the navigation is the same in every language
-            frontMatter: {...translation.frontMatter, order: node.frontMatter.order},
+            // The position in the navigation and the old addresses are the same in every language
+            frontMatter: {...translation.frontMatter, order: node.frontMatter.order, redirects: node.frontMatter.redirects},
             updated: dates?.get(translation.path),
         };
     };
@@ -454,6 +458,37 @@ function loadVersion(docsDir: string, info: VersionInfo, gitDates: boolean, lang
         pages.push(...collectPages(languageTree, prefix, info.name, language.code).pages);
     }
     return {version: {...info, docsDir, tree, nav: editions[0]!.nav}, editions, pages, warnings};
+}
+
+// The old addresses of pages ("redirects" in their front matter), in each
+// version and language: "/guides/install" on a German page is "/de/guides/install".
+// Problems are reported once, for the default language.
+export function collectRedirects(pages: Page[], defaultLanguage: string): { redirects: Redirect[], warnings: string[] } {
+    const routes = new Set(pages.flatMap(page => [page.route, page.prefix || "/"]));
+    const redirects = new Map<string, Redirect>();
+    const warnings: string[] = [];
+    for (const page of pages) {
+        const report = page.language === defaultLanguage;
+        const source = page.version ? `docs-archive/${page.version}/${page.source}` : page.source;
+        for (const old of page.frontMatter.redirects ?? []) {
+            const problem = (reason: string) => report && warnings.push(`${source}: redirects "${old}", ${reason}; it is skipped`);
+            if (/^[a-z][a-z\d+.-]*:|^\/\/|[?#]|(^|\/)\.\.?(\/|$)/i.test(old)) {
+                problem("which is not an address of this site");
+                continue;
+            }
+            const path = ("/" + old.trim().replace(/^\/+/, "")).replace(/\/+$/, "").replace(/\.md$/i, "");
+            if (!path || /^\/(_|docs\/)/.test(path)) {
+                problem(path ? "which is reserved for Clay's own files" : "which is the start page");
+                continue;
+            }
+            const from = page.prefix + path;
+            const taken = redirects.get(from);
+            if (routes.has(from)) problem("which is the address of a page");
+            else if (taken && taken.to !== page.route) problem(`which already leads to ${taken.to}`);
+            else redirects.set(from, {from, to: page.route, title: page.title, language: page.language});
+        }
+    }
+    return {redirects: [...redirects.values()], warnings};
 }
 
 // Loads everything Clay needs from a project: config, directory metadata and
@@ -489,12 +524,16 @@ export function loadSite(root: string, {env = process.env, gitDates = true}: Loa
         return loaded;
     });
 
+    const pages = [current.pages, ...older.map(o => o.pages)].flat();
+    const {redirects, warnings: redirectWarnings} = collectRedirects(pages, codes[0]!);
+    warnings.push(...redirectWarnings);
+
     const {docsDir, tree, nav} = current.version;
     return {
         root, docsDir, config, configs, tree, nav, languages,
         versions: [current.version, ...older.map(o => o.version)],
         editions: [current.editions, ...older.map(o => o.editions)].flat(),
-        pages: [current.pages, ...older.map(o => o.pages)].flat(),
+        pages, redirects,
         included: [...expander.included, ...configFiles],
         warnings,
     };
