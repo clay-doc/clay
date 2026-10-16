@@ -10,6 +10,7 @@ import {remember, restoreTabs, reveal, selectLabel, selectTab, tabKeydown} from 
 import {drawDiagrams} from "~/utils/diagrams";
 import {track} from "~/utils/analytics";
 import type {DocItem, LinkPart} from "#common/nav";
+import {PAGE_ACTIONS, showsPageAction, type Configuration} from "#common/configuration";
 import type {TocEntry} from "#common/toc";
 
 // start: the start page of the site or of an edition (docs/index.md)
@@ -20,6 +21,9 @@ const route = useRoute();
 const linkParts = inject('linkParts') as Ref<LinkPart[]>;
 const currentDocItem = inject('currentDocItem') as Ref<DocItem | undefined>;
 const untranslatedNote = inject('untranslatedNote') as Ref<string>;
+const config = inject('config') as Ref<Configuration | undefined>;
+// "pageActions" in clay.yaml can hide every entry of the page menu
+const hasActions = computed(() => PAGE_ACTIONS.some(action => showsPageAction(config.value, action)));
 const t = useMessages();
 const {theme} = useTheme();
 
@@ -140,12 +144,12 @@ function handleKeys(event: KeyboardEvent) {
         </div>
         <!-- Narrower screens have no room beside the page: the contents and the
              page's actions fold up above it -->
-        <details ref="tocBox" class="not-prose xl:hidden mb-6 rounded-box border border-base-300 text-sm">
+        <details v-if="doc.toc.length > 1 || hasActions" ref="tocBox" class="not-prose xl:hidden mb-6 rounded-box border border-base-300 text-sm">
           <summary class="cursor-pointer px-4 py-2 font-semibold">{{doc.toc.length > 1 ? t.onThisPage : t.pageActions}}</summary>
           <div class="px-4 pb-3">
             <TableOfContents v-if="doc.toc.length > 1" :entries="doc.toc" :scroll-container="scrollContainer" :title="false"
                              @navigate="tocBox?.removeAttribute('open')"/>
-            <PageActions :route="url" :class="{'page-actions-below': doc.toc.length > 1}"/>
+            <PageActions v-if="hasActions" :route="url" :class="{'page-actions-below': doc.toc.length > 1}"/>
           </div>
         </details>
         <div ref="contentEl" v-html="doc.html" @click="handleClicks" @keydown="handleKeys" class="w-full"></div>
@@ -158,7 +162,7 @@ function handleKeys(event: KeyboardEvent) {
       <div class="sticky top-6">
         <TableOfContents v-if="doc.toc.length > 1" :entries="doc.toc" :scroll-container="scrollContainer"/>
         <!-- Below a line under the contents: the page for language models -->
-        <PageActions :route="url" :class="{'page-actions-below': doc.toc.length > 1}"/>
+        <PageActions v-if="hasActions" :route="url" :class="{'page-actions-below': doc.toc.length > 1}"/>
       </div>
     </aside>
   </div>

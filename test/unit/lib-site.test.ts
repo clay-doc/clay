@@ -170,6 +170,18 @@ describe("redirects", () => {
     });
 });
 
+describe("pageActions", () => {
+    it("takes true or false for each entry, and knows only the four entries", () => {
+        const root = project({"clay.yaml": "title: Docs\npageActions:\n  chatgpt: false\n  claude: no way\n  gemini: false\n"});
+        const {config, warnings} = loadConfig(root, {});
+        expect(config.pageActions?.chatgpt).toBe(false);
+        expect(warnings).toEqual([
+            'clay.yaml: unknown key "pageActions.gemini" is ignored (typo?)',
+            'clay.yaml: pageActions.claude must be true or false, not "no way"',
+        ]);
+    });
+});
+
 describe("settings in files of their own", () => {
     it("are read from the files clay.yaml names, and checked like clay.yaml", () => {
         const root = mkdtempSync(join(tmpdir(), "clay-split-"));

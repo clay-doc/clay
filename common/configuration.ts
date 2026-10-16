@@ -21,6 +21,7 @@ export type Configuration = {
     theme?: ThemeConfiguration, // the site's own colors, corners and fonts
     analytics?: AnalyticsConfiguration, // page views and events, without cookies
     socialImages?: boolean, // an image for each page in link previews; on with siteURL unless false
+    pageActions?: PageActionsConfiguration, // the page menu below the contents; each entry false hides it
     langs?: string[], // obsolete: code languages are detected automatically
 }
 
@@ -31,6 +32,15 @@ export type HeadConfiguration = {
     script?: HeadTag[],
     link?: HeadTag[],
     meta?: HeadTag[],
+}
+
+// The entries of the page menu (PageActions.vue), all shown unless set to false
+export const PAGE_ACTIONS = ["copyMarkdown", "openMarkdown", "chatgpt", "claude"] as const;
+export type PageAction = typeof PAGE_ACTIONS[number];
+export type PageActionsConfiguration = Partial<Record<PageAction, boolean>>;
+
+export function showsPageAction(config: Configuration | undefined, action: PageAction): boolean {
+    return config?.pageActions?.[action] !== false;
 }
 
 export type NavbarConfiguration = {

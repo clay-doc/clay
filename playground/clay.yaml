@@ -19,6 +19,9 @@ navbar:
 # {{version}} in the docs, and extra tags in the head of every page
 variables:
   version: "4.0"
+# The page menu without ChatGPT
+pageActions:
+  chatgpt: false
 head:
   meta:
     - name: "clay-playground"

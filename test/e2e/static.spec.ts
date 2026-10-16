@@ -554,6 +554,8 @@ test.describe("for language models and agents", () => {
         await expect(actions.getByRole("link", {name: "Open as Markdown"})).toHaveAttribute("href", "/clay/reference/feature-tour.md");
         await expect(actions.getByRole("link", {name: "Open in Claude"})).toHaveAttribute("href",
             /^https:\/\/claude\.ai\/new\?q=.*http%3A%2F%2F127\.0\.0\.1%3A4173%2Fclay%2Freference%2Ffeature-tour\.md/);
+        // Hidden with "pageActions: {chatgpt: false}" in clay.yaml
+        await expect(actions.getByRole("link", {name: "Open in ChatGPT"})).toHaveCount(0);
 
         await actions.getByRole("button", {name: "Copy as Markdown"}).click();
         await expect(actions.getByRole("button", {name: "Copied as Markdown"})).toBeVisible();

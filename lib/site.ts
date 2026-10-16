@@ -353,6 +353,9 @@ export function loadConfig(root: string, env: Record<string, string | undefined>
     warnings.push(...unknownKeys(config, configSchema).map(key => `clay.yaml: unknown key "${key}" is ignored (typo?)`));
     if (!config.title) warnings.push(`clay.yaml: "title" is not set`);
     warnings.push(...themeWarnings(config.theme), ...analyticsWarnings(config.analytics, config.siteURL));
+    for (const [key, value] of Object.entries(config.pageActions ?? {})) {
+        if (typeof value !== "boolean") warnings.push(`clay.yaml: pageActions.${key} must be true or false, not "${value}"`);
+    }
     if (config.langs) warnings.push(`clay.yaml: "langs" is no longer needed and is ignored; code languages are detected automatically`);
     if ((config as Record<string, unknown>).index) warnings.push(`clay.yaml: "index" is no longer read since Clay 3; write the start page in docs/index.md`);
 

@@ -19,6 +19,7 @@ export const configSchema: Schema = {
     // obsolete, reported separately
     langs: true, index: true,
     navbar: {logo: true, source: link, links: [link]},
+    pageActions: {copyMarkdown: true, openMarkdown: true, chatgpt: true, claude: true},
     head: {script: [true], link: [true], meta: [true]},
     analytics: {plausible: {domain: true, src: true}, umami: {websiteId: true, src: true}, goatcounter: {code: true, endpoint: true}, events: true},
     theme: {

@@ -1,5 +1,5 @@
 import {describe, expect, it} from "vitest";
-import {editLink, hasFontawesomeKit, type Configuration} from "../../common/configuration";
+import {editLink, hasFontawesomeKit, showsPageAction, type Configuration} from "../../common/configuration";
 
 const config = (extra: Partial<Configuration>) => ({title: "Docs", ...extra}) as Configuration;
 
@@ -34,5 +34,14 @@ describe("hasFontawesomeKit", () => {
         ["  ", false],
     ])("%j => %j", (fontawesomeKit, expected) => {
         expect(hasFontawesomeKit(config({fontawesomeKit}))).toBe(expected);
+    });
+});
+
+describe("showsPageAction", () => {
+    it("shows every entry of the page menu unless it is set to false", () => {
+        expect(showsPageAction(undefined, "chatgpt")).toBe(true);
+        expect(showsPageAction(config({pageActions: {chatgpt: false, claude: true}}), "chatgpt")).toBe(false);
+        expect(showsPageAction(config({pageActions: {chatgpt: false, claude: true}}), "claude")).toBe(true);
+        expect(showsPageAction(config({pageActions: {chatgpt: false}}), "copyMarkdown")).toBe(true);
     });
 });
