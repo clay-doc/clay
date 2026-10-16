@@ -1,4 +1,5 @@
 import type {Messages} from "./i18n";
+import type {ThemeConfiguration} from "./theme";
 
 // clay.yaml; only the title is required
 export type Configuration = {
@@ -16,6 +17,7 @@ export type Configuration = {
     variables?: Record<string, string | number | boolean>, // {{name}} in the docs, e.g. version: "4.0.0"
     head?: HeadConfiguration,
     generate?: string[], // commands that write docs before every build, e.g. API reference from code
+    theme?: ThemeConfiguration, // the site's own colors, corners and fonts
     socialImages?: boolean, // an image for each page in link previews; on with siteURL unless false
     langs?: string[], // obsolete: code languages are detected automatically
 }

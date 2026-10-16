@@ -10,6 +10,8 @@ import {delimitLinkParts, getCurrentDocItemFromRoute, getLinkPartsFromCurrentRou
 import linkConcat from "#common/link-concat";
 import {editionOf, editionPrefix, samePage, stripPrefix, switchEdition} from "#common/editions";
 import {format, languageName, messagesFor} from "#common/i18n";
+import {themeCss} from "#common/theme";
+import {fontFaces} from "#clay-site";
 
 // Config and navigation (see app/composables/use-site.ts)
 const site = await useSite();
@@ -46,6 +48,11 @@ useHead(() => ({
   ],
   script: kit ? [{src: `https://kit.fontawesome.com/${siteConfig.fontawesomeKit}.js`, crossorigin: 'anonymous' as const, async: true}] : [],
 }));
+
+// The site's own colors, corners and fonts from "theme" in clay.yaml; fonts from
+// Google Fonts are published with the site (lib/fonts.ts)
+const theme = fontFaces + themeCss(siteConfig.theme);
+if (theme) useHead({style: [{key: "clay-theme", innerHTML: theme}]});
 
 // Tags of the site's own from "head" in clay.yaml, in the language of the page.
 // Their attributes are whatever the site needs, so they are not typed per tag.

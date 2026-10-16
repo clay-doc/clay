@@ -1,10 +1,11 @@
-import {copyFileSync, existsSync, mkdirSync, readdirSync, rmSync, watch} from "node:fs";
+import {copyFileSync, existsSync, mkdirSync, readdirSync, rmSync, watch, writeFileSync} from "node:fs";
 import {dirname, join, relative, resolve} from "node:path";
 import {fileURLToPath} from "node:url";
 import {addTemplate, defineNuxtModule, updateTemplates, useLogger} from "@nuxt/kit";
 import {isMarkdown, loadSite, type Site} from "../lib/site";
 import {brokenLinks} from "../lib/checks";
 import {writeSocialImages} from "../lib/social-images";
+import {loadThemeFonts, type ThemeFonts} from "../lib/fonts";
 import {socialCard} from "../lib/social-card";
 import {resolveOrigin} from "../common/seo";
 import {markdownRoute} from "../common/route-path";
@@ -42,9 +43,16 @@ function copyAssets(site: Site, target: string) {
     }
 }
 
+// The theme's fonts, served from _clay/fonts/
+function writeFonts(fonts: ThemeFonts, target: string) {
+    if (!fonts.files.length) return;
+    mkdirSync(join(target, "_clay", "fonts"), {recursive: true});
+    for (const {name, data} of fonts.files) writeFileSync(join(target, "_clay", "fonts", name), data);
+}
+
 export default defineNuxtModule({
     meta: {name: "clay"},
-    setup(_options, nuxt) {
+    async setup(_options, nuxt) {
         const logger = useLogger("clay");
         const root = nuxt.options.runtimeConfig.clayRoot as string;
         const strict = process.env.CLAY_STRICT === "1";
@@ -52,6 +60,16 @@ export default defineNuxtModule({
         const assetsDir = join(dirname(nuxt.options.buildDir), "public");
 
         let site = loadSite(root, {gitDates: !nuxt.options.dev});
+
+        // The theme's fonts, downloaded once into a cache shared by all projects (lib/fonts.ts)
+        const themeFonts = async () => {
+            const warnings: string[] = [];
+            const cache = fileURLToPath(new URL("../node_modules/.cache/clay/fonts", import.meta.url));
+            const loaded = await loadThemeFonts(site.config.theme, nuxt.options.app.baseURL, cache, warnings);
+            for (const warning of warnings) logger.warn(warning);
+            return loaded;
+        };
+        let fonts = await themeFonts();
 
         // Problems are reported once per build; with --strict they fail it
         // (missing git history only limits last-updated dates, so it never fails a build)
@@ -89,6 +107,7 @@ export default defineNuxtModule({
                 `export const languages = ${JSON.stringify(site.languages)};`,
                 `export const navs = ${JSON.stringify(Object.fromEntries(site.editions.map(e => [e.prefix, e.nav])))};`,
                 `export const configs = ${JSON.stringify(site.configs)};`,
+                `export const fontFaces = ${JSON.stringify(fonts.faces)};`,
             ].join("\n") + "\n",
             write: true
         });
@@ -103,13 +122,15 @@ export default defineNuxtModule({
                 "export declare const versions: VersionInfo[];",
                 "export declare const languages: LanguageInfo[];",
                 "export declare const navs: Record<string, DocItem>;",
-                "export declare const configs: Record<string, Configuration>;"
+                "export declare const configs: Record<string, Configuration>;",
+                "export declare const fontFaces: string;"
             ].join("\n"),
             write: true
         });
         nuxt.options.alias["#clay-site"] = join(nuxt.options.buildDir, SITE_TEMPLATE);
 
         copyAssets(site, assetsDir);
+        writeFonts(fonts, assetsDir);
         // Social images are drawn into the built site; unchanged ones come from a
         // cache shared by all projects
         if (!nuxt.options.dev) {
@@ -118,7 +139,7 @@ export default defineNuxtModule({
                 const started = Date.now();
                 logger.info("Drawing social images");
                 const cache = fileURLToPath(new URL("../node_modules/.cache/clay/social-images", import.meta.url));
-                const {drawn, total, warning} = await writeSocialImages(site, nitro.options.output.publicDir, cache);
+                const {drawn, total, warning} = await writeSocialImages(site, nitro.options.output.publicDir, cache, fonts.image);
                 if (warning) logger.warn(warning);
                 logger.info(`Drew ${drawn} of ${total} social images, the others are unchanged · ${Date.now() - started}ms`);
             });
@@ -162,7 +183,9 @@ export default defineNuxtModule({
                 timer = setTimeout(async () => {
                     try {
                         site = loadSite(root, {gitDates: false});
+                        fonts = await themeFonts();
                         copyAssets(site, assetsDir);
+                        writeFonts(fonts, assetsDir);
                         await updateTemplates({filter: template => template.filename === SITE_TEMPLATE});
                         // The app reads docs and navigation from the dev server,
                         // so a reload shows the change (no restart needed)

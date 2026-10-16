@@ -7,12 +7,25 @@ import satori, {type SatoriOptions} from "satori";
 import {Resvg} from "@resvg/resvg-js";
 import {SOCIAL_IMAGE_HEIGHT, SOCIAL_IMAGE_WIDTH, socialCard, socialImagePath, type SocialCard} from "./social-card";
 import type {Site} from "./site";
+import type {ImageFont} from "./fonts";
+import {contentColor, mixColors, type ThemeConfiguration} from "../common/theme";
 
 // Social images: a picture for each page that chats and social networks show
 // with links to it, drawn at build time with satori (layout to SVG) and resvg
 // (SVG to PNG), in the colors of the dark theme (app/assets/css/themes.css)
 
-const COLORS = {background: "#191414", text: "#cac9c9", muted: "#9a9696", primary: "#009764"};
+export type SocialColors = { background: string, text: string, title: string, muted: string, primary: string };
+const COLORS: SocialColors = {background: "#191414", text: "#cac9c9", title: "#ffffff", muted: "#9a9696", primary: "#009764"};
+
+// The colors of the dark theme, with those of "theme" in clay.yaml (common/theme.ts)
+export function socialColors(theme: ThemeConfiguration | undefined): SocialColors {
+    const hex = (value: string | undefined) => value && /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i.test(value) ? value : undefined;
+    const background = hex(theme?.dark?.background ?? theme?.background) ?? COLORS.background;
+    const text = hex(theme?.dark?.text ?? theme?.text) ?? COLORS.text;
+    const primary = hex(theme?.dark?.primary ?? theme?.primary) ?? COLORS.primary;
+    if (background === COLORS.background && text === COLORS.text) return {...COLORS, primary};
+    return {background, text, primary, title: mixColors(text, contentColor(background), 0.5), muted: mixColors(text, background, 0.3)};
+}
 // Bumped when the look changes, so cached images are drawn again
 const DESIGN = "1";
 
@@ -85,28 +98,32 @@ type Node = { type: string, props: Record<string, unknown> };
 const el = (type: string, style: Record<string, unknown>, children?: unknown, props: Record<string, unknown> = {}): Node =>
     ({type, props: {...props, style, children}});
 
-function layout(card: SocialCard, logo: string | undefined): Node {
+// The text font from the theme (lib/fonts.ts); Inter draws what it lacks
+export type SocialFont = { family: string, fonts: ImageFont[] };
+
+function layout(card: SocialCard, logo: string | undefined, colors: SocialColors, family: string): Node {
     return el("div", {
         width: "100%", height: "100%", display: "flex", flexDirection: "column", justifyContent: "space-between",
-        padding: "72px 80px", backgroundColor: COLORS.background, color: COLORS.text, fontFamily: "Inter",
-        borderBottom: `12px solid ${COLORS.primary}`,
+        padding: "72px 80px", backgroundColor: colors.background, color: colors.text, fontFamily: family,
+        borderBottom: `12px solid ${colors.primary}`,
     }, [
-        el("div", {display: "flex", alignItems: "center", gap: 24, fontSize: 34, color: COLORS.muted}, [
+        el("div", {display: "flex", alignItems: "center", gap: 24, fontSize: 34, color: colors.muted}, [
             ...(logo ? [el("img", {width: 64, height: 64, objectFit: "contain"}, undefined, {src: logo, width: 64, height: 64})] : []),
             el("div", {display: "flex"}, card.site),
         ]),
         el("div", {display: "flex", flexDirection: "column", gap: 20}, [
-            ...(card.section ? [el("div", {display: "flex", fontSize: 30, color: COLORS.primary, fontWeight: 700}, card.section)] : []),
-            el("div", {display: "block", fontSize: card.title.length > 40 ? 60 : 72, fontWeight: 700, lineHeight: 1.1, color: "#ffffff", lineClamp: 2}, card.title),
+            ...(card.section ? [el("div", {display: "flex", fontSize: 30, color: colors.primary, fontWeight: 700}, card.section)] : []),
+            el("div", {display: "block", fontSize: card.title.length > 40 ? 60 : 72, fontWeight: 700, lineHeight: 1.1, color: colors.title, lineClamp: 2}, card.title),
             ...(card.description ? [el("div", {display: "block", fontSize: 32, lineHeight: 1.4, lineClamp: 3}, card.description)] : []),
         ]),
     ]);
 }
 
 // Draws a card; cacheDir keeps the fonts fetched for Chinese, Japanese and Korean
-export async function drawSocialImage(card: SocialCard, logo: string | undefined, cacheDir: string): Promise<Buffer> {
-    const svg = await satori(layout(card, logo) as never, {
-        width: SOCIAL_IMAGE_WIDTH, height: SOCIAL_IMAGE_HEIGHT, fonts: loadFonts(),
+export async function drawSocialImage(card: SocialCard, logo: string | undefined, cacheDir: string, colors = COLORS, font?: SocialFont): Promise<Buffer> {
+    const own = (font?.fonts ?? []).map(f => ({...f, style: "normal" as const}));
+    const svg = await satori(layout(card, logo, colors, font?.family ?? "Inter") as never, {
+        width: SOCIAL_IMAGE_WIDTH, height: SOCIAL_IMAGE_HEIGHT, fonts: [...own, ...loadFonts()],
         // Han letters and punctuation are shared by Chinese, Japanese and Korean: a page's language decides
         loadAdditionalAsset: async (code, segment) => {
             const known = CJK_FAMILIES[code] !== undefined;
@@ -130,8 +147,9 @@ const withoutCjk = (card: SocialCard): SocialCard => ({
 // Draws the image of every page into target (published with the site), reusing
 // images from cacheDir whose text has not changed. Returns how many were drawn,
 // and a warning when fonts could not be fetched.
-export async function writeSocialImages(site: Site, target: string, cacheDir: string): Promise<{ drawn: number, total: number, warning?: string }> {
+export async function writeSocialImages(site: Site, target: string, cacheDir: string, font?: SocialFont): Promise<{ drawn: number, total: number, warning?: string }> {
     const logo = logoOf(site);
+    const colors = socialColors(site.config.theme);
     const jobs = site.pages.flatMap(page => {
         const card = socialCard(page, site);
         return card ? [{card, path: socialImagePath(page.route)}] : [];
@@ -142,17 +160,17 @@ export async function writeSocialImages(site: Site, target: string, cacheDir: st
     // A few at a time: drawing is mostly synchronous work
     for (let i = 0; i < jobs.length; i += 8) {
         await Promise.all(jobs.slice(i, i + 8).map(async ({card, path}) => {
-            const key = createHash("sha256").update(JSON.stringify([DESIGN, card, logo])).digest("hex").slice(0, 16);
+            const key = createHash("sha256").update(JSON.stringify([DESIGN, card, logo, colors, font?.family])).digest("hex").slice(0, 16);
             const cached = join(cacheDir, `${key}.png`);
             const file = join(target, path);
             mkdirSync(dirname(file), {recursive: true});
             if (!existsSync(cached)) {
                 try {
-                    await writeFile(cached, await drawSocialImage(card, logo, cacheDir));
+                    await writeFile(cached, await drawSocialImage(card, logo, cacheDir, colors, font));
                 } catch (error) {
                     // Drawn without those texts, and not kept: the next build tries again
                     warning = `Social images: fonts for Chinese, Japanese and Korean could not be loaded from Google Fonts (${(error as Error).message}); their pages get images without that text`;
-                    await writeFile(file, await drawSocialImage(withoutCjk(card), logo, cacheDir));
+                    await writeFile(file, await drawSocialImage(withoutCjk(card), logo, cacheDir, colors, font));
                     return;
                 }
                 drawn++;

@@ -20,6 +20,10 @@ export const configSchema: Schema = {
     langs: true, index: true,
     navbar: {logo: true, source: link, links: [link]},
     head: {script: [true], link: [true], meta: [true]},
+    theme: {
+        primary: true, background: true, text: true, radius: true, font: true, codeFont: true,
+        light: {primary: true, background: true, text: true}, dark: {primary: true, background: true, text: true},
+    },
 };
 
 // Keys in YAML data that the schema does not define, e.g. "navbar.lgo", so
