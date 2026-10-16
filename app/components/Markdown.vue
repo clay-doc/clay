@@ -8,6 +8,7 @@ import {clearHighlights, firstMarkInSection, highlightTerms} from "~/utils/highl
 import {copyCodeBlock} from "~/utils/code-copy";
 import {remember, restoreTabs, reveal, selectLabel, selectTab, tabKeydown} from "~/utils/tabs";
 import {drawDiagrams} from "~/utils/diagrams";
+import {track} from "~/utils/analytics";
 import type {DocItem, LinkPart} from "#common/nav";
 import type {TocEntry} from "#common/toc";
 
@@ -88,6 +89,7 @@ function handleClicks(event: MouseEvent) {
   const copyButton = target?.closest<HTMLElement>('button.copy-code');
   if (copyButton) {
     copyCodeBlock(copyButton, navigator.clipboard, t.value);
+    track(copyButton.closest(".clay-prompt") ? "Copy prompt" : "Copy code", {page: props.url});
     return;
   }
 

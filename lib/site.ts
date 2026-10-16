@@ -13,6 +13,7 @@ import {lastUpdated} from "./git-dates";
 import {configSchema, unknownKeys} from "./checks";
 import {createExpander} from "./expand";
 import {themeWarnings} from "../common/theme";
+import {analyticsWarnings} from "../common/analytics";
 
 // Fills in snippets and variables of a docs file (expand.ts) for a language
 type Expand = (markdown: string, file: string, language: string) => string;
@@ -347,7 +348,7 @@ export function loadConfig(root: string, env: Record<string, string | undefined>
     readSplitFiles(root, config as Record<string, unknown>, warnings, files);
     warnings.push(...unknownKeys(config, configSchema).map(key => `clay.yaml: unknown key "${key}" is ignored (typo?)`));
     if (!config.title) warnings.push(`clay.yaml: "title" is not set`);
-    warnings.push(...themeWarnings(config.theme));
+    warnings.push(...themeWarnings(config.theme), ...analyticsWarnings(config.analytics, config.siteURL));
     if (config.langs) warnings.push(`clay.yaml: "langs" is no longer needed and is ignored; code languages are detected automatically`);
     if ((config as Record<string, unknown>).index) warnings.push(`clay.yaml: "index" is no longer read since Clay 3; write the start page in docs/index.md`);
 

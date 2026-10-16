@@ -1,5 +1,6 @@
 import type {Messages} from "./i18n";
 import type {ThemeConfiguration} from "./theme";
+import type {AnalyticsConfiguration} from "./analytics";
 
 // clay.yaml; only the title is required
 export type Configuration = {
@@ -18,6 +19,7 @@ export type Configuration = {
     head?: HeadConfiguration,
     generate?: string[], // commands that write docs before every build, e.g. API reference from code
     theme?: ThemeConfiguration, // the site's own colors, corners and fonts
+    analytics?: AnalyticsConfiguration, // page views and events, without cookies
     socialImages?: boolean, // an image for each page in link previews; on with siteURL unless false
     langs?: string[], // obsolete: code languages are detected automatically
 }

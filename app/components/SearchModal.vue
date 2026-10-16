@@ -6,6 +6,7 @@ import {getSearchIndex} from "~/utils/search-index";
 import SearchHighlight from "~/components/SearchHighlight.vue";
 import type {Edition} from "#common/editions";
 import {format} from "#common/i18n";
+import {track} from "~/utils/analytics";
 
 const baseUrl = inject('baseUrl') as Ref<string>;
 const edition = inject('edition') as Ref<Edition>;
@@ -23,6 +24,19 @@ const recent = ref<SearchTarget[]>([]);
 
 const hits = computed<SearchHit[]>(() => index.value ? searchSections(index.value, query.value, 50) : []);
 const hasQuery = computed(() => query.value.trim() !== "");
+
+// A search that found nothing, once the reader stops typing, tells what the docs lack
+let searched = "";
+let settle: ReturnType<typeof setTimeout> | undefined;
+watch([query, hits], () => {
+  clearTimeout(settle);
+  const text = query.value.trim();
+  if (!text || hits.value.length > 0 || !index.value) return;
+  settle = setTimeout(() => {
+    if (text !== searched) track("Search without results", {query: text});
+    searched = text;
+  }, 1500);
+});
 
 // The results can be narrowed to one top-level section of the docs
 const section = ref("");
