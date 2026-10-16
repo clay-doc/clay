@@ -59,6 +59,16 @@ export function absoluteUrl(origin: string | undefined, basePath: string, route:
     return origin ? origin + routePath(basePath, route) : undefined;
 }
 
+// The Open Graph locale of a language code: "pt-BR" is "pt_BR". Clay does not guess
+// regions, so "de" stays "de".
+export const ogLocale = (language: string) => language.replace("-", "_");
+
+// WebSite structured data for start pages, so search results show the site's name
+export function websiteData(name: string, url: string, language: string): string {
+    return JSON.stringify({"@context": "https://schema.org", "@type": "WebSite", name, url, inLanguage: language})
+        .replace(/</g, "\\u003c");
+}
+
 // BreadcrumbList structured data, so search results can show where a page sits
 export function breadcrumbs(trail: { title: string, route: string }[], origin: string | undefined, basePath: string): string | undefined {
     if (!origin || trail.length < 2) return undefined;

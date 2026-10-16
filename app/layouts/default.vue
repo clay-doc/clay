@@ -29,6 +29,7 @@ const siteConfig = site.value.config;
 
 // Read during setup: the head below is resolved later, where Nuxt composables are unavailable
 const baseUrl = ref(useRuntimeConfig().app.baseURL);
+const icons = useRuntimeConfig().public.clayIcons as { ico?: string, appleTouchIcon?: string };
 
 const FONTAWESOME_FREE_CSS = "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css";
 const FONTAWESOME_FREE_SRI = "sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg==";
@@ -41,7 +42,12 @@ const kit = hasFontawesomeKit(siteConfig);
 useHead(() => ({
   htmlAttrs: {lang: edition.value.language.code},
   link: [
-    ...(siteConfig.favicon ? [{rel: 'icon' as const, href: linkConcat(baseUrl.value, siteConfig.favicon)}] : []),
+    // favicon.ico for search engines, the favicon itself (often an SVG) for browsers,
+    // and a PNG for the home screen of iOS (lib/icons.ts)
+    ...(icons.ico ? [{rel: 'icon' as const, href: linkConcat(baseUrl.value, icons.ico), sizes: '32x32'}] : []),
+    ...(siteConfig.favicon ? [{rel: 'icon' as const, href: linkConcat(baseUrl.value, siteConfig.favicon),
+      ...(/\.svg$/i.test(siteConfig.favicon) ? {type: 'image/svg+xml'} : {})}] : []),
+    ...(icons.appleTouchIcon ? [{rel: 'apple-touch-icon' as const, href: linkConcat(baseUrl.value, icons.appleTouchIcon)}] : []),
     ...(kit
       ? [{rel: 'preconnect' as const, href: 'https://ka-f.fontawesome.com', crossorigin: 'anonymous' as const}]
       : [{rel: 'stylesheet' as const, href: FONTAWESOME_FREE_CSS, integrity: FONTAWESOME_FREE_SRI, crossorigin: 'anonymous' as const}]),

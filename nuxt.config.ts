@@ -46,6 +46,7 @@ export default defineNuxtConfig({
     claySocialImages: true, // false when Skia has no build for the platform (modules/clay.ts)
     public: {
       baseUrl: baseURL,
+      clayIcons: {} as { ico?: string, appleTouchIcon?: string }, // drawn from the favicon (lib/icons.ts)
     },
   },
   // Only builds write into the output folder: the dev server cleans its output

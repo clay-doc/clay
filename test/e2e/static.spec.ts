@@ -14,6 +14,22 @@ test.describe("pre-rendered pages", () => {
         expect(html).toContain('"@type":"BreadcrumbList"');
         expect(html).toContain('<link rel="sitemap" type="application/xml" href="https://clay-doc.github.io/clay/sitemap.xml">');
         expect(html).toContain('class="shiki');
+        // Icons drawn from the favicon (lib/icons.ts), and the page's locale
+        expect(html).toContain('<link rel="icon" href="/clay/favicon.ico" sizes="32x32">');
+        expect(html).toContain('<link rel="icon" href="/clay/logo.svg" type="image/svg+xml">');
+        expect(html).toContain('<link rel="apple-touch-icon" href="/clay/_clay/icons/apple-touch-icon.png">');
+        expect(html).toContain('<meta property="og:locale" content="en">');
+        expect((await request.get("favicon.ico")).headers()["content-type"]).toMatch(/icon/);
+        expect((await request.get("_clay/icons/apple-touch-icon.png")).ok()).toBe(true);
+    });
+
+    test("start pages name the site for search engines, and translated pages their other languages", async ({request}) => {
+        const start = await (await request.get("")).text();
+        expect(start).toContain('"@type":"WebSite","name":"Clay","url":"https://clay-doc.github.io/clay/","inLanguage":"en"');
+        expect(start).not.toContain('"@type":"BreadcrumbList"');
+        const german = await (await request.get("de/getting-started/")).text();
+        expect(german).toContain('<meta property="og:locale" content="de">');
+        expect(german).toContain('<meta property="og:locale:alternate" content="en">');
     });
 
     test("redirect to the trailing slash and answer unknown pages with 404", async ({request}) => {

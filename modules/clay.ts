@@ -5,6 +5,7 @@ import {addTemplate, defineNuxtModule, updateTemplates, useLogger} from "@nuxt/k
 import {isMarkdown, loadSite, type Site} from "../lib/site";
 import {brokenLinks} from "../lib/checks";
 import {loadCanvas, writeSocialImages} from "../lib/social-images";
+import {writeIcons} from "../lib/icons";
 import {loadThemeFonts, type ThemeFonts} from "../lib/fonts";
 import {socialCard} from "../lib/social-card";
 import {resolveOrigin} from "../common/seo";
@@ -131,6 +132,8 @@ export default defineNuxtModule({
 
         copyAssets(site, assetsDir);
         writeFonts(fonts, assetsDir);
+        // favicon.ico and the home screen icon of iOS, from the favicon (lib/icons.ts)
+        nuxt.options.runtimeConfig.public.clayIcons = await writeIcons(root, site.config, assetsDir);
         // Social images are drawn into the built site; unchanged ones come from a
         // cache shared by all projects. Without Skia for this platform, pages do
         // not link to them (server/routes/_clay/page).
@@ -194,6 +197,7 @@ export default defineNuxtModule({
                         fonts = await themeFonts();
                         copyAssets(site, assetsDir);
                         writeFonts(fonts, assetsDir);
+                        await writeIcons(root, site.config, assetsDir);
                         await updateTemplates({filter: template => template.filename === SITE_TEMPLATE});
                         // The app reads docs and navigation from the dev server,
                         // so a reload shows the change (no restart needed)

@@ -1,6 +1,6 @@
 import type {Configuration} from "#common/configuration";
 import type {LanguageInfo} from "#common/editions";
-import {absoluteUrl, breadcrumbs, pageTitle, resolveOrigin, SOCIAL_IMAGE_HEIGHT, SOCIAL_IMAGE_WIDTH, truncate} from "#common/seo";
+import {absoluteUrl, breadcrumbs, ogLocale, pageTitle, resolveOrigin, SOCIAL_IMAGE_HEIGHT, SOCIAL_IMAGE_WIDTH, truncate, websiteData} from "#common/seo";
 import type {Edition} from "#common/editions";
 import {markdownRoute, normalizePath} from "#common/route-path";
 import linkConcat from "#common/link-concat";
@@ -40,7 +40,10 @@ export function useClaySeo(input: MaybeRefOrGetter<SeoInput>) {
             rel: "alternate" as const, hreflang: alternate.language, href: absoluteUrl(origin, basePath, alternate.route)!,
         })) : [];
         const defaultTranslation = translations.find(t => t.hreflang === languages.value[0]?.code);
-        const jsonLd = page.trail ? breadcrumbs(page.trail, origin, basePath) : undefined;
+        const language = edition.value.language.code;
+        // Start pages (of the site, a version or a language) name the site; other pages show their place in it
+        const start = normalizePath(page.route) === (edition.value.prefix || "/");
+        const jsonLd = start && url ? websiteData(config.title, url, language) : page.trail ? breadcrumbs(page.trail, origin, basePath) : undefined;
         // Link previews need the image's full address
         const image = origin && page.image ? origin + linkConcat(basePath, page.image) : undefined;
 
@@ -52,6 +55,9 @@ export function useClaySeo(input: MaybeRefOrGetter<SeoInput>) {
                 {property: "og:title", content: title},
                 {property: "og:description", content: description},
                 {property: "og:site_name", content: config.title},
+                {property: "og:locale", content: ogLocale(language)},
+                ...alternates.value.filter(alternate => alternate.language !== language)
+                    .map(alternate => ({property: "og:locale:alternate", content: ogLocale(alternate.language)})),
                 {name: "twitter:card", content: image ? "summary_large_image" : "summary"},
                 ...(image ? [
                     {property: "og:image", content: image},
