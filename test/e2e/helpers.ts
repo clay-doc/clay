@@ -7,9 +7,15 @@ export function watchConsole(page: Page): string[] {
         // WebKit warns about the preloaded page data when hydration takes more
         // than a few seconds, as on a busy CI runner; that is no problem of the page
         if (/was preloaded using link preload but not used/.test(message.text())) return;
+        // WebKit reports Nuxt's fetch of its build manifest, cancelled when the test
+        // opens the next page, as an access control error; Nuxt then logs E5002
+        if (/NUXT_E5002/.test(message.text())) return;
         if (message.type() === "error" || message.type() === "warning") messages.push(`${message.type()}: ${message.text()}`);
     });
-    page.on("pageerror", error => messages.push(`pageerror: ${error.message}`));
+    page.on("pageerror", error => {
+        if (/\/_nuxt\/builds\/meta\/.* due to access control checks/.test(error.message)) return;
+        messages.push(`pageerror: ${error.message}`);
+    });
     return messages;
 }
 
