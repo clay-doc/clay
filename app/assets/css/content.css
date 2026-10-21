@@ -1,4 +1,4 @@
-/* The text of a page: alerts, search hits, links to sections, videos and embeds, task lists */
+/* The text of a page: alerts, search hits, links to sections and other sites, videos and embeds, task lists */
 
 /* Alerts: a box with a bar of its own in the alert's color, a little left of it */
 .markdown-alert {
@@ -84,3 +84,11 @@
 .clay-task {
     @apply checkbox checkbox-sm checkbox-primary me-2 cursor-default align-[-0.2em] opacity-100!;
 }
+
+/* Links to other sites (server/utils/doc-links.ts): a "leaves the site" icon
+   before the text, in its color and not underlined. Raised a little, its top
+   lines up with the top of tall letters like "l". */
+.clay-external-icon {
+    @apply me-1 text-[0.85em] align-[0.035em];
+}
+

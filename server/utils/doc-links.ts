@@ -37,7 +37,8 @@ export function isAssetLink(href: string): boolean {
 
 // Rewrites a rendered doc before it is shown: doc links get their app route
 // (data-route) and a real href that also works in new tabs, relative images and
-// files point into docs/, and external links open in a new tab. Done on a
+// files point into docs/, and external links open in a new tab, with an icon
+// before their text that says they leave the site. Done on a
 // <template>, so nothing loads the unresolved image URLs; pass a DOM
 // implementation's document (jsdom). Files resolve against
 // assetPath: translations share the files of their version, so their path has
@@ -71,6 +72,13 @@ export function rewriteDocHtml(html: string, docPath: string, baseUrl: string, r
             if (/^https?:/i.test(href)) {
                 link.setAttribute("target", "_blank");
                 link.setAttribute("rel", "noopener noreferrer");
+                // Not on images that are links, or cards, which are boxes of their own
+                if (!link.matches(".clay-card") && !link.querySelector("img, picture, svg, video")) {
+                    const icon = doc.createElement("i");
+                    icon.className = "fa-solid fa-arrow-up-right-from-square clay-external-icon";
+                    icon.setAttribute("aria-hidden", "true");
+                    link.prepend(icon);
+                }
             }
             continue;
         }
