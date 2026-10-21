@@ -1,19 +1,23 @@
 /* Code blocks: highlighting in both themes, file names, the copy button and the line notations */
 
-/* Code is highlighted in both themes (as CSS variables); show the one matching the site theme */
+/* Code is highlighted in both themes (as CSS variables); show the one matching the
+   site theme. Request cells color their code the same way (HighlightedCode.vue). */
 .shiki,
-.shiki span {
+.shiki span,
+.clay-shiki span {
     color: var(--shiki-light);
 }
 
 :root[data-theme="clay-dark"] .shiki,
-:root[data-theme="clay-dark"] .shiki span {
+:root[data-theme="clay-dark"] .shiki span,
+:root[data-theme="clay-dark"] .clay-shiki span {
     color: var(--shiki-dark);
 }
 
 @media (prefers-color-scheme: dark) {
     :root:not([data-theme="clay-light"]) .shiki,
-    :root:not([data-theme="clay-light"]) .shiki span {
+    :root:not([data-theme="clay-light"]) .shiki span,
+    :root:not([data-theme="clay-light"]) .clay-shiki span {
         color: var(--shiki-dark);
     }
 }

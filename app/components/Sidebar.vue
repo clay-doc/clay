@@ -4,6 +4,8 @@ import type { DocItem } from "#common/nav";
 
 const structureIn = inject('structure') as Ref<DocItem>;
 const structure = computed(() => structureIn.value?.children as DocItem[])
+// The APIs (OpenAPI), each below a line under the docs
+const apis = computed(() => structureIn.value?.apis ?? [])
 const route = useRoute();
 
 // One highlight for the active entry, a tint with a rule at its left edge, that
@@ -14,6 +16,7 @@ const marker = ref<HTMLElement | null>(null);
 let placed = false; // whether the mark shows, so the next move can slide
 let layer = 0; // how deep in folders the marked entry is
 let frame = 0;
+let parking: ReturnType<typeof setTimeout> | undefined;
 let following = 0; // until when to follow the entries every frame
 
 // Written onto the element directly: a placement without sliding needs its
@@ -37,10 +40,21 @@ function measure(follow: boolean) {
     }
   }
   if (bottom - top < 1) {
-    // Faded where it is: there is no entry to move to
+    // Faded where it is: there is no entry to move to. Once faded, it goes to the
+    // top without a height, or the list would still scroll down to where it was,
+    // e.g. after switching to a version with a shorter navigation.
     bar.style.opacity = "0";
     bar.classList.remove("placed");
     placed = false;
+    clearTimeout(parking);
+    parking = setTimeout(() => {
+      if (placed) return;
+      bar.style.transition = "none";
+      bar.style.translate = "0px 0px";
+      bar.style.height = "0px";
+      void bar.offsetHeight;
+      bar.style.transition = "";
+    }, 200);
     return;
   }
   let depth = 0;
@@ -81,11 +95,13 @@ function schedule(follow = 0) {
 
 watch(() => route.path, () => schedule());
 let classes: MutationObserver | null = null;
-const onResize = () => schedule();
+// The window, or the reader dragging the sidebar wider (SidebarResizer.vue)
+let sized: ResizeObserver | null = null;
 onMounted(() => {
   schedule();
   void document.fonts?.ready.then(() => schedule());
-  window.addEventListener("resize", onResize);
+  sized = new ResizeObserver(() => schedule());
+  if (list.value) sized.observe(list.value);
   // Folders open and close by the classes of their list items and lists, and
   // move the entries below them (links change theirs when the route does)
   classes = new MutationObserver(records => {
@@ -95,15 +111,19 @@ onMounted(() => {
 });
 onBeforeUnmount(() => {
   cancelAnimationFrame(frame);
+  clearTimeout(parking);
   classes?.disconnect();
-  window.removeEventListener("resize", onResize);
+  sized?.disconnect();
 });
 </script>
-
 <template>
   <!-- isolate: the highlight sits between the list's background and its entries -->
-  <ul ref="list" class="menu bg-base-200 overflow-auto relative isolate">
+  <ul ref="list" class="menu bg-base-200 overflow-y-auto overflow-x-hidden relative isolate">
     <li ref="marker" aria-hidden="true" class="sidebar-marker"></li>
     <SidebarNode v-for="e in structure" :link="e.displayLink" :icon="e.icon" :title="e.title" :children="e.children"/>
+    <template v-for="api in apis" :key="api.displayLink">
+      <li aria-hidden="true" class="sidebar-separator"></li>
+      <SidebarNode :link="api.displayLink" :icon="api.icon" :title="api.title" :children="api.children" :collapsed="api.collapsed"/>
+    </template>
   </ul>
 </template>

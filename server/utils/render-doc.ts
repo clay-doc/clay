@@ -9,6 +9,7 @@ import {parseFrontMatter, stripFrontMatter} from "../../lib/front-matter";
 import {messagesFor, type Messages} from "../../common/i18n";
 import {renderMarkdown} from "./markdown";
 import {sanitizeHtml, serverDocument} from "./sanitize";
+import type {CellResolver} from "./request-cell";
 
 // What a card (markdown-components.ts) shows of the page it links to
 export type PageInfo = (route: string) => { icon?: string, description?: string } | undefined;
@@ -22,10 +23,10 @@ export type RenderedDoc = {
 // Renders a doc for the app: sanitized HTML with links resolved for the site's
 // base URL, its table of contents and a description for search engines.
 export async function renderDoc(markdown: string, docPath: string, baseURL: string, fallbackDescription = "", assetPath = docPath,
-                                messages: Messages = messagesFor("en"), pageInfo?: PageInfo): Promise<RenderedDoc> {
+                                messages: Messages = messagesFor("en"), pageInfo?: PageInfo, cells?: CellResolver): Promise<RenderedDoc> {
     const body = stripFrontMatter(markdown);
     const routeHref = (route: string) => route.startsWith("#") ? route : linkConcat(baseURL, route);
-    const html = rewriteDocHtml(sanitizeHtml(await renderMarkdown(body, messages)), docPath, baseURL, routeHref, serverDocument, assetPath);
+    const html = rewriteDocHtml(sanitizeHtml(await renderMarkdown(body, messages, cells)), docPath, baseURL, routeHref, serverDocument, assetPath);
 
     const template = serverDocument.createElement("template");
     template.innerHTML = html;

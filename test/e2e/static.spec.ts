@@ -525,6 +525,20 @@ test.describe("snippets, variables, head and social images", () => {
         expect((await request.get("_snippets/note/")).status()).toBe(404);
     });
 
+    test("pages end with the footer of clay.yaml, in their language", async ({page}) => {
+        await page.goto("configuration/");
+        await hydrated(page);
+        const footer = page.locator("footer.clay-footer");
+        await expect(footer.getByRole("navigation", {name: "Docs"}).getByRole("link")).toHaveText(["Getting Started", "Components"]);
+        await expect(footer.getByRole("link", {name: "GitHub"})).toHaveAttribute("target", "_blank");
+        await expect(footer).toContainText("Made with Clay");
+        await footer.getByRole("link", {name: "Components"}).click();
+        await expect(page.locator(".prose h1")).toContainText("Components");
+        await page.goto("de/");
+        await hydrated(page);
+        await expect(page.locator("footer.clay-footer")).toContainText("Gemacht mit Clay");
+    });
+
     test("pages carry the head tags of clay.yaml", async ({request}) => {
         const html = await (await request.get("reference/feature-tour/")).text();
         expect(html).toContain('<meta name="clay-playground" content="from clay.yaml">');

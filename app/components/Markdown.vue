@@ -8,6 +8,10 @@ import {clearHighlights, firstMarkInSection, highlightTerms} from "~/utils/highl
 import {copyCodeBlock} from "~/utils/code-copy";
 import {remember, restoreTabs, reveal, selectLabel, selectTab, tabKeydown} from "~/utils/tabs";
 import {drawDiagrams} from "~/utils/diagrams";
+import RequestCell from "~/components/RequestCell.vue";
+import ApiCredentials from "~/components/ApiCredentials.vue";
+import {h, render} from "vue";
+import type {CellData} from "#common/openapi";
 import {track} from "~/utils/analytics";
 import type {DocItem, LinkPart} from "#common/nav";
 import {PAGE_ACTIONS, showsPageAction, type Configuration} from "#common/configuration";
@@ -70,13 +74,47 @@ async function revealResult() {
   (mark ?? anchor)?.scrollIntoView({block: mark ? "center" : "start"});
 }
 
-// Components that need the browser: the reader's tabs, and diagrams in the site's theme
+// Components that need the browser: the reader's tabs, diagrams in the site's
+// theme, and request cells to fill in and run
 function drawComponents() {
   const root = contentEl.value;
   if (!root) return;
   restoreTabs(root);
   drawDiagrams(root, theme.value === "clay-dark", t.value.diagramError);
+  mountCells(root);
 }
+
+// Request cells replace what the server rendered of them (server/utils/components.ts),
+// and the credentials of an API get their form
+const baseURL = useRuntimeConfig().app.baseURL;
+type Mounted = { el: HTMLElement, data: CellData | { api: string, schemes: CellData["schemes"] } };
+let cells: Mounted[] = [];
+const drawCell = ({el, data}: Mounted) => render("method" in data
+    ? h(RequestCell, {cell: data, t: t.value, baseUrl: baseURL, here: props.url, navigate: (to: string) => router.push(to)})
+    : h(ApiCredentials, {api: data.api, schemes: data.schemes, t: t.value, baseUrl: baseURL}), el);
+function mountCells(root: HTMLElement) {
+  for (const el of root.querySelectorAll<HTMLElement>(".clay-request[data-request], .clay-credentials[data-credentials]")) {
+    if (cells.some(cell => cell.el === el)) continue;
+    let data: Mounted["data"];
+    try {
+      data = JSON.parse(el.dataset.request ?? el.dataset.credentials!);
+    } catch {
+      continue;
+    }
+    el.replaceChildren();
+    const cell = {el, data};
+    drawCell(cell);
+    cells.push(cell);
+  }
+}
+function unmountCells() {
+  for (const {el} of cells) render(null, el);
+  cells = [];
+}
+// The interface texts change after a page in another language is shown: drawn
+// again, the cells take them and keep what the reader entered
+watch(t, () => cells.forEach(drawCell));
+onBeforeUnmount(unmountCells);
 
 onMounted(() => {
   scrollContainer.value = contentEl.value?.closest<HTMLElement>("#content") ?? null;
@@ -85,6 +123,8 @@ onMounted(() => {
 });
 watch(() => [route.hash, route.query.highlight], revealResult);
 watch(() => doc.value?.html, () => nextTick(drawComponents));
+// Before the page's HTML is replaced
+watch(() => doc.value?.html, unmountCells, {flush: "pre"});
 watch(theme, () => contentEl.value && drawDiagrams(contentEl.value, theme.value === "clay-dark", t.value.diagramError));
 
 function handleClicks(event: MouseEvent) {
@@ -115,6 +155,8 @@ function handleClicks(event: MouseEvent) {
 function pickTab(tab: HTMLElement) {
   const label = tab.textContent?.trim() ?? "";
   selectTab(tab);
+  // Groups of their own, like an operation's responses, are not carried to others
+  if (tab.closest("[data-tabs-local]")) return;
   if (contentEl.value) selectLabel(contentEl.value, label);
   remember(label);
 }
@@ -156,7 +198,7 @@ function handleKeys(event: KeyboardEvent) {
         <PageList v-if="doc.list"/>
         <PageFooter v-if="!start" :url="url"/>
       </template>
-      <Error v-else :code="error?.statusCode ?? 500" :message="error?.statusMessage ?? 'Error'"/>
+      <Error v-else :code="error?.status ?? 500" :message="error?.statusText ?? 'Error'"/>
     </article>
     <aside v-if="doc" class="hidden xl:block w-56 shrink-0 ml-auto">
       <div class="sticky top-6">

@@ -36,12 +36,13 @@ const adjacent = computed(() => structure.value ? adjacentPages(structure.value,
       <NuxtLink v-if="adjacent.previous" :to="adjacent.previous.displayLink" rel="prev"
                 class="card card-border hover:border-primary p-4 col-start-1">
         <span class="opacity-80 text-xs">{{t.previous}}</span>
-        <span class="font-semibold"><i class="fa-solid fa-arrow-left mr-1"></i>{{adjacent.previous.title}}</span>
+        <!-- Long titles, like those of some API operations, take three lines at most -->
+        <span class="flex items-start gap-1 font-semibold" :title="adjacent.previous.title"><i class="fa-solid fa-arrow-left mt-[0.35em]"></i><span class="line-clamp-3">{{adjacent.previous.title}}</span></span>
       </NuxtLink>
       <NuxtLink v-if="adjacent.next" :to="adjacent.next.displayLink" rel="next"
                 class="card card-border hover:border-primary p-4 col-start-2 text-right">
         <span class="opacity-80 text-xs">{{t.next}}</span>
-        <span class="font-semibold">{{adjacent.next.title}}<i class="fa-solid fa-arrow-right ml-1"></i></span>
+        <span class="flex items-start justify-end gap-1 font-semibold" :title="adjacent.next.title"><span class="line-clamp-3">{{adjacent.next.title}}</span><i class="fa-solid fa-arrow-right mt-[0.35em]"></i></span>
       </NuxtLink>
     </nav>
   </footer>

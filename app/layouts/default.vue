@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import Navbar from "~/components/Navbar.vue";
 import Sidebar from "~/components/Sidebar.vue";
+import SidebarResizer from "~/components/SidebarResizer.vue";
 import Content from "~/components/Content.vue";
 import SearchModal from "~/components/SearchModal.vue";
 import MobileNav from "~/components/MobileNav.vue";
@@ -12,6 +13,7 @@ import {editionOf, editionPrefix, samePage, stripPrefix, switchEdition} from "#c
 import {format, languageName, messagesFor} from "#common/i18n";
 import {themeCss} from "#common/theme";
 import {fontFaces} from "#clay-site";
+import ContentFooter from "~/components/ContentFooter.vue";
 
 // Config and navigation (see app/composables/use-site.ts)
 const site = await useSite();
@@ -132,7 +134,8 @@ provide('untranslatedNote', untranslatedNote)
 </script>
 
 <template>
-  <div class="grid grid-rows-[4.5rem_1fr] grid-cols-[20rem_1fr] row-end-auto w-screen h-screen">
+  <!-- The sidebar's width can be changed by the reader (SidebarResizer.vue) -->
+  <div class="grid grid-rows-[4.5rem_1fr] grid-cols-[var(--clay-sidebar,20rem)_1fr] row-end-auto w-screen h-screen">
     <!-- The first stop for the keyboard: past the navbar and sidebar to the page. It
          waits above the window rather than in "sr-only", which Font Awesome's
          stylesheet defines too, out of reach of Tailwind's "focus:not-sr-only" -->
@@ -140,6 +143,7 @@ provide('untranslatedNote', untranslatedNote)
        @click.prevent="skipToContent">{{messages.skipToContent}}</a>
     <Navbar class="col-span-2"/>
     <Sidebar class="hidden lg:block w-full"/>
+    <SidebarResizer class="hidden lg:block"/>
     <Content class="h-full w-full col-span-2 lg:col-span-1 overflow-hidden">
       <div v-if="version.name" role="status" class="alert alert-warning alert-soft rounded-none sm:rounded-tl-2xl">
         <i class="fa-solid fa-clock-rotate-left"></i>
@@ -149,6 +153,7 @@ provide('untranslatedNote', untranslatedNote)
         </span>
       </div>
       <slot />
+      <ContentFooter />
     </Content>
     <SearchModal/>
     <MobileNav/>

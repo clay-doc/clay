@@ -214,3 +214,82 @@ dialog input[type="search"]::-webkit-search-cancel-button {
 .page-actions .assistant-icon {
     @apply size-3.5 shrink-0 mx-px;
 }
+
+/* The line between the docs and each API in the sidebar (Sidebar.vue) */
+.menu > .sidebar-separator {
+    @apply mx-2 my-3 h-0.5 rounded-full bg-base-content/15 p-0;
+}
+
+/* The method of an API operation, in the sidebar and request cells */
+.clay-method {
+    --clay-method: var(--color-base-content);
+    @apply inline-block min-w-[3.25rem] shrink-0 rounded-selector px-1 text-center font-mono text-[0.65rem] font-bold leading-5;
+    color: color-mix(in oklab, var(--clay-method) 75%, var(--color-base-content));
+    background-color: color-mix(in oklab, var(--clay-method) 15%, transparent);
+}
+
+.clay-method-get {
+    --clay-method: var(--color-success);
+}
+
+.clay-method-post {
+    --clay-method: var(--color-info);
+}
+
+.clay-method-put, .clay-method-patch {
+    --clay-method: var(--color-warning);
+}
+
+.clay-method-delete {
+    --clay-method: var(--color-error);
+}
+
+/* Sidebar entries are one line: long titles end in "…" (SidebarNode.vue) */
+.menu li > a.sidebar-link {
+    @apply flex max-w-full min-w-0 items-center gap-2;
+}
+
+/* The edge between sidebar and page, to drag (SidebarResizer.vue): a thin line
+   shows on hover and focus. While dragging, text is not selected. */
+.sidebar-resizer {
+    @apply fixed top-[4.5rem] bottom-0 z-20 w-2 -translate-x-1/2 cursor-col-resize outline-none;
+    left: var(--clay-sidebar, 20rem);
+}
+
+.sidebar-resizer::after {
+    @apply absolute inset-y-0 left-1/2 w-0.5 -translate-x-1/2 bg-primary opacity-0 transition-opacity duration-150;
+    content: "";
+}
+
+.sidebar-resizer:hover::after, .sidebar-resizer:focus-visible::after, .clay-resizing .sidebar-resizer::after {
+    @apply opacity-60;
+}
+
+.clay-resizing, .clay-resizing * {
+    @apply cursor-col-resize select-none;
+}
+
+/* The footer below every page (ContentFooter.vue), from "footer" in clay.yaml */
+.clay-footer {
+    @apply mt-16 border-t border-base-300 px-6 py-10 text-sm sm:pl-9;
+}
+
+.clay-footer-columns {
+    @apply grid grid-cols-[repeat(auto-fit,minmax(10rem,1fr))] gap-8;
+}
+
+.clay-footer-columns ul {
+    @apply mt-2 flex flex-col gap-2;
+}
+
+.clay-footer-columns a {
+    @apply inline-flex items-center gap-2 text-base-content/80;
+}
+
+.clay-footer-text {
+    @apply mt-8 text-xs text-base-content/60;
+}
+
+.clay-footer-columns + .clay-footer-text {
+    @apply border-t border-base-300 pt-6;
+}

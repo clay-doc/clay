@@ -1,0 +1,270 @@
+# A sample API for the playground and tests: every part of OpenAPI that Clay shows
+openapi: 3.1.0
+info:
+  title: Petstore API
+  version: 1.2.0
+  summary: Pets, their owners and their orders.
+  description: |
+    Manage the pets of a store. Most requests need an API key or a token,
+    as told below.
+  termsOfService: https://example.com/terms
+  contact: {name: Petstore team, url: https://example.com/support, email: api@example.com}
+  license: {name: MIT, identifier: MIT}
+servers:
+  - url: https://petstore.example.com/v1
+    description: Production
+  - url: https://{region}.petstore.example.com/v1
+    description: Regional
+    variables:
+      region: {default: eu, enum: [eu, us], description: Where the data is kept}
+security:
+  - apiKey: []
+  - bearer: []
+tags:
+  - name: pets
+    description: Everything about your pets.
+  - name: store
+    description: Orders of the store.
+    externalDocs: {url: https://example.com/orders, description: How orders work}
+paths:
+  /pets:
+    get:
+      tags: [pets]
+      operationId: listPets
+      summary: List pets
+      description: Pets of the store, the newest first.
+      parameters:
+        - name: status
+          in: query
+          description: Only pets with these statuses.
+          schema: {type: array, items: {type: string, enum: [available, pending, sold]}}
+        - name: limit
+          in: query
+          schema: {type: integer, minimum: 1, maximum: 100, default: 20}
+        - name: X-Request-Id
+          in: header
+          schema: {type: string, format: uuid}
+      responses:
+        "200":
+          description: A page of pets
+          headers:
+            X-Next:
+              description: Link to the next page
+              schema: {type: string}
+          content:
+            application/json:
+              schema: {type: array, items: {$ref: "#/components/schemas/Pet"}}
+        default: {$ref: "#/components/responses/Error"}
+    post:
+      tags: [pets]
+      operationId: createPet
+      summary: Create a pet
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: "#/components/schemas/NewPet"}
+            example: {name: Rex, kind: dog, tags: [friendly]}
+          application/xml:
+            schema: {$ref: "#/components/schemas/NewPet"}
+          application/x-www-form-urlencoded:
+            schema: {$ref: "#/components/schemas/NewPet"}
+      callbacks:
+        adopted:
+          "{$request.body#/callbackUrl}":
+            post:
+              summary: Sent when the pet is adopted
+              requestBody:
+                content:
+                  application/json:
+                    schema: {$ref: "#/components/schemas/Pet"}
+              responses:
+                "204": {description: Received}
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/Pet"}
+          links:
+            GetPet:
+              operationId: getPet
+              parameters: {petId: "$response.body#/id"}
+              description: The new pet
+        default: {$ref: "#/components/responses/Error"}
+  /pets/{petId}:
+    parameters:
+      - name: petId
+        in: path
+        required: true
+        description: The pet's ID
+        schema: {type: integer, format: int64}
+    get:
+      tags: [pets]
+      operationId: getPet
+      summary: Get a pet
+      security: []
+      responses:
+        "200":
+          description: The pet
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/Pet"}
+        "404": {$ref: "#/components/responses/Error"}
+    delete:
+      tags: [pets]
+      operationId: deletePet
+      summary: Delete a pet
+      deprecated: true
+      security:
+        - oauth: [write:pets]
+        - openId: []
+      responses:
+        "204": {description: Deleted}
+  /pets/{petId}/photo:
+    put:
+      tags: [pets]
+      operationId: uploadPhoto
+      summary: Upload a photo
+      parameters:
+        - {$ref: "#/components/parameters/PetId"}
+        - name: session
+          in: cookie
+          schema: {type: string}
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file: {type: string, format: binary}
+                caption: {type: string}
+          image/png:
+            schema: {type: string, format: binary}
+      responses:
+        "200":
+          description: The photo
+          content:
+            image/png:
+              schema: {type: string, format: binary}
+  /store/orders:
+    post:
+      tags: [store]
+      operationId: placeOrder
+      summary: Place an order
+      security:
+        - basic: []
+        - mtls: []
+      requestBody:
+        content:
+          application/json:
+            schema: {$ref: "#/components/schemas/Order"}
+      responses:
+        "200":
+          description: The order
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/Order"}
+  /health:
+    get:
+      operationId: health
+      summary: Health check
+      security: []
+      responses:
+        "200":
+          description: Running
+          content:
+            text/plain:
+              schema: {type: string, example: ok}
+webhooks:
+  petSold:
+    post:
+      summary: A pet was sold
+      requestBody:
+        content:
+          application/json:
+            schema: {$ref: "#/components/schemas/Pet"}
+      responses:
+        "200": {description: Received}
+components:
+  parameters:
+    PetId:
+      name: petId
+      in: path
+      required: true
+      schema: {type: integer, format: int64}
+  responses:
+    Error:
+      description: Something went wrong
+      content:
+        application/json:
+          schema: {$ref: "./schemas/error.yaml"}
+  securitySchemes:
+    apiKey: {type: apiKey, in: header, name: X-API-Key, description: Keys are in your account settings.}
+    bearer: {type: http, scheme: bearer, bearerFormat: JWT}
+    basic: {type: http, scheme: basic}
+    oauth:
+      type: oauth2
+      flows:
+        authorizationCode:
+          authorizationUrl: https://auth.example.com/authorize
+          tokenUrl: https://auth.example.com/token
+          scopes: {read:pets: Read pets, write:pets: Change pets}
+        clientCredentials:
+          tokenUrl: https://auth.example.com/token
+          scopes: {read:pets: Read pets}
+    openId: {type: openIdConnect, openIdConnectUrl: https://auth.example.com/.well-known/openid-configuration}
+    mtls: {type: mutualTLS}
+  schemas:
+    Pet:
+      allOf:
+        - $ref: "#/components/schemas/NewPet"
+        - type: object
+          required: [id]
+          properties:
+            id: {type: integer, format: int64, readOnly: true, examples: [42]}
+            status: {type: string, enum: [available, pending, sold]}
+            category: {$ref: "#/components/schemas/Category"}
+    NewPet:
+      type: object
+      required: [name]
+      xml: {name: pet}
+      properties:
+        name: {type: string, examples: [Rex]}
+        kind: {type: string, enum: [dog, cat, bird]}
+        tags:
+          type: array
+          xml: {wrapped: true}
+          items: {type: string, xml: {name: tag}}
+        birthday: {type: [string, "null"], format: date}
+        owner:
+          oneOf:
+            - $ref: "#/components/schemas/Person"
+            - $ref: "#/components/schemas/Shelter"
+          discriminator: {propertyName: type}
+        callbackUrl: {type: string, format: uri, writeOnly: true}
+    Category:
+      type: object
+      description: Categories nest, e.g. Dogs › Terriers.
+      properties:
+        name: {type: string}
+        parent: {$ref: "#/components/schemas/Category"}
+    Person:
+      type: object
+      properties:
+        type: {const: person}
+        name: {type: string}
+    Shelter:
+      type: object
+      properties:
+        type: {const: shelter}
+        address: {type: string}
+    Order:
+      type: object
+      properties:
+        petId: {type: integer, format: int64}
+        quantity: {type: integer, default: 1}
+        notes:
+          type: object
+          additionalProperties: {type: string}

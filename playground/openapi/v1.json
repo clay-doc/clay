@@ -1,0 +1,7298 @@
+{
+  "openapi": "3.1.1",
+  "info": {
+    "title": "Marshal API | v1",
+    "description": "",
+    "version": "1.0"
+  },
+  "paths": {
+    "/api/v1/auth/providers": {
+      "get": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Lists the active login providers.",
+        "operationId": "ListLoginProviders",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/LoginProviderInfo"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/login/{provider}": {
+      "get": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Starts a login with the provider and redirects back to returnUrl (an app-relative path) afterwards.",
+        "operationId": "StartLogin",
+        "parameters": [
+          {
+            "name": "provider",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "returnUrl",
+            "in": "query",
+            "description": "",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/auth/logout": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Ends the session (and the IdP session for OIDC logins) and redirects to the login page.",
+        "operationId": "Logout",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/auth/local/setup": {
+      "get": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "200 while the instance owner is unclaimed and the first-run setup is available, otherwise 404.",
+        "operationId": "GetLocalSetup",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LocalSetupStatus"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Claims the instance owner: sets user name, display name and password, grants admin and signs in.",
+        "operationId": "CompleteLocalSetup",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LocalSetupRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        }
+      }
+    },
+    "/api/v1/auth/local/login": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Signs in with user name and password.",
+        "operationId": "LocalPasswordLogin",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LocalLoginRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        }
+      }
+    },
+    "/api/v1/auth/local/passkey/options": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "WebAuthn request options (PublicKeyCredentialRequestOptions JSON) for passkey login.",
+        "operationId": "LocalPasskeyRequestOptions",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/PasskeyOptionsRequest"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/auth/local/passkey": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Signs in with a passkey assertion (PublicKeyCredential JSON).",
+        "operationId": "LocalPasskeyLogin",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PasskeyCredentialRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        }
+      }
+    },
+    "/api/v1/auth/local/passkeys/creation-options": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "WebAuthn creation options (PublicKeyCredentialCreationOptions JSON) to add a passkey to the signed-in user.",
+        "operationId": "LocalPasskeyCreationOptions",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/auth/local/passkeys": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Stores a passkey attestation for the signed-in user.",
+        "operationId": "RegisterLocalPasskey",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PasskeyRegistrationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        }
+      }
+    },
+    "/api/v1/me": {
+      "get": {
+        "tags": [
+          "Me"
+        ],
+        "summary": "The current user: id, display name, roles and scopes.",
+        "operationId": "GetMe",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MeResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/antiforgery": {
+      "get": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "A token for the X-XSRF-TOKEN header of state-changing requests. Fetch a new one after login or logout.",
+        "operationId": "GetAntiforgeryToken",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AntiforgeryToken"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/events": {
+      "get": {
+        "tags": [
+          "Events"
+        ],
+        "summary": "Server-sent live updates for the comma-separated topics (event name = event type, data = LiveEventMessage).",
+        "operationId": "SubscribeLiveEvents",
+        "parameters": [
+          {
+            "name": "topics",
+            "in": "query",
+            "description": "",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/event-stream": {
+                "schema": {
+                  "$ref": "#/components/schemas/SseItemOfLiveEventMessage"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/runs": {
+      "get": {
+        "tags": [
+          "Runs"
+        ],
+        "summary": "The user\u0027s runs (voice, web, task, api), newest first or slowest time to first delta first (sort=timeToFirstDelta); filter by source, outcome and minimum cost, page with before.",
+        "operationId": "ListRuns",
+        "parameters": [
+          {
+            "name": "source",
+            "in": "query",
+            "description": "",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "outcome",
+            "in": "query",
+            "description": "",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "minCost",
+            "in": "query",
+            "description": "",
+            "schema": {
+              "type": "number",
+              "format": "double"
+            }
+          },
+          {
+            "name": "before",
+            "in": "query",
+            "description": "",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "description": "",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RunSummary"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/runs/{id}": {
+      "get": {
+        "tags": [
+          "Runs"
+        ],
+        "summary": "One run: context build, model calls, tool calls with guard decisions, taint sources and the reply.",
+        "operationId": "GetRun",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunDetail"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/cost": {
+      "get": {
+        "tags": [
+          "Runs"
+        ],
+        "summary": "Cost per day and tier in the user\u0027s time zone, advisor separately (default: the last 30 days).",
+        "operationId": "GetCost",
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "description": "",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "description": "",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CostReport"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/system": {
+      "get": {
+        "tags": [
+          "System"
+        ],
+        "summary": "The app version, the supported and deprecated API versions and the event sources.",
+        "operationId": "GetSystem",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SystemInfo"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/config": {
+      "get": {
+        "tags": [
+          "Config"
+        ],
+        "summary": "Loaded skills, templates, MCP servers, risk rules, models and satellites, plus the last load error per file.",
+        "operationId": "GetConfigSummary",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConfigSummary"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/conversation/turns": {
+      "post": {
+        "tags": [
+          "Marshal"
+        ],
+        "summary": "Runs one conversation turn and streams the reply as server-sent events (delta, status, artifact, final; web sessions also reasoning and tool).",
+        "operationId": "CreateConversationTurn",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConversationTurnRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/event-stream": {
+                "schema": {
+                  "$ref": "#/components/schemas/SseItemOfObject"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/conversations": {
+      "get": {
+        "tags": [
+          "Conversations"
+        ],
+        "summary": "The user\u0027s conversations (web, voice, api), newest last turn first; page with before (a lastTurnAt) and limit.",
+        "operationId": "ListConversations",
+        "parameters": [
+          {
+            "name": "before",
+            "in": "query",
+            "description": "",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ConversationSummary"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/conversations/{id}": {
+      "get": {
+        "tags": [
+          "Conversations"
+        ],
+        "summary": "One conversation: its turns and background results in time order.",
+        "operationId": "GetConversation",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConversationDetail"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/notifications": {
+      "get": {
+        "tags": [
+          "Notifications"
+        ],
+        "summary": "The user\u0027s notifications, newest first, with channel, outcome and reason; filter by outcome, page with before.",
+        "operationId": "ListNotifications",
+        "parameters": [
+          {
+            "name": "outcome",
+            "in": "query",
+            "description": "",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "before",
+            "in": "query",
+            "description": "",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/NotificationEntry"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/artifacts/{id}/content": {
+      "get": {
+        "tags": [
+          "Artifacts"
+        ],
+        "summary": "The artifact\u0027s content (session or token).",
+        "operationId": "GetArtifactContent",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/artifacts/{id}/preview": {
+      "get": {
+        "tags": [
+          "Artifacts"
+        ],
+        "summary": "A PNG preview within 480 \u00D7 270 pixels for 3D models and images; 404 for other kinds.",
+        "operationId": "GetArtifactPreview",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "304": {
+            "description": "Not Modified"
+          }
+        }
+      }
+    },
+    "/api/v1/artifacts/{id}/content/signed": {
+      "get": {
+        "tags": [
+          "Artifacts"
+        ],
+        "summary": "The artifact\u0027s content through a signed, expiring link; no sign-in.",
+        "operationId": "GetSignedArtifactContent",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "signature",
+            "in": "query",
+            "description": "",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/printers/{printer}/snapshots/{snapshot}/keep": {
+      "post": {
+        "tags": [
+          "Printers"
+        ],
+        "summary": "Copies a printer snapshot into the artifact store, outside the snapshot retention.",
+        "operationId": "KeepPrinterSnapshot",
+        "parameters": [
+          {
+            "name": "printer",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "snapshot",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArtifactResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/hooks/{source}": {
+      "post": {
+        "tags": [
+          "Hooks"
+        ],
+        "summary": "Receives a webhook of a source (e.g. uptime-kuma) and publishes its events.",
+        "operationId": "PostWebhook",
+        "parameters": [
+          {
+            "name": "source",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {}
+            },
+            "multipart/form-data": {
+              "schema": {}
+            },
+            "application/x-www-form-urlencoded": {
+              "schema": {}
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "description": "Accepted"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Payload Too Large",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/me/tokens": {
+      "get": {
+        "tags": [
+          "Tokens"
+        ],
+        "summary": "The user\u0027s API tokens without secrets; executor callback tokens are read-only.",
+        "operationId": "ListApiTokens",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ApiTokenResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Tokens"
+        ],
+        "summary": "Creates a token with scopes the user holds; the plaintext is returned only in this response.",
+        "operationId": "CreateApiToken",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateApiTokenRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatedApiTokenResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/me/tokens/{id}": {
+      "delete": {
+        "tags": [
+          "Tokens"
+        ],
+        "summary": "Revokes one of the user\u0027s tokens.",
+        "operationId": "RevokeApiToken",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        }
+      }
+    },
+    "/api/v1/me/secrets": {
+      "get": {
+        "tags": [
+          "Secrets"
+        ],
+        "summary": "Every secret visible to the user (own, instance, environment) without values, plus unresolved references.",
+        "operationId": "GetSecretOverview",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SecretOverview"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/me/secrets/{name}": {
+      "put": {
+        "tags": [
+          "Secrets"
+        ],
+        "summary": "Creates or replaces one of the user\u0027s secrets.",
+        "operationId": "SetOwnSecret",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SecretValueRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Secrets"
+        ],
+        "summary": "Deletes one of the user\u0027s secrets.",
+        "operationId": "DeleteOwnSecret",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        }
+      }
+    },
+    "/api/v1/secrets/instance": {
+      "get": {
+        "tags": [
+          "Secrets"
+        ],
+        "summary": "Instance secrets (database and environment) without values.",
+        "operationId": "ListInstanceSecrets",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SecretItem"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/secrets/instance/{name}": {
+      "put": {
+        "tags": [
+          "Secrets"
+        ],
+        "summary": "Creates or replaces an instance secret.",
+        "operationId": "SetInstanceSecret",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SecretValueRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Secrets"
+        ],
+        "summary": "Deletes an instance secret.",
+        "operationId": "DeleteInstanceSecret",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        }
+      }
+    },
+    "/api/v1/me/preferences": {
+      "get": {
+        "tags": [
+          "Preferences"
+        ],
+        "summary": "Language, time zone, quiet hours, notification targets and do-not-disturb of the user.",
+        "operationId": "GetPreferences",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserPreferencesResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Preferences"
+        ],
+        "summary": "Replaces the user\u0027s preferences.",
+        "operationId": "UpdatePreferences",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserPreferencesResponse"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        }
+      }
+    },
+    "/api/v1/memory/chunks": {
+      "get": {
+        "tags": [
+          "Memory"
+        ],
+        "summary": "Chunks newest first, or ranked by relevance with query; filter by type, scope, projectId and pinned.",
+        "operationId": "ListMemoryChunks",
+        "parameters": [
+          {
+            "name": "query",
+            "in": "query",
+            "description": "",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "description": "",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "scope",
+            "in": "query",
+            "description": "",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "projectId",
+            "in": "query",
+            "description": "",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "pinned",
+            "in": "query",
+            "description": "",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "includeDeleted",
+            "in": "query",
+            "description": "",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MemoryChunk"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Memory"
+        ],
+        "summary": "Writes a chunk through its deterministic id (an existing chunk with the same identity is updated).",
+        "operationId": "CreateMemoryChunk",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChunkWriteRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChunkWriteResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/memory/chunks/{id}": {
+      "get": {
+        "tags": [
+          "Memory"
+        ],
+        "summary": "A chunk (also when deleted) with its earlier versions and its edges.",
+        "operationId": "GetMemoryChunk",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemoryChunkDetail"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Memory"
+        ],
+        "summary": "Changes content, importance and source; the previous content becomes a version.",
+        "operationId": "EditMemoryChunk",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChunkEditRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChunkWriteResult"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Memory"
+        ],
+        "summary": "Soft-deletes a chunk; it is no longer retrieved.",
+        "operationId": "DeleteMemoryChunk",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        }
+      }
+    },
+    "/api/v1/memory/chunks/{id}/pin": {
+      "put": {
+        "tags": [
+          "Memory"
+        ],
+        "summary": "Pins a chunk: it is injected in full in every turn.",
+        "operationId": "PinMemoryChunk",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Memory"
+        ],
+        "summary": "Unpins a chunk.",
+        "operationId": "UnpinMemoryChunk",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        }
+      }
+    },
+    "/api/v1/memory/chunks/{id}/supersede": {
+      "post": {
+        "tags": [
+          "Memory"
+        ],
+        "summary": "Writes a replacement with a new identity and a supersedes edge to the chunk.",
+        "operationId": "SupersedeMemoryChunk",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChunkWriteRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChunkWriteResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/memory/chunks/{id}/history": {
+      "get": {
+        "tags": [
+          "Memory"
+        ],
+        "summary": "Predecessors, earlier versions and the current content, oldest first.",
+        "operationId": "GetMemoryChunkHistory",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MemoryHistoryEntry"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/memory/audit": {
+      "get": {
+        "tags": [
+          "Memory"
+        ],
+        "summary": "Stale chunks, open contradictions, orphans and dangling edges.",
+        "operationId": "GetMemoryAudit",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemoryAuditReport"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/memory/graph": {
+      "get": {
+        "tags": [
+          "Memory"
+        ],
+        "summary": "Live chunks and the edges between them, for the force-directed graph.",
+        "operationId": "GetMemoryGraph",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemoryGraph"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/memory/scatter": {
+      "get": {
+        "tags": [
+          "Memory"
+        ],
+        "summary": "Live chunks\u0027 embeddings projected onto their first two principal components.",
+        "operationId": "GetMemoryScatter",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MemoryScatterPoint"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/memory/export": {
+      "get": {
+        "tags": [
+          "Memory"
+        ],
+        "summary": "Chunks, versions, edges and projects as NDJSON (without embeddings).",
+        "operationId": "ExportMemory",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/memory/projects": {
+      "get": {
+        "tags": [
+          "Memory"
+        ],
+        "summary": "Live projects with aliases, alias candidates and chunk counts.",
+        "operationId": "ListProjects",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ProjectView"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Memory"
+        ],
+        "summary": "Creates a project; names are unique.",
+        "operationId": "CreateProject",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProjectRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectView"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/memory/projects/{id}": {
+      "put": {
+        "tags": [
+          "Memory"
+        ],
+        "summary": "Renames or re-describes a project.",
+        "operationId": "UpdateProject",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProjectRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectView"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Memory"
+        ],
+        "summary": "Deletes a project; its chunks stay and show up as orphans in the audit.",
+        "operationId": "DeleteProject",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        }
+      }
+    },
+    "/api/v1/memory/projects/{id}/aliases": {
+      "post": {
+        "tags": [
+          "Memory"
+        ],
+        "summary": "Adds an active alias (or activates an existing candidate).",
+        "operationId": "AddProjectAlias",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AliasRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectAliasView"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/memory/projects/{id}/aliases/{aliasId}": {
+      "put": {
+        "tags": [
+          "Memory"
+        ],
+        "summary": "Promotes or rejects an alias or alias candidate.",
+        "operationId": "SetProjectAliasStatus",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "aliasId",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AliasStatusRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectAliasView"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Memory"
+        ],
+        "summary": "Removes an alias or alias candidate.",
+        "operationId": "RemoveProjectAlias",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "aliasId",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        }
+      }
+    },
+    "/api/v1/memory/projects/{id}/feedback": {
+      "get": {
+        "tags": [
+          "Memory"
+        ],
+        "summary": "The project\u0027s correction log, newest first.",
+        "operationId": "GetProjectFeedback",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ProjectFeedbackView"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/printers": {
+      "get": {
+        "tags": [
+          "Printers"
+        ],
+        "summary": "Configured printers with their live state (null while offline), allowlisted macros and babysitter state (null when not enabled).",
+        "operationId": "ListPrinters",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PrinterSummary"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/printers/{printer}": {
+      "get": {
+        "tags": [
+          "Printers"
+        ],
+        "summary": "Live state from the websocket cache.",
+        "operationId": "GetPrinterStatus",
+        "parameters": [
+          {
+            "name": "printer",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PrinterState"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/printers/{printer}/files": {
+      "get": {
+        "tags": [
+          "Printers"
+        ],
+        "summary": "Printable files, newest first.",
+        "operationId": "ListPrinterFiles",
+        "parameters": [
+          {
+            "name": "printer",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PrinterFile"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/printers/{printer}/queue": {
+      "get": {
+        "tags": [
+          "Printers"
+        ],
+        "summary": "The job queue.",
+        "operationId": "GetPrinterQueue",
+        "parameters": [
+          {
+            "name": "printer",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobQueueStatus"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/printers/{printer}/history": {
+      "get": {
+        "tags": [
+          "Printers"
+        ],
+        "summary": "Recent jobs, newest first.",
+        "operationId": "GetPrinterHistory",
+        "parameters": [
+          {
+            "name": "printer",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PrintJob"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/printers/{printer}/controls": {
+      "post": {
+        "tags": [
+          "Printers"
+        ],
+        "summary": "Runs a safe control, or freezes a confirm-tier control and returns its confirmation token.",
+        "operationId": "ControlPrinter",
+        "parameters": [
+          {
+            "name": "printer",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PrinterControlRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PrinterControlResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/printers/{printer}/controls/confirm": {
+      "post": {
+        "tags": [
+          "Printers"
+        ],
+        "summary": "Runs a frozen control with the token from the confirmation dialog (single use, expires).",
+        "operationId": "ConfirmPrinterControl",
+        "parameters": [
+          {
+            "name": "printer",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PrinterControlConfirmation"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PrinterControlResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/printers/{printer}/snapshots": {
+      "post": {
+        "tags": [
+          "Printers"
+        ],
+        "summary": "Takes, resizes and stores a webcam snapshot.",
+        "operationId": "CapturePrinterSnapshot",
+        "parameters": [
+          {
+            "name": "printer",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PrinterSnapshotInfo"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/printers/{printer}/snapshots/{id}": {
+      "get": {
+        "tags": [
+          "Printers"
+        ],
+        "summary": "A stored snapshot as JPEG.",
+        "operationId": "GetPrinterSnapshot",
+        "parameters": [
+          {
+            "name": "printer",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/printers/{printer}/snapshots/{id}/shared": {
+      "get": {
+        "tags": [
+          "Printers"
+        ],
+        "summary": "A stored snapshot as JPEG without signing in, with the signature of a shared link (push notification images; expires after a day).",
+        "operationId": "GetSharedPrinterSnapshot",
+        "parameters": [
+          {
+            "name": "printer",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "signature",
+            "in": "query",
+            "description": "",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/printers/{printer}/webcam/stream": {
+      "get": {
+        "tags": [
+          "Printers"
+        ],
+        "summary": "The webcam\u0027s live stream, proxied so the browser never contacts the printer.",
+        "operationId": "StreamPrinterWebcam",
+        "parameters": [
+          {
+            "name": "printer",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/mail/accounts": {
+      "get": {
+        "tags": [
+          "Mail"
+        ],
+        "summary": "The user\u0027s mail accounts without credentials.",
+        "operationId": "ListMailAccounts",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MailAccountItem"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Mail"
+        ],
+        "summary": "Adds an IMAP account; the password becomes a write-only owner secret.",
+        "operationId": "CreateMailAccount",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateMailAccountRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MailAccountItem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/mail/accounts/{id}": {
+      "delete": {
+        "tags": [
+          "Mail"
+        ],
+        "summary": "Removes an account and its stored credential.",
+        "operationId": "DeleteMailAccount",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        }
+      }
+    },
+    "/api/v1/mail/oauth/providers": {
+      "get": {
+        "tags": [
+          "Mail"
+        ],
+        "summary": "OAuth providers and whether this instance has a client for them.",
+        "operationId": "ListMailOAuthProviders",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MailOAuthProvider"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/mail/oauth/{provider}/start": {
+      "post": {
+        "tags": [
+          "Mail"
+        ],
+        "summary": "Starts connecting an account: returns the provider\u0027s sign-in URL for the browser.",
+        "operationId": "StartMailOAuth",
+        "parameters": [
+          {
+            "name": "provider",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StartMailOAuthRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StartMailOAuthResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/approvals": {
+      "get": {
+        "tags": [
+          "Approvals"
+        ],
+        "summary": "Undecided approvals of the user\u0027s background tasks, oldest first, with reasons and taint sources.",
+        "operationId": "ListApprovals",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ApprovalItem"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/approvals/{id}/approve": {
+      "post": {
+        "tags": [
+          "Approvals"
+        ],
+        "summary": "Executes the frozen action and resumes the task with its result.",
+        "operationId": "ApproveApproval",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApprovalDecision"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/approvals/{id}/reject": {
+      "post": {
+        "tags": [
+          "Approvals"
+        ],
+        "summary": "Resumes the task with the rejection; nothing is executed.",
+        "operationId": "RejectApproval",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApprovalDecision"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/tasks": {
+      "get": {
+        "tags": [
+          "Tasks"
+        ],
+        "summary": "The user\u0027s tasks and watches, oldest first; status filters by one status or active (pending, running, waiting).",
+        "operationId": "ListTasks",
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "description": "",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TaskItem"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/tasks/kill-switch": {
+      "get": {
+        "tags": [
+          "Tasks"
+        ],
+        "summary": "Whether background work is stopped.",
+        "operationId": "GetKillSwitch",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KillSwitchState"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/tasks/kill-switch/activate": {
+      "post": {
+        "tags": [
+          "Tasks"
+        ],
+        "summary": "Stops every unfinished agent task and pauses new ones until released.",
+        "operationId": "ActivateKillSwitch",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KillSwitchState"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/tasks/kill-switch/release": {
+      "post": {
+        "tags": [
+          "Tasks"
+        ],
+        "summary": "Lets background tasks run again; tasks paused while it was active become due.",
+        "operationId": "ReleaseKillSwitch",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KillSwitchState"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/tasks/{id}": {
+      "get": {
+        "tags": [
+          "Tasks"
+        ],
+        "summary": "One task with notes, the latest result, deliveries, recent runs, notifications and executor sessions.",
+        "operationId": "GetTask",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskDetail"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/tasks/{id}/goal": {
+      "put": {
+        "tags": [
+          "Tasks"
+        ],
+        "summary": "Replaces the task\u0027s goal; the next run uses it.",
+        "operationId": "SetTaskGoal",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TaskGoalUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskItem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/tasks/{id}/cancel": {
+      "post": {
+        "tags": [
+          "Tasks"
+        ],
+        "summary": "Cancels the task and its unfinished child tasks.",
+        "operationId": "CancelTask",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskCancellation"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/proposals": {
+      "get": {
+        "tags": [
+          "Proposals"
+        ],
+        "summary": "The user\u0027s proposals, newest first, without diffs (default: open ones; status=all for every one).",
+        "operationId": "ListProposals",
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "description": "",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ProposalRecord"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/proposals/{id}": {
+      "get": {
+        "tags": [
+          "Proposals"
+        ],
+        "summary": "One proposal with its diff.",
+        "operationId": "GetProposal",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProposalRecord"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/proposals/{id}/merge": {
+      "post": {
+        "tags": [
+          "Proposals"
+        ],
+        "summary": "Merges the change into the branch it started from on the executor host; a conflict leaves it open.",
+        "operationId": "MergeProposal",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProposalRecord"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/proposals/{id}/reject": {
+      "post": {
+        "tags": [
+          "Proposals"
+        ],
+        "summary": "Rejects the change and drops its branch on the executor host.",
+        "operationId": "RejectProposal",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProposalRecord"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/artifacts": {
+      "get": {
+        "tags": [
+          "Artifacts"
+        ],
+        "summary": "The owner\u0027s artifacts, newest first, filtered by kind, source and name, with the quota usage.",
+        "operationId": "ListArtifacts",
+        "parameters": [
+          {
+            "name": "kind",
+            "in": "query",
+            "description": "",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "source",
+            "in": "query",
+            "description": "",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "query",
+            "in": "query",
+            "description": "",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArtifactList"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Artifacts"
+        ],
+        "summary": "Uploads one file (multipart field \u0027file\u0027), at most artifacts.maxUploadMb.",
+        "operationId": "UploadArtifact",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/IFormFile"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArtifactResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/artifacts/{id}": {
+      "get": {
+        "tags": [
+          "Artifacts"
+        ],
+        "summary": "",
+        "operationId": "GetArtifact",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArtifactResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Artifacts"
+        ],
+        "summary": "",
+        "operationId": "DeleteArtifact",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AgentTaskStatus": {
+        "enum": [
+          "pending",
+          "running",
+          "waiting",
+          "done",
+          "failed",
+          "cancelled"
+        ]
+      },
+      "AliasRequest": {
+        "required": [
+          "phrase"
+        ],
+        "type": "object",
+        "properties": {
+          "phrase": {
+            "type": "string",
+            "description": "The phrase; normalized when stored."
+          }
+        },
+        "description": "An alias phrase."
+      },
+      "AliasStatusRequest": {
+        "required": [
+          "status"
+        ],
+        "type": "object",
+        "properties": {
+          "status": {
+            "description": "Active or rejected.",
+            "$ref": "#/components/schemas/ProjectAliasStatus"
+          }
+        },
+        "description": "A new alias status."
+      },
+      "AntiforgeryToken": {
+        "required": [
+          "token"
+        ],
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string"
+          }
+        },
+        "description": "Value for the \u0060X-XSRF-TOKEN\u0060 header."
+      },
+      "ApiTokenId": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "ApiTokenKind": {
+        "enum": [
+          "standard",
+          "executorCallback"
+        ]
+      },
+      "ApiTokenResponse": {
+        "required": [
+          "id",
+          "name",
+          "scopes",
+          "kind",
+          "createdAt",
+          "expiresAt",
+          "revokedAt",
+          "readOnly"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "description": "Token id.",
+            "$ref": "#/components/schemas/ApiTokenId"
+          },
+          "name": {
+            "type": "string",
+            "description": "Label."
+          },
+          "scopes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Granted scopes."
+          },
+          "kind": {
+            "description": "\u0060standard\u0060 or \u0060executorCallback\u0060.",
+            "$ref": "#/components/schemas/ApiTokenKind"
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "Creation time.",
+            "format": "date-time"
+          },
+          "expiresAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Expiry, if any.",
+            "format": "date-time"
+          },
+          "revokedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Revocation time, if revoked.",
+            "format": "date-time"
+          },
+          "readOnly": {
+            "type": "boolean",
+            "description": "True for tokens users cannot manage (executor callback tokens)."
+          }
+        },
+        "description": "A machine token without its secret."
+      },
+      "ApprovalDecision": {
+        "required": [
+          "id",
+          "status"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Pending action id."
+          },
+          "status": {
+            "description": "New status: \u0060approved\u0060 or \u0060rejected\u0060.",
+            "$ref": "#/components/schemas/PendingActionStatus"
+          }
+        },
+        "description": "The outcome of a decision."
+      },
+      "ApprovalItem": {
+        "required": [
+          "id",
+          "taskId",
+          "runId",
+          "tool",
+          "arguments",
+          "summary",
+          "reasons",
+          "taint",
+          "createdAt",
+          "expiresAt"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Pending action id."
+          },
+          "taskId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The task that waits for the decision."
+          },
+          "runId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The run that asked; with a taint source\u0027s first step it links to the tool result that tainted the run."
+          },
+          "tool": {
+            "type": "string",
+            "description": "Frozen tool id."
+          },
+          "arguments": {
+            "description": "Frozen arguments; approving executes exactly these.",
+            "$ref": "#/components/schemas/JsonElement"
+          },
+          "summary": {
+            "type": "string",
+            "description": "What the action does."
+          },
+          "reasons": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ConfirmationReason"
+            },
+            "description": "Why it needs approval, verbatim, the main one first."
+          },
+          "taint": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TaintSource"
+            },
+            "description": "Untrusted sources the run had read, with the step that brought each in."
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "When it was queued.",
+            "format": "date-time"
+          },
+          "expiresAt": {
+            "type": "string",
+            "description": "When it expires (counts as rejected).",
+            "format": "date-time"
+          }
+        },
+        "description": "A background approval in the review queue."
+      },
+      "ArtifactId": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "ArtifactKind": {
+        "enum": [
+          "image",
+          "svg",
+          "video",
+          "model3d",
+          "code",
+          "diff",
+          "pdf",
+          "markdown",
+          "html",
+          "other"
+        ]
+      },
+      "ArtifactList": {
+        "required": [
+          "items",
+          "usedBytes",
+          "quotaBytes"
+        ],
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ArtifactResponse"
+            },
+            "description": "Artifacts, newest first."
+          },
+          "usedBytes": {
+            "type": "integer",
+            "description": "Storage used.",
+            "format": "int64"
+          },
+          "quotaBytes": {
+            "type": "integer",
+            "description": "Storage allowed (\u0060artifacts.quotaMb\u0060).",
+            "format": "int64"
+          }
+        },
+        "description": "Artifacts with the owner\u0027s storage usage."
+      },
+      "ArtifactRef": {
+        "required": [
+          "id",
+          "name",
+          "kind",
+          "url"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/ArtifactId"
+          },
+          "name": {
+            "type": "string"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/ArtifactKind"
+          },
+          "url": {
+            "type": "string"
+          }
+        }
+      },
+      "ArtifactResponse": {
+        "required": [
+          "id",
+          "name",
+          "kind",
+          "mediaType",
+          "size",
+          "source",
+          "sourceReference",
+          "tainted",
+          "createdAt",
+          "url"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Artifact id."
+          },
+          "name": {
+            "type": "string",
+            "description": "File name."
+          },
+          "kind": {
+            "description": "Detected kind; picks the viewer.",
+            "$ref": "#/components/schemas/ArtifactKind"
+          },
+          "mediaType": {
+            "type": "string",
+            "description": "Detected media type."
+          },
+          "size": {
+            "type": "integer",
+            "description": "Size in bytes.",
+            "format": "int64"
+          },
+          "source": {
+            "description": "Where it came from.",
+            "$ref": "#/components/schemas/ArtifactSource"
+          },
+          "sourceReference": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Task, message or printer snapshot it came from."
+          },
+          "tainted": {
+            "type": "boolean",
+            "description": "Content or name can carry third-party text."
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "When it was stored.",
+            "format": "date-time"
+          },
+          "url": {
+            "type": "string",
+            "description": "Content URL (session or token)."
+          }
+        },
+        "description": "An artifact."
+      },
+      "ArtifactSource": {
+        "enum": [
+          "upload",
+          "executor",
+          "printer",
+          "mail",
+          "github"
+        ]
+      },
+      "BabysitterCheck": {
+        "required": [
+          "at",
+          "outcome",
+          "reason",
+          "snapshotUrl"
+        ],
+        "type": "object",
+        "properties": {
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "outcome": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "snapshotUrl": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "BabysitterStatus": {
+        "required": [
+          "active",
+          "verdicts",
+          "pausedAt"
+        ],
+        "type": "object",
+        "properties": {
+          "active": {
+            "type": "boolean"
+          },
+          "verdicts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BabysitterCheck"
+            }
+          },
+          "pausedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          }
+        }
+      },
+      "ChunkAuthor": {
+        "enum": [
+          "user",
+          "agent",
+          "consolidation",
+          "import"
+        ]
+      },
+      "ChunkEdgeKind": {
+        "enum": [
+          "supersedes",
+          "contradicts",
+          "dependsOn",
+          "relatesTo"
+        ]
+      },
+      "ChunkEditRequest": {
+        "required": [
+          "content",
+          "importance",
+          "sourceRef"
+        ],
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "string",
+            "description": "English content."
+          },
+          "importance": {
+            "type": "integer",
+            "description": "1\u20135.",
+            "format": "int32"
+          },
+          "sourceRef": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Origin reference, if any."
+          }
+        },
+        "description": "New content of a chunk; identity fields cannot change (supersede instead)."
+      },
+      "ChunkId": {
+        "maxLength": 26,
+        "minLength": 26,
+        "type": "string"
+      },
+      "ChunkScope": {
+        "enum": [
+          "general",
+          "project"
+        ]
+      },
+      "ChunkType": {
+        "enum": [
+          "fact",
+          "preference",
+          "event",
+          "procedure",
+          "person",
+          "device"
+        ]
+      },
+      "ChunkWriteOutcome": {
+        "enum": [
+          "created",
+          "updated",
+          "unchanged"
+        ]
+      },
+      "ChunkWriteRequest": {
+        "required": [
+          "scope",
+          "projectId",
+          "type",
+          "title",
+          "content",
+          "importance",
+          "sourceRef"
+        ],
+        "type": "object",
+        "properties": {
+          "scope": {
+            "description": "General or project.",
+            "$ref": "#/components/schemas/ChunkScope"
+          },
+          "projectId": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ProjectId"
+              }
+            ],
+            "description": "Required for project scope."
+          },
+          "type": {
+            "description": "Kind of knowledge.",
+            "$ref": "#/components/schemas/ChunkType"
+          },
+          "title": {
+            "type": "string",
+            "description": "Short English title (part of the identity)."
+          },
+          "content": {
+            "type": "string",
+            "description": "English content."
+          },
+          "importance": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "description": "1\u20135 (default 3).",
+            "format": "int32"
+          },
+          "sourceRef": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Origin reference, if any."
+          }
+        },
+        "description": "A chunk to write (create or supersede replacement)."
+      },
+      "ChunkWriteResult": {
+        "required": [
+          "id",
+          "outcome"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/ChunkId"
+          },
+          "outcome": {
+            "$ref": "#/components/schemas/ChunkWriteOutcome"
+          }
+        }
+      },
+      "ConfigError": {
+        "required": [
+          "file",
+          "message",
+          "previousVersionActive"
+        ],
+        "type": "object",
+        "properties": {
+          "file": {
+            "type": "string",
+            "description": "Path relative to \u0060/config\u0060."
+          },
+          "message": {
+            "type": "string",
+            "description": "What is wrong (never contains secret values)."
+          },
+          "previousVersionActive": {
+            "type": "boolean",
+            "description": "True when the previous version of the file stays active; false when the entry is skipped."
+          }
+        },
+        "description": "A config file whose last load failed."
+      },
+      "ConfigSummary": {
+        "required": [
+          "errors",
+          "skills",
+          "templates",
+          "mcpServers",
+          "riskRules",
+          "models",
+          "satellites"
+        ],
+        "type": "object",
+        "properties": {
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ConfigError"
+            },
+            "description": "Files whose last load failed."
+          },
+          "skills": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SkillSummary"
+            },
+            "description": "Loaded skills."
+          },
+          "templates": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TemplateSummary"
+            },
+            "description": "Loaded agent templates, including the built-in default unless replaced."
+          },
+          "mcpServers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/McpServerSummary"
+            },
+            "description": "Configured MCP servers with their connection status."
+          },
+          "riskRules": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RiskRuleSummary"
+            },
+            "description": "Active risk rules in evaluation order (first match wins)."
+          },
+          "models": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ModelSummary"
+            },
+            "description": "Configured models; API keys by secret name only."
+          },
+          "satellites": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SatelliteSummary"
+            },
+            "description": "Satellite profiles."
+          }
+        },
+        "description": "Read-only summary of the loaded \u0060/config\u0060."
+      },
+      "ConfirmationReason": {
+        "required": [
+          "code",
+          "sentence"
+        ],
+        "type": "object",
+        "properties": {
+          "code": {
+            "$ref": "#/components/schemas/ConfirmationReasonCode"
+          },
+          "sentence": {
+            "type": "string"
+          }
+        }
+      },
+      "ConfirmationReasonCode": {
+        "enum": [
+          "rule",
+          "unresolvedTarget",
+          "taint",
+          "quietHoursOverride"
+        ]
+      },
+      "ContextNote": {
+        "required": [
+          "kind",
+          "label"
+        ],
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "detail": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "score": {
+            "type": [
+              "null",
+              "number"
+            ],
+            "format": "double"
+          }
+        }
+      },
+      "ConversationDetail": {
+        "required": [
+          "conversation",
+          "entries"
+        ],
+        "type": "object",
+        "properties": {
+          "conversation": {
+            "$ref": "#/components/schemas/ConversationSummary"
+          },
+          "entries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ConversationEntry"
+            }
+          }
+        }
+      },
+      "ConversationEntry": {
+        "required": [
+          "kind"
+        ],
+        "type": "object",
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/ConversationEntryTurnEntry"
+          },
+          {
+            "$ref": "#/components/schemas/ConversationEntryBackgroundResultEntry"
+          }
+        ],
+        "discriminator": {
+          "propertyName": "kind",
+          "mapping": {
+            "turn": "#/components/schemas/ConversationEntryTurnEntry",
+            "backgroundResult": "#/components/schemas/ConversationEntryBackgroundResultEntry"
+          }
+        }
+      },
+      "ConversationEntryBackgroundResultEntry": {
+        "required": [
+          "taskId",
+          "body",
+          "at"
+        ],
+        "properties": {
+          "kind": {
+            "enum": [
+              "backgroundResult"
+            ],
+            "type": "string"
+          },
+          "taskId": {
+            "$ref": "#/components/schemas/TaskId"
+          },
+          "body": {
+            "type": "string"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ConversationEntryTurnEntry": {
+        "required": [
+          "runId",
+          "inputMode",
+          "satelliteId",
+          "areaId",
+          "input",
+          "reply",
+          "continueConversation",
+          "artifacts",
+          "outcome",
+          "reasoning",
+          "reasoningWithheld",
+          "tools",
+          "at"
+        ],
+        "properties": {
+          "kind": {
+            "enum": [
+              "turn"
+            ],
+            "type": "string"
+          },
+          "runId": {
+            "$ref": "#/components/schemas/RunId"
+          },
+          "inputMode": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/InputMode"
+              }
+            ]
+          },
+          "satelliteId": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "areaId": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "input": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "reply": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "continueConversation": {
+            "type": [
+              "null",
+              "boolean"
+            ]
+          },
+          "artifacts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ArtifactRef"
+            }
+          },
+          "outcome": {
+            "$ref": "#/components/schemas/RunOutcome"
+          },
+          "reasoning": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "reasoningWithheld": {
+            "type": "boolean"
+          },
+          "tools": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TurnToolStep"
+            }
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ConversationSummary": {
+        "required": [
+          "id",
+          "source",
+          "createdAt",
+          "lastTurnAt",
+          "turns",
+          "title",
+          "canContinue",
+          "satelliteId",
+          "areaId"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/SessionId"
+          },
+          "source": {
+            "$ref": "#/components/schemas/SessionSource"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "lastTurnAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "turns": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "title": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "canContinue": {
+            "type": "boolean"
+          },
+          "satelliteId": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "areaId": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "ConversationTurnRequest": {
+        "required": [
+          "conversationId",
+          "text",
+          "language",
+          "deviceId",
+          "satelliteId",
+          "areaId",
+          "haUserId",
+          "inputMode",
+          "followupRef"
+        ],
+        "type": "object",
+        "properties": {
+          "conversationId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Token clients: their own conversation id (required). Browser sessions: Marshal\u0027s session id\nfrom an earlier final event; omitted starts a new conversation."
+          },
+          "text": {
+            "type": "string",
+            "description": "What the user said or typed."
+          },
+          "language": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Request language (\u0060de\u0060 or \u0060en\u0060); the reply uses it."
+          },
+          "deviceId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Home Assistant device id."
+          },
+          "satelliteId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Satellite entity id, e.g. \u0060assist_satellite.kitchen\u0060."
+          },
+          "areaId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Area id of the satellite."
+          },
+          "haUserId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Home Assistant user id, if known."
+          },
+          "inputMode": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/InputMode"
+              }
+            ],
+            "description": "\u0060voice\u0060 when the turn went through speech-to-text, otherwise \u0060text\u0060."
+          },
+          "followupRef": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Opaque reference from a voice follow-up; unknown values are ignored."
+          }
+        },
+        "description": "A conversation turn."
+      },
+      "CostReport": {
+        "required": [
+          "timeZone",
+          "from",
+          "to",
+          "days",
+          "total",
+          "byTier",
+          "advisor"
+        ],
+        "type": "object",
+        "properties": {
+          "timeZone": {
+            "type": "string"
+          },
+          "from": {
+            "type": "string",
+            "format": "date"
+          },
+          "to": {
+            "type": "string",
+            "format": "date"
+          },
+          "days": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DailyCost"
+            }
+          },
+          "total": {
+            "type": "number",
+            "format": "double"
+          },
+          "byTier": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "number",
+              "format": "double"
+            }
+          },
+          "advisor": {
+            "type": "number",
+            "format": "double"
+          }
+        }
+      },
+      "CreateApiTokenRequest": {
+        "required": [
+          "name",
+          "scopes",
+          "expiresAt",
+          "kind"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Label, e.g. the client using it."
+          },
+          "scopes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Scopes to grant; each must be one the user holds."
+          },
+          "expiresAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Optional expiry.",
+            "format": "date-time"
+          },
+          "kind": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ApiTokenKind"
+              }
+            ],
+            "description": "Only \u0060standard\u0060 can be created."
+          }
+        },
+        "description": "A new token."
+      },
+      "CreatedApiTokenResponse": {
+        "required": [
+          "info",
+          "token"
+        ],
+        "type": "object",
+        "properties": {
+          "info": {
+            "description": "The stored token.",
+            "$ref": "#/components/schemas/ApiTokenResponse"
+          },
+          "token": {
+            "type": "string",
+            "description": "The plaintext; shown only in this response."
+          }
+        },
+        "description": "A created token."
+      },
+      "CreateMailAccountRequest": {
+        "required": [
+          "alias",
+          "host",
+          "port",
+          "security",
+          "userName",
+          "password"
+        ],
+        "type": "object",
+        "properties": {
+          "alias": {
+            "type": "string",
+            "description": "1-32 lowercase letters, digits or \u0027-\u0027."
+          },
+          "host": {
+            "type": "string",
+            "description": "IMAP host."
+          },
+          "port": {
+            "type": "integer",
+            "description": "IMAP port (993 for TLS, 143 for STARTTLS).",
+            "format": "int32"
+          },
+          "security": {
+            "description": "Transport security.",
+            "$ref": "#/components/schemas/MailSecurity"
+          },
+          "userName": {
+            "type": "string",
+            "description": "Login name."
+          },
+          "password": {
+            "type": "string",
+            "description": "Password or app password."
+          },
+          "draftsFolder": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Drafts folder when the server marks none with \u0060\\Drafts\u0060."
+          }
+        },
+        "description": "A new IMAP account with a password or app password. The password becomes a write-only owner secret."
+      },
+      "DailyCost": {
+        "required": [
+          "date",
+          "total",
+          "byTier",
+          "advisor"
+        ],
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "format": "date"
+          },
+          "total": {
+            "type": "number",
+            "format": "double"
+          },
+          "byTier": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "number",
+              "format": "double"
+            }
+          },
+          "advisor": {
+            "type": "number",
+            "format": "double"
+          }
+        }
+      },
+      "DayOfWeek": {
+        "enum": [
+          "sunday",
+          "monday",
+          "tuesday",
+          "wednesday",
+          "thursday",
+          "friday",
+          "saturday"
+        ]
+      },
+      "DeliveryChannel": {
+        "enum": [
+          "voice",
+          "push",
+          "inbox",
+          "silent"
+        ]
+      },
+      "DemoInfo": {
+        "required": [
+          "enabled",
+          "showBadge"
+        ],
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "description": "Unconfigured integrations are simulated and demo data is seeded."
+          },
+          "showBadge": {
+            "type": "boolean",
+            "description": "Show the \u0022Demo\u0022 badge in the navigation."
+          }
+        },
+        "description": "Demo mode as the UI needs it."
+      },
+      "EventSourceInfo": {
+        "required": [
+          "source",
+          "connected",
+          "webhook",
+          "lastReceivedAt"
+        ],
+        "type": "object",
+        "properties": {
+          "source": {
+            "type": "string",
+            "description": "Source name, e.g. \u0060ha\u0060, \u0060uptime-kuma\u0060."
+          },
+          "connected": {
+            "type": "boolean",
+            "description": "Whether it currently receives events (webhook sources: a webhook arrived in the last 24 hours)."
+          },
+          "webhook": {
+            "type": "boolean",
+            "description": "Whether it is a webhook source (\u0060POST /api/v1/hooks/{source}\u0060)."
+          },
+          "lastReceivedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "When it last received a webhook; null for other sources or before the first one.",
+            "format": "date-time"
+          }
+        },
+        "description": "An event source and its state."
+      },
+      "ExecutorSessionRecord": {
+        "required": [
+          "id",
+          "taskId",
+          "executor",
+          "target",
+          "status",
+          "startedAt",
+          "finishedAt"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "taskId": {
+            "$ref": "#/components/schemas/TaskId"
+          },
+          "executor": {
+            "type": "string"
+          },
+          "target": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "status": {
+            "$ref": "#/components/schemas/ExecutorSessionStatus"
+          },
+          "startedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "finishedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          }
+        }
+      },
+      "ExecutorSessionStatus": {
+        "enum": [
+          "starting",
+          "running",
+          "done",
+          "failed",
+          "cancelled"
+        ]
+      },
+      "GuardDecision": {
+        "enum": [
+          "safe",
+          "pending",
+          "confirmedByKeyword",
+          "judgePositive",
+          "judgeNeutral",
+          "judgeNegative",
+          "escalatedByTaint",
+          "denied",
+          "expired",
+          null
+        ]
+      },
+      "HeaterState": {
+        "required": [
+          "temperature",
+          "target",
+          "power"
+        ],
+        "type": "object",
+        "properties": {
+          "temperature": {
+            "type": "number",
+            "format": "double"
+          },
+          "target": {
+            "type": "number",
+            "format": "double"
+          },
+          "power": {
+            "type": "number",
+            "format": "double"
+          }
+        }
+      },
+      "IFormFile": {
+        "type": "string",
+        "format": "binary"
+      },
+      "InputMode": {
+        "enum": [
+          "text",
+          "voice",
+          null
+        ]
+      },
+      "JobQueueStatus": {
+        "required": [
+          "state",
+          "jobs"
+        ],
+        "type": "object",
+        "properties": {
+          "state": {
+            "type": "string"
+          },
+          "jobs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/QueuedJob"
+            }
+          }
+        }
+      },
+      "JsonElement": {},
+      "KillSwitchState": {
+        "required": [
+          "active"
+        ],
+        "type": "object",
+        "properties": {
+          "active": {
+            "type": "boolean",
+            "description": "Whether background work is stopped."
+          },
+          "cancelled": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "description": "On activation: how many tasks were cancelled.",
+            "format": "int32"
+          }
+        },
+        "description": "The kill switch."
+      },
+      "LiveEventMessage": {
+        "required": [
+          "topic",
+          "type",
+          "id",
+          "payload"
+        ],
+        "type": "object",
+        "properties": {
+          "topic": {
+            "type": "string",
+            "description": "Topic, e.g. \u0060runs\u0060."
+          },
+          "type": {
+            "type": "string",
+            "description": "Event type, e.g. \u0060run.completed\u0060 (also the SSE event name)."
+          },
+          "id": {
+            "type": "string",
+            "description": "Unique event id."
+          },
+          "payload": {
+            "description": "Topic-specific data (see \u0060web/src/live/events.ts\u0060)."
+          }
+        },
+        "description": "One live update."
+      },
+      "LoadedToolNamespace": {
+        "required": [
+          "name",
+          "reason"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "score": {
+            "type": [
+              "null",
+              "number"
+            ],
+            "format": "double"
+          }
+        }
+      },
+      "LocalLoginRequest": {
+        "required": [
+          "userName",
+          "password"
+        ],
+        "type": "object",
+        "properties": {
+          "userName": {
+            "type": "string"
+          },
+          "password": {
+            "type": "string"
+          }
+        },
+        "description": "Password login."
+      },
+      "LocalSetupRequest": {
+        "required": [
+          "userName",
+          "displayName",
+          "password"
+        ],
+        "type": "object",
+        "properties": {
+          "userName": {
+            "type": "string"
+          },
+          "displayName": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "password": {
+            "type": "string"
+          }
+        },
+        "description": "First-run setup: the instance owner\u0027s login."
+      },
+      "LocalSetupStatus": {
+        "required": [
+          "available"
+        ],
+        "type": "object",
+        "properties": {
+          "available": {
+            "type": "boolean"
+          }
+        },
+        "description": "Whether the first-run setup is available."
+      },
+      "LoginProviderInfo": {
+        "required": [
+          "name",
+          "type",
+          "displayName"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Id used in \u0060/api/v1/auth/login/{name}\u0060."
+          },
+          "type": {
+            "type": "string",
+            "description": "\u0060oidc\u0060 or \u0060local\u0060."
+          },
+          "displayName": {
+            "type": "string",
+            "description": "Button label."
+          }
+        },
+        "description": "A login provider as shown on the login page."
+      },
+      "MailAccountItem": {
+        "required": [
+          "id",
+          "alias",
+          "provider",
+          "strategy",
+          "host",
+          "port",
+          "security",
+          "userName",
+          "draftsFolder",
+          "createdAt"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Account id."
+          },
+          "alias": {
+            "type": "string",
+            "description": "Alias used as the tools\u0027 \u0060account\u0060 argument."
+          },
+          "provider": {
+            "type": "string",
+            "description": "Protocol (\u0060imap\u0060)."
+          },
+          "strategy": {
+            "type": "string",
+            "description": "Credential strategy: \u0060password\u0060, \u0060oauth_google\u0060 or \u0060oauth_microsoft\u0060."
+          },
+          "host": {
+            "type": "string",
+            "description": "IMAP host."
+          },
+          "port": {
+            "type": "integer",
+            "description": "IMAP port.",
+            "format": "int32"
+          },
+          "security": {
+            "description": "Transport security.",
+            "$ref": "#/components/schemas/MailSecurity"
+          },
+          "userName": {
+            "type": "string",
+            "description": "Login name."
+          },
+          "draftsFolder": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Configured drafts folder, if any."
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "Creation time.",
+            "format": "date-time"
+          }
+        },
+        "description": "A mail account without its credentials."
+      },
+      "MailOAuthProvider": {
+        "required": [
+          "name",
+          "configured"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "configured": {
+            "type": "boolean"
+          }
+        },
+        "description": "An OAuth provider and whether this instance has a client for it."
+      },
+      "MailSecurity": {
+        "enum": [
+          "tls",
+          "startTls",
+          "none"
+        ]
+      },
+      "McpServerState": {
+        "enum": [
+          "connecting",
+          "connected",
+          "down"
+        ]
+      },
+      "McpServerSummary": {
+        "required": [
+          "id",
+          "namespace",
+          "transport",
+          "target",
+          "untrusted",
+          "authTokenSecret",
+          "environmentSecrets",
+          "state",
+          "error",
+          "toolCount",
+          "file",
+          "untrustedTools",
+          "warnings"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Server id."
+          },
+          "namespace": {
+            "type": "string",
+            "description": "Tool namespace (id or \u0060toolPrefix\u0060)."
+          },
+          "transport": {
+            "type": "string",
+            "description": "\u0060http\u0060 or \u0060stdio\u0060."
+          },
+          "target": {
+            "type": "string",
+            "description": "URL (http) or command line (stdio)."
+          },
+          "untrusted": {
+            "type": "boolean",
+            "description": "Its tool output taints the run."
+          },
+          "authTokenSecret": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Secret name of the bearer token, if any."
+          },
+          "environmentSecrets": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Secret names passed as environment variables (stdio)."
+          },
+          "state": {
+            "description": "Connection state.",
+            "$ref": "#/components/schemas/McpServerState"
+          },
+          "error": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Last connection error, if any."
+          },
+          "toolCount": {
+            "type": "integer",
+            "description": "Tools offered while connected.",
+            "format": "int32"
+          },
+          "file": {
+            "type": "string",
+            "description": "Config file, relative to \u0060/config/mcp\u0060."
+          },
+          "untrustedTools": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Globs on reported tool names whose output taints the run (with \u0060Untrusted\u0060 false)."
+          },
+          "warnings": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Problems that leave the server usable, e.g. an \u0060untrustedTools\u0060 glob that matches no tool."
+          }
+        },
+        "description": "A configured MCP server."
+      },
+      "MemoryAuditReport": {
+        "required": [
+          "stale",
+          "contradictions",
+          "orphans",
+          "danglingEdges"
+        ],
+        "type": "object",
+        "properties": {
+          "stale": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MemoryChunk"
+            }
+          },
+          "contradictions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MemoryContradiction"
+            }
+          },
+          "orphans": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MemoryChunk"
+            }
+          },
+          "danglingEdges": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MemoryEdge"
+            }
+          }
+        }
+      },
+      "MemoryChunk": {
+        "required": [
+          "id",
+          "scope",
+          "projectId",
+          "type",
+          "title",
+          "content",
+          "importance",
+          "pinned",
+          "sourceRef",
+          "createdBy",
+          "createdAt",
+          "updatedAt",
+          "deletedAt",
+          "lastRetrievedAt"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/ChunkId"
+          },
+          "scope": {
+            "$ref": "#/components/schemas/ChunkScope"
+          },
+          "projectId": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ProjectId"
+              }
+            ]
+          },
+          "type": {
+            "$ref": "#/components/schemas/ChunkType"
+          },
+          "title": {
+            "type": "string"
+          },
+          "content": {
+            "type": "string"
+          },
+          "importance": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pinned": {
+            "type": "boolean"
+          },
+          "sourceRef": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "createdBy": {
+            "$ref": "#/components/schemas/ChunkAuthor"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "deletedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "lastRetrievedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          }
+        }
+      },
+      "MemoryChunkDetail": {
+        "required": [
+          "chunk",
+          "versions",
+          "edges"
+        ],
+        "type": "object",
+        "properties": {
+          "chunk": {
+            "description": "The chunk.",
+            "$ref": "#/components/schemas/MemoryChunk"
+          },
+          "versions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MemoryChunkVersion"
+            },
+            "description": "Earlier versions, oldest first."
+          },
+          "edges": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MemoryEdge"
+            },
+            "description": "Edges from and to the chunk."
+          }
+        },
+        "description": "A chunk with its history data."
+      },
+      "MemoryChunkVersion": {
+        "required": [
+          "chunkId",
+          "content",
+          "importance",
+          "sourceRef",
+          "replacedAt"
+        ],
+        "type": "object",
+        "properties": {
+          "chunkId": {
+            "$ref": "#/components/schemas/ChunkId"
+          },
+          "content": {
+            "type": "string"
+          },
+          "importance": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "sourceRef": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "replacedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "MemoryContradiction": {
+        "required": [
+          "from",
+          "to",
+          "since"
+        ],
+        "type": "object",
+        "properties": {
+          "from": {
+            "$ref": "#/components/schemas/MemoryChunk"
+          },
+          "to": {
+            "$ref": "#/components/schemas/MemoryChunk"
+          },
+          "since": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "MemoryEdge": {
+        "required": [
+          "from",
+          "to",
+          "kind",
+          "createdAt"
+        ],
+        "type": "object",
+        "properties": {
+          "from": {
+            "$ref": "#/components/schemas/ChunkId"
+          },
+          "to": {
+            "$ref": "#/components/schemas/ChunkId"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/ChunkEdgeKind"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "MemoryGraph": {
+        "required": [
+          "nodes",
+          "edges"
+        ],
+        "type": "object",
+        "properties": {
+          "nodes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MemoryGraphNode"
+            }
+          },
+          "edges": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MemoryEdge"
+            }
+          }
+        }
+      },
+      "MemoryGraphNode": {
+        "required": [
+          "id",
+          "title",
+          "type",
+          "projectId",
+          "pinned",
+          "importance"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/ChunkId"
+          },
+          "title": {
+            "type": "string"
+          },
+          "type": {
+            "$ref": "#/components/schemas/ChunkType"
+          },
+          "projectId": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ProjectId"
+              }
+            ]
+          },
+          "pinned": {
+            "type": "boolean"
+          },
+          "importance": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "MemoryHistoryEntry": {
+        "required": [
+          "chunkId",
+          "kind",
+          "title",
+          "content",
+          "importance",
+          "validFrom"
+        ],
+        "type": "object",
+        "properties": {
+          "chunkId": {
+            "$ref": "#/components/schemas/ChunkId"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/MemoryHistoryKind"
+          },
+          "title": {
+            "type": "string"
+          },
+          "content": {
+            "type": "string"
+          },
+          "importance": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "validFrom": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "MemoryHistoryKind": {
+        "enum": [
+          "predecessor",
+          "version",
+          "current"
+        ]
+      },
+      "MemoryScatterPoint": {
+        "required": [
+          "id",
+          "title",
+          "type",
+          "projectId",
+          "x",
+          "y"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/ChunkId"
+          },
+          "title": {
+            "type": "string"
+          },
+          "type": {
+            "$ref": "#/components/schemas/ChunkType"
+          },
+          "projectId": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ProjectId"
+              }
+            ]
+          },
+          "x": {
+            "type": "number",
+            "format": "double"
+          },
+          "y": {
+            "type": "number",
+            "format": "double"
+          }
+        }
+      },
+      "MeResponse": {
+        "required": [
+          "id",
+          "displayName",
+          "roles",
+          "scopes",
+          "demo"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "description": "Owner id of the user.",
+            "$ref": "#/components/schemas/OwnerId"
+          },
+          "displayName": {
+            "type": "string",
+            "description": "Name used in the UI and the system prompt."
+          },
+          "roles": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Roles (empty for token principals)."
+          },
+          "scopes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Scopes: granted by the roles for cookie sessions, the token\u0027s own for tokens."
+          },
+          "demo": {
+            "description": "Whether the instance runs in demo mode and shows the badge.",
+            "$ref": "#/components/schemas/DemoInfo"
+          }
+        },
+        "description": "The current user."
+      },
+      "ModelSummary": {
+        "required": [
+          "key",
+          "tier",
+          "provider",
+          "model",
+          "endpoint",
+          "apiKeySecret",
+          "vision",
+          "tools",
+          "contextLength"
+        ],
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string",
+            "description": "Model key in \u0060marshal.yaml\u0060."
+          },
+          "tier": {
+            "description": "Model tier.",
+            "$ref": "#/components/schemas/ModelTier"
+          },
+          "provider": {
+            "type": "string",
+            "description": "Provider."
+          },
+          "model": {
+            "type": "string",
+            "description": "Provider model name."
+          },
+          "endpoint": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Server URL, if any."
+          },
+          "apiKeySecret": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Secret name of the API key, if any."
+          },
+          "vision": {
+            "type": "boolean",
+            "description": "Accepts images."
+          },
+          "tools": {
+            "type": "boolean",
+            "description": "Supports tool calls."
+          },
+          "contextLength": {
+            "type": "integer",
+            "description": "Context window in tokens.",
+            "format": "int32"
+          }
+        },
+        "description": "A configured model."
+      },
+      "ModelTier": {
+        "enum": [
+          "fast",
+          "standard",
+          "advisor",
+          null
+        ]
+      },
+      "NotificationEntry": {
+        "required": [
+          "id",
+          "taskId",
+          "source",
+          "priority",
+          "content",
+          "channel",
+          "outcome",
+          "reason",
+          "coalescedInto",
+          "createdAt",
+          "deliveredAt"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "taskId": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/TaskId"
+              }
+            ]
+          },
+          "source": {
+            "type": "string"
+          },
+          "priority": {
+            "$ref": "#/components/schemas/NotificationPriority"
+          },
+          "content": {
+            "type": "string"
+          },
+          "channel": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "outcome": {
+            "$ref": "#/components/schemas/NotificationOutcome"
+          },
+          "reason": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "coalescedInto": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "deliveredAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          }
+        }
+      },
+      "NotificationOutcome": {
+        "enum": [
+          "pending",
+          "delivered",
+          "coalesced",
+          "held",
+          "inboxed",
+          "expired",
+          "fallback"
+        ]
+      },
+      "NotificationPriority": {
+        "enum": [
+          "critical",
+          "normal",
+          "low"
+        ]
+      },
+      "NotificationTargets": {
+        "required": [
+          "person",
+          "push"
+        ],
+        "type": "object",
+        "properties": {
+          "person": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "push": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "OwnerId": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "PasskeyCredentialRequest": {
+        "required": [
+          "credentialJson"
+        ],
+        "type": "object",
+        "properties": {
+          "credentialJson": {
+            "type": "string"
+          }
+        },
+        "description": "A \u0060PublicKeyCredential\u0060 serialized with \u0060toJSON()\u0060."
+      },
+      "PasskeyOptionsRequest": {
+        "required": [
+          "userName"
+        ],
+        "type": "object",
+        "properties": {
+          "userName": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        },
+        "description": "Passkey login options; without a user name the options allow any discoverable passkey."
+      },
+      "PasskeyRegistrationRequest": {
+        "required": [
+          "credentialJson",
+          "name"
+        ],
+        "type": "object",
+        "properties": {
+          "credentialJson": {
+            "type": "string"
+          },
+          "name": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        },
+        "description": "A new passkey for the signed-in user."
+      },
+      "PendingActionStatus": {
+        "enum": [
+          "pending",
+          "approved",
+          "rejected",
+          "dropped",
+          "expired",
+          "superseded"
+        ]
+      },
+      "PrinterControlConfirmation": {
+        "required": [
+          "token"
+        ],
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string"
+          }
+        },
+        "description": "Confirms a frozen control."
+      },
+      "PrinterControlRequest": {
+        "required": [
+          "action"
+        ],
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string",
+            "description": "start_print, pause, resume, cancel, emergency_stop, set_temperature, home, move, run_macro,\nqueue_add, queue_remove, queue_clear, queue_pause, queue_start or queue_jump."
+          },
+          "file": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "File for start_print."
+          },
+          "heater": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "extruder or bed, for set_temperature."
+          },
+          "target": {
+            "type": [
+              "null",
+              "number"
+            ],
+            "description": "Target \u00B0C for set_temperature.",
+            "format": "double"
+          },
+          "axes": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string"
+            },
+            "description": "x, y and / or z for home (all when empty)."
+          },
+          "axis": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "x, y or z for move."
+          },
+          "distance": {
+            "type": [
+              "null",
+              "number"
+            ],
+            "description": "mm for move.",
+            "format": "double"
+          },
+          "macro": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Allowlisted macro for run_macro."
+          },
+          "files": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string"
+            },
+            "description": "Files for queue_add."
+          },
+          "jobIds": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string"
+            },
+            "description": "Jobs for queue_remove."
+          },
+          "jobId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Job for queue_jump."
+          }
+        },
+        "description": "A printer page control. \u0060action\u0060 names the command; the other fields are its arguments."
+      },
+      "PrinterControlResult": {
+        "required": [
+          "status",
+          "description"
+        ],
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "description": "done or confirmation_required."
+          },
+          "description": {
+            "type": "string",
+            "description": "What the control does, for the dialog."
+          },
+          "token": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Single-use confirmation token (confirm tier only)."
+          },
+          "expiresAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "When the token expires.",
+            "format": "date-time"
+          }
+        },
+        "description": "Outcome of a control: \u0060done\u0060, or \u0060confirmation_required\u0060 with a token for the dialog."
+      },
+      "PrinterFile": {
+        "required": [
+          "path",
+          "modified",
+          "size"
+        ],
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string"
+          },
+          "modified": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "size": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "PrinterSnapshotInfo": {
+        "required": [
+          "id",
+          "url",
+          "width",
+          "height",
+          "capturedAt"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          },
+          "width": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "height": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "capturedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "description": "A stored snapshot."
+      },
+      "PrinterState": {
+        "required": [
+          "printer",
+          "klippyState",
+          "stateMessage",
+          "printState",
+          "filename",
+          "progress",
+          "printDuration",
+          "totalDuration",
+          "filamentUsed",
+          "currentLayer",
+          "totalLayers",
+          "etaSeconds",
+          "message",
+          "extruder",
+          "bed",
+          "updatedAt"
+        ],
+        "type": "object",
+        "properties": {
+          "printer": {
+            "type": "string"
+          },
+          "klippyState": {
+            "type": "string"
+          },
+          "stateMessage": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "printState": {
+            "type": "string"
+          },
+          "filename": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "progress": {
+            "type": "number",
+            "format": "double"
+          },
+          "printDuration": {
+            "type": "number",
+            "format": "double"
+          },
+          "totalDuration": {
+            "type": "number",
+            "format": "double"
+          },
+          "filamentUsed": {
+            "type": "number",
+            "format": "double"
+          },
+          "currentLayer": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "totalLayers": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "etaSeconds": {
+            "type": [
+              "null",
+              "number"
+            ],
+            "format": "double"
+          },
+          "message": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "extruder": {
+            "$ref": "#/components/schemas/HeaterState"
+          },
+          "bed": {
+            "$ref": "#/components/schemas/HeaterState"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "PrinterSummary": {
+        "required": [
+          "name",
+          "online",
+          "state",
+          "macros",
+          "webUrl",
+          "babysitter"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "online": {
+            "type": "boolean"
+          },
+          "state": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/PrinterState"
+              }
+            ]
+          },
+          "macros": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "webUrl": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uri"
+          },
+          "babysitter": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/BabysitterStatus"
+              }
+            ]
+          }
+        },
+        "description": "A printer with its live state (null while offline), its macros and its own web UI, if configured."
+      },
+      "PrintJob": {
+        "required": [
+          "jobId",
+          "filename",
+          "status",
+          "startedAt",
+          "endedAt",
+          "printDuration",
+          "totalDuration",
+          "filamentUsed",
+          "exists"
+        ],
+        "type": "object",
+        "properties": {
+          "jobId": {
+            "type": "string"
+          },
+          "filename": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "startedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "endedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "printDuration": {
+            "type": "number",
+            "format": "double"
+          },
+          "totalDuration": {
+            "type": "number",
+            "format": "double"
+          },
+          "filamentUsed": {
+            "type": "number",
+            "format": "double"
+          },
+          "exists": {
+            "type": "boolean"
+          }
+        }
+      },
+      "ProblemDetails": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "title": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "status": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "detail": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "instance": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "ProjectAliasStatus": {
+        "enum": [
+          "candidate",
+          "active",
+          "rejected"
+        ]
+      },
+      "ProjectAliasView": {
+        "required": [
+          "id",
+          "phrase",
+          "status",
+          "confirmations",
+          "createdAt"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "phrase": {
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ProjectAliasStatus"
+          },
+          "confirmations": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ProjectFeedbackKind": {
+        "enum": [
+          "confirmed",
+          "rejected",
+          "switched"
+        ]
+      },
+      "ProjectFeedbackView": {
+        "required": [
+          "id",
+          "kind",
+          "phrase",
+          "runId",
+          "createdAt"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/ProjectFeedbackKind"
+          },
+          "phrase": {
+            "type": "string"
+          },
+          "runId": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/RunId"
+              }
+            ]
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ProjectId": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "ProjectRequest": {
+        "required": [
+          "name",
+          "description"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Name (explicit activation by name)."
+          },
+          "description": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Description (part of the centroid)."
+          }
+        },
+        "description": "Name and description of a project."
+      },
+      "ProjectView": {
+        "required": [
+          "id",
+          "name",
+          "description",
+          "createdAt",
+          "lastActiveAt",
+          "chunkCount",
+          "aliases"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/ProjectId"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "lastActiveAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "chunkCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "aliases": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProjectAliasView"
+            }
+          }
+        }
+      },
+      "ProposalKind": {
+        "enum": [
+          "notes",
+          "code"
+        ]
+      },
+      "ProposalRecord": {
+        "required": [
+          "id",
+          "taskId",
+          "executorSessionId",
+          "kind",
+          "target",
+          "branch",
+          "title",
+          "diff",
+          "status",
+          "createdAt",
+          "decidedAt"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "taskId": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/TaskId"
+              }
+            ]
+          },
+          "executorSessionId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/ProposalKind"
+          },
+          "target": {
+            "type": "string"
+          },
+          "branch": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "diff": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "status": {
+            "$ref": "#/components/schemas/ProposalStatus"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "decidedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          }
+        }
+      },
+      "ProposalStatus": {
+        "enum": [
+          "open",
+          "merged",
+          "rejected"
+        ]
+      },
+      "QueuedJob": {
+        "required": [
+          "jobId",
+          "filename",
+          "addedAt"
+        ],
+        "type": "object",
+        "properties": {
+          "jobId": {
+            "type": "string"
+          },
+          "filename": {
+            "type": "string"
+          },
+          "addedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "QuietHoursWindow": {
+        "required": [
+          "day",
+          "start",
+          "end"
+        ],
+        "type": "object",
+        "properties": {
+          "day": {
+            "$ref": "#/components/schemas/DayOfWeek"
+          },
+          "start": {
+            "type": "string",
+            "format": "time"
+          },
+          "end": {
+            "type": "string",
+            "format": "time"
+          }
+        }
+      },
+      "RiskRuleSummary": {
+        "required": [
+          "tool",
+          "match",
+          "args",
+          "tier"
+        ],
+        "type": "object",
+        "properties": {
+          "tool": {
+            "type": "string",
+            "description": "Tool id glob."
+          },
+          "match": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "description": "Target attribute conditions (e.g. \u0060domain\u0060, \u0060area\u0060)."
+          },
+          "args": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "description": "Argument conditions."
+          },
+          "tier": {
+            "description": "Tier when the rule matches.",
+            "$ref": "#/components/schemas/RiskTier"
+          }
+        },
+        "description": "An active risk rule."
+      },
+      "RiskTier": {
+        "enum": [
+          "safe",
+          "confirm",
+          "forbidden",
+          null
+        ]
+      },
+      "RunDetail": {
+        "required": [
+          "run",
+          "language",
+          "taintSources",
+          "steps"
+        ],
+        "type": "object",
+        "properties": {
+          "run": {
+            "$ref": "#/components/schemas/RunSummary"
+          },
+          "language": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "taintSources": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TaintSource"
+            }
+          },
+          "steps": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RunStepDetail"
+            }
+          },
+          "loadedNamespaces": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LoadedToolNamespace"
+            }
+          }
+        }
+      },
+      "RunId": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "RunOutcome": {
+        "enum": [
+          "ok",
+          "error",
+          "backgrounded",
+          "cancelled"
+        ]
+      },
+      "RunStepDetail": {
+        "required": [
+          "sequence",
+          "kind",
+          "model",
+          "tier",
+          "tokensIn",
+          "tokensOut",
+          "tokensCached",
+          "firstTokenMs",
+          "durationMs",
+          "cost",
+          "tool",
+          "riskTier",
+          "guardDecision",
+          "reasons",
+          "input",
+          "content",
+          "arguments",
+          "reference",
+          "continueConversation",
+          "error",
+          "depth",
+          "notes",
+          "reasoning",
+          "reasoningWithheld"
+        ],
+        "type": "object",
+        "properties": {
+          "sequence": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/RunStepKind"
+          },
+          "model": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "tier": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "tokensIn": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "tokensOut": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "tokensCached": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "firstTokenMs": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "durationMs": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "cost": {
+            "type": [
+              "null",
+              "number"
+            ],
+            "format": "double"
+          },
+          "tool": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "riskTier": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/RiskTier"
+              }
+            ]
+          },
+          "guardDecision": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/GuardDecision"
+              }
+            ]
+          },
+          "reasons": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ConfirmationReason"
+            }
+          },
+          "input": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "content": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "arguments": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "reference": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "continueConversation": {
+            "type": [
+              "null",
+              "boolean"
+            ]
+          },
+          "error": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "depth": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "notes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ContextNote"
+            }
+          },
+          "reasoning": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "reasoningWithheld": {
+            "type": "boolean"
+          }
+        }
+      },
+      "RunStepKind": {
+        "enum": [
+          "context",
+          "modelCall",
+          "toolCall",
+          "reply"
+        ]
+      },
+      "RunSummary": {
+        "required": [
+          "id",
+          "sessionId",
+          "source",
+          "inputMode",
+          "trigger",
+          "satelliteId",
+          "startedAt",
+          "endedAt",
+          "outcome",
+          "outcomeReason",
+          "tainted",
+          "cost"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/RunId"
+          },
+          "sessionId": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/SessionId"
+              }
+            ]
+          },
+          "source": {
+            "$ref": "#/components/schemas/SessionSource"
+          },
+          "inputMode": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/InputMode"
+              }
+            ]
+          },
+          "trigger": {
+            "type": "string"
+          },
+          "satelliteId": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "startedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "endedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "outcome": {
+            "$ref": "#/components/schemas/RunOutcome"
+          },
+          "outcomeReason": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "tainted": {
+            "type": "boolean"
+          },
+          "cost": {
+            "type": "number",
+            "format": "double"
+          },
+          "timeToFirstDeltaMs": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          }
+        }
+      },
+      "SatelliteSummary": {
+        "required": [
+          "id",
+          "verbosity",
+          "notes",
+          "denyTools",
+          "denyConfirm"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Satellite entity id."
+          },
+          "verbosity": {
+            "type": "string",
+            "description": "Reply verbosity."
+          },
+          "notes": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Operator notes."
+          },
+          "denyTools": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Tool globs hidden on this satellite."
+          },
+          "denyConfirm": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Tool globs whose confirm-tier calls are refused on this satellite."
+          }
+        },
+        "description": "A satellite profile."
+      },
+      "SecretItem": {
+        "required": [
+          "name",
+          "scope",
+          "origin",
+          "updatedAt",
+          "readOnly"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Secret name."
+          },
+          "scope": {
+            "type": "string",
+            "description": "\u0060user\u0060 or \u0060instance\u0060."
+          },
+          "origin": {
+            "description": "\u0060database\u0060 (UI-managed) or \u0060environment\u0060 (variable or \u0060/run/secrets\u0060 file).",
+            "$ref": "#/components/schemas/SecretOrigin"
+          },
+          "updatedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Last change of a database secret.",
+            "format": "date-time"
+          },
+          "readOnly": {
+            "type": "boolean",
+            "description": "True when the current user cannot change it here."
+          }
+        },
+        "description": "A secret without its value."
+      },
+      "SecretOrigin": {
+        "enum": [
+          "environment",
+          "database"
+        ]
+      },
+      "SecretOverview": {
+        "required": [
+          "secrets",
+          "unresolved"
+        ],
+        "type": "object",
+        "properties": {
+          "secrets": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SecretItem"
+            }
+          },
+          "unresolved": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UnresolvedSecret"
+            }
+          }
+        },
+        "description": "The secrets view: every visible secret and every reference that does not resolve."
+      },
+      "SecretValueRequest": {
+        "required": [
+          "value"
+        ],
+        "type": "object",
+        "properties": {
+          "value": {
+            "type": "string"
+          }
+        },
+        "description": "A secret value to store. It is never returned."
+      },
+      "SessionId": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "SessionSource": {
+        "enum": [
+          "voice",
+          "web",
+          "task",
+          "api"
+        ]
+      },
+      "SkillSummary": {
+        "required": [
+          "name",
+          "description",
+          "files"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Skill name."
+          },
+          "description": {
+            "type": "string",
+            "description": "When to use it."
+          },
+          "files": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Additional files, relative to the skill."
+          }
+        },
+        "description": "A loaded skill."
+      },
+      "SseItemOfLiveEventMessage": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/LiveEventMessage"
+          },
+          "eventType": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "eventId": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "reconnectionInterval": {
+            "pattern": "^-?(\\d\u002B\\.)?\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,7})?$",
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "SseItemOfObject": {
+        "type": "object",
+        "properties": {
+          "data": {},
+          "eventType": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "eventId": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "reconnectionInterval": {
+            "pattern": "^-?(\\d\u002B\\.)?\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,7})?$",
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "StartMailOAuthRequest": {
+        "required": [
+          "alias",
+          "email"
+        ],
+        "type": "object",
+        "properties": {
+          "alias": {
+            "type": "string",
+            "description": "Alias of the new account."
+          },
+          "email": {
+            "type": "string",
+            "description": "The mailbox address (the IMAP login name)."
+          }
+        },
+        "description": "Starts connecting an account through OAuth."
+      },
+      "StartMailOAuthResponse": {
+        "required": [
+          "authorizationUrl"
+        ],
+        "type": "object",
+        "properties": {
+          "authorizationUrl": {
+            "type": "string",
+            "format": "uri"
+          }
+        },
+        "description": "Where the browser goes to sign in with the provider."
+      },
+      "SystemInfo": {
+        "required": [
+          "version",
+          "supportedApiVersions",
+          "deprecatedApiVersions",
+          "eventSources",
+          "simulatedIntegrations"
+        ],
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "string",
+            "description": "App version (informational version, including the commit when built from source)."
+          },
+          "supportedApiVersions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "API versions this build serves, e.g. \u00601.0\u0060."
+          },
+          "deprecatedApiVersions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Supported versions that will be removed."
+          },
+          "eventSources": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EventSourceInfo"
+            },
+            "description": "What publishes events on the event bus (HA, printers, mail, webhook sources)."
+          },
+          "simulatedIntegrations": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Integrations demo mode simulates (\u0060home_assistant\u0060, \u0060printers\u0060, \u0060mail\u0060, \u0060rss\u0060, \u0060notes\u0060); empty without demo mode."
+          }
+        },
+        "description": "Version information."
+      },
+      "TaintSource": {
+        "required": [
+          "kind",
+          "firstStep"
+        ],
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string"
+          },
+          "firstStep": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "TaskBudgetView": {
+        "required": [
+          "tokens",
+          "cost",
+          "steps",
+          "wallTimeSeconds",
+          "runs"
+        ],
+        "type": "object",
+        "properties": {
+          "tokens": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "description": "Model tokens.",
+            "format": "int64"
+          },
+          "cost": {
+            "type": [
+              "null",
+              "number"
+            ],
+            "description": "Cost in the configured currency.",
+            "format": "double"
+          },
+          "steps": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "description": "Model calls.",
+            "format": "int32"
+          },
+          "wallTimeSeconds": {
+            "type": [
+              "null",
+              "number"
+            ],
+            "description": "Run time.",
+            "format": "double"
+          },
+          "runs": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "description": "Runs.",
+            "format": "int32"
+          }
+        },
+        "description": "Limits of a task over one activation; null limits are not enforced at the task level."
+      },
+      "TaskCancellation": {
+        "required": [
+          "cancelled"
+        ],
+        "type": "object",
+        "properties": {
+          "cancelled": {
+            "type": "integer",
+            "description": "How many tasks were cancelled (the task and its unfinished descendants).",
+            "format": "int32"
+          }
+        },
+        "description": "The outcome of a cancellation."
+      },
+      "TaskCreator": {
+        "enum": [
+          "user",
+          "task",
+          "system"
+        ]
+      },
+      "TaskDelivery": {
+        "required": [
+          "channel"
+        ],
+        "type": "object",
+        "properties": {
+          "channel": {
+            "$ref": "#/components/schemas/DeliveryChannel"
+          },
+          "target": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "priority": {
+            "$ref": "#/components/schemas/NotificationPriority"
+          },
+          "followUp": {
+            "type": "boolean",
+            "default": false
+          },
+          "when": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string"
+            }
+          },
+          "expires": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "fallback": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/DeliveryChannel"
+              }
+            ]
+          },
+          "pendingSince": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "expiresAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          }
+        }
+      },
+      "TaskDetail": {
+        "required": [
+          "task",
+          "notes",
+          "result",
+          "deliveries",
+          "overrideQuietHoursUntil",
+          "runs",
+          "notifications",
+          "executorSessions"
+        ],
+        "type": "object",
+        "properties": {
+          "task": {
+            "description": "The task as listed.",
+            "$ref": "#/components/schemas/TaskItem"
+          },
+          "notes": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Notes the task keeps between runs."
+          },
+          "result": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/TaskResult"
+              }
+            ],
+            "description": "The latest result: speech and markdown body."
+          },
+          "deliveries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TaskDelivery"
+            },
+            "description": "Where results go."
+          },
+          "overrideQuietHoursUntil": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Until when it may notify during quiet hours.",
+            "format": "date-time"
+          },
+          "runs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RunSummary"
+            },
+            "description": "Its runs, newest first."
+          },
+          "notifications": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NotificationEntry"
+            },
+            "description": "What it sent and what the router did, newest first."
+          },
+          "executorSessions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ExecutorSessionRecord"
+            },
+            "description": "External work it started, newest first."
+          }
+        },
+        "description": "One task with everything the detail view shows."
+      },
+      "TaskGoalUpdate": {
+        "required": [
+          "goal"
+        ],
+        "type": "object",
+        "properties": {
+          "goal": {
+            "type": "string",
+            "description": "The goal the next run works on."
+          }
+        },
+        "description": "A new goal for a task."
+      },
+      "TaskId": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "TaskItem": {
+        "required": [
+          "id",
+          "name",
+          "goal",
+          "kind",
+          "status",
+          "statusReason",
+          "trigger",
+          "nextRunAt",
+          "budget",
+          "spent",
+          "resultSpeech",
+          "resultAt",
+          "parentId",
+          "createdBy",
+          "createdAt",
+          "updatedAt"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Task id."
+          },
+          "name": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Unique name, if any."
+          },
+          "goal": {
+            "type": "string",
+            "description": "What the task works on."
+          },
+          "kind": {
+            "description": "\u0060agent\u0060 or \u0060system\u0060.",
+            "$ref": "#/components/schemas/TaskKind"
+          },
+          "status": {
+            "description": "Lifecycle state.",
+            "$ref": "#/components/schemas/AgentTaskStatus"
+          },
+          "statusReason": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Why it is in that state (e.g. \u0060budget_exceeded\u0060, \u0060paused\u0060)."
+          },
+          "trigger": {
+            "description": "What makes it due; watches have kind \u0060event\u0060.",
+            "$ref": "#/components/schemas/TaskTrigger"
+          },
+          "nextRunAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "When it runs next.",
+            "format": "date-time"
+          },
+          "budget": {
+            "description": "Limits over one activation.",
+            "$ref": "#/components/schemas/TaskBudgetView"
+          },
+          "spent": {
+            "description": "What the current activation has used.",
+            "$ref": "#/components/schemas/TaskSpendView"
+          },
+          "resultSpeech": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The spoken part of the latest result."
+          },
+          "resultAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "When the latest result was ready.",
+            "format": "date-time"
+          },
+          "parentId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The task that created it."
+          },
+          "createdBy": {
+            "description": "Who created it.",
+            "$ref": "#/components/schemas/TaskCreator"
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "When it was created.",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "description": "When it last changed.",
+            "format": "date-time"
+          }
+        },
+        "description": "A task or watch in the tasks list."
+      },
+      "TaskKind": {
+        "enum": [
+          "agent",
+          "system"
+        ]
+      },
+      "TaskResult": {
+        "required": [
+          "speech",
+          "body"
+        ],
+        "type": "object",
+        "properties": {
+          "speech": {
+            "type": "string"
+          },
+          "body": {
+            "type": "string"
+          }
+        }
+      },
+      "TaskSpendView": {
+        "required": [
+          "tokens",
+          "cost",
+          "steps",
+          "wallTimeSeconds",
+          "runs"
+        ],
+        "type": "object",
+        "properties": {
+          "tokens": {
+            "type": "integer",
+            "description": "Model tokens.",
+            "format": "int64"
+          },
+          "cost": {
+            "type": "number",
+            "description": "Cost in the configured currency.",
+            "format": "double"
+          },
+          "steps": {
+            "type": "integer",
+            "description": "Model calls.",
+            "format": "int32"
+          },
+          "wallTimeSeconds": {
+            "type": "number",
+            "description": "Run time.",
+            "format": "double"
+          },
+          "runs": {
+            "type": "integer",
+            "description": "Runs.",
+            "format": "int32"
+          }
+        },
+        "description": "What a task\u0027s current activation has used, in the shape of ."
+      },
+      "TaskTrigger": {
+        "required": [
+          "kind",
+          "spec"
+        ],
+        "type": "object",
+        "properties": {
+          "kind": {
+            "$ref": "#/components/schemas/TaskTriggerKind"
+          },
+          "spec": {
+            "type": "string"
+          },
+          "once": {
+            "type": "boolean",
+            "default": false
+          }
+        }
+      },
+      "TaskTriggerKind": {
+        "enum": [
+          "now",
+          "at",
+          "cron",
+          "event",
+          "after"
+        ]
+      },
+      "TemplateSummary": {
+        "required": [
+          "name",
+          "description",
+          "modelTier",
+          "tools",
+          "skills",
+          "maxSteps",
+          "maxAdvisorCalls",
+          "builtIn"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Template name."
+          },
+          "description": {
+            "type": "string",
+            "description": "What it is for."
+          },
+          "modelTier": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ModelTier"
+              }
+            ],
+            "description": "Fixed model tier; null = by input mode."
+          },
+          "tools": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Tool id globs it may use."
+          },
+          "skills": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string"
+            },
+            "description": "Skills it may use; null = all."
+          },
+          "maxSteps": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "description": "Step limit; null = \u0060agent.maxSteps\u0060.",
+            "format": "int32"
+          },
+          "maxAdvisorCalls": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "description": "Advisor calls per run; null = \u0060agent.advisor.maxCallsPerRun\u0060.",
+            "format": "int32"
+          },
+          "builtIn": {
+            "type": "boolean",
+            "description": "True for the built-in default (no \u0060default.md\u0060)."
+          }
+        },
+        "description": "A loaded agent template."
+      },
+      "ToolEventState": {
+        "enum": [
+          "running",
+          "ok",
+          "error",
+          "denied",
+          "pending"
+        ]
+      },
+      "TurnToolStep": {
+        "required": [
+          "tool",
+          "arguments",
+          "state",
+          "durationMs",
+          "result"
+        ],
+        "type": "object",
+        "properties": {
+          "tool": {
+            "type": "string"
+          },
+          "arguments": {
+            "type": "string"
+          },
+          "state": {
+            "$ref": "#/components/schemas/ToolEventState"
+          },
+          "durationMs": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "result": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "UnresolvedSecret": {
+        "required": [
+          "name",
+          "referencedBy"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Secret name."
+          },
+          "referencedBy": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Where it is referenced."
+          }
+        },
+        "description": "A referenced secret that no source provides."
+      },
+      "UserPreferencesResponse": {
+        "required": [
+          "language",
+          "timeZone",
+          "quietHours",
+          "notificationTargets",
+          "dndUntil"
+        ],
+        "type": "object",
+        "properties": {
+          "language": {
+            "type": "string",
+            "description": "\u0060de\u0060 or \u0060en\u0060; used when a request has no language."
+          },
+          "timeZone": {
+            "type": "string",
+            "description": "IANA time zone id."
+          },
+          "quietHours": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/QuietHoursWindow"
+            },
+            "description": "Weekly quiet-hour windows; an end before the start ends the next day."
+          },
+          "notificationTargets": {
+            "description": "HA \u0060person.*\u0060 entity and \u0060notify.*\u0060 push services.",
+            "$ref": "#/components/schemas/NotificationTargets"
+          },
+          "dndUntil": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Do-not-disturb end, if active.",
+            "format": "date-time"
+          }
+        },
+        "description": "A user\u0027s preferences. Content preferences (briefing topics, interests) live in memory, not here."
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "Auth"
+    },
+    {
+      "name": "Me"
+    },
+    {
+      "name": "Events"
+    },
+    {
+      "name": "Runs"
+    },
+    {
+      "name": "System"
+    },
+    {
+      "name": "Config"
+    },
+    {
+      "name": "Marshal"
+    },
+    {
+      "name": "Conversations"
+    },
+    {
+      "name": "Notifications"
+    },
+    {
+      "name": "Artifacts"
+    },
+    {
+      "name": "Printers"
+    },
+    {
+      "name": "Hooks"
+    },
+    {
+      "name": "Tokens"
+    },
+    {
+      "name": "Secrets"
+    },
+    {
+      "name": "Preferences"
+    },
+    {
+      "name": "Memory"
+    },
+    {
+      "name": "Mail"
+    },
+    {
+      "name": "Approvals"
+    },
+    {
+      "name": "Tasks"
+    },
+    {
+      "name": "Proposals"
+    }
+  ]
+}

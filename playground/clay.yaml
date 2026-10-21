@@ -16,6 +16,17 @@ navbar:
     - name: "Example"
       icon: "fa-solid fa-book"
       link: "https://clay-doc.github.io/clay-example-repo"
+# Below every page: columns of links and a line of text
+footer:
+  columns:
+    - title: {en: "Docs", de: "Doku"}
+      links:
+        - {name: {en: "Getting Started", de: "Erste Schritte"}, link: "/getting-started"}
+        - {name: "Components", link: "/reference/components"}
+    - title: "Community"
+      links:
+        - {name: "GitHub", icon: "fa-brands fa-github", link: "https://github.com/clay-doc/clay"}
+  text: {en: "Made with Clay", de: "Gemacht mit Clay"}
 # {{version}} in the docs, and extra tags in the head of every page
 variables:
   version: "4.0"
@@ -26,3 +37,7 @@ head:
   meta:
     - name: "clay-playground"
       content: "from clay.yaml"
+# Pages for an API, below the docs in the navigation
+openapi:
+  - spec: "openapi/petstore.yaml"
+    title: {en: "Petstore API", de: "Tierhandlung-API"}

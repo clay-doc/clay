@@ -15,6 +15,7 @@ export type Configuration = {
     languages?: string[], // language codes; the first is the default language
     messages?: Record<string, Partial<Messages>>, // interface texts by language
     navbar?: NavbarConfiguration,
+    footer?: FooterConfiguration, // below every page: columns of links and a line of text
     variables?: Record<string, string | number | boolean>, // {{name}} in the docs, e.g. version: "4.0.0"
     head?: HeadConfiguration,
     generate?: string[], // commands that write docs before every build, e.g. API reference from code
@@ -22,8 +23,12 @@ export type Configuration = {
     analytics?: AnalyticsConfiguration, // page views and events, without cookies
     socialImages?: boolean, // an image for each page in link previews; on with siteURL unless false
     pageActions?: PageActionsConfiguration, // the page menu below the contents; each entry false hides it
+    openapi?: ApiConfiguration[], // OpenAPI documents, each with pages below the docs in the navigation
     langs?: string[], // obsolete: code languages are detected automatically
 }
+
+// An OpenAPI document (lib/openapi.ts): its file, and where its pages go, e.g. "api/petstore"
+export type ApiConfiguration = { spec: string, route?: string, title?: string, icon?: string };
 
 // Extra tags in the head of every page, e.g. a chat widget's script or a
 // site verification; each tag is its attributes, a script's code is "code"
@@ -42,6 +47,13 @@ export type PageActionsConfiguration = Partial<Record<PageAction, boolean>>;
 export function showsPageAction(config: Configuration | undefined, action: PageAction): boolean {
     return config?.pageActions?.[action] !== false;
 }
+
+// The footer below every page (ContentFooter.vue): columns of links, each with a
+// title, and a line of text, e.g. a copyright notice. Without it, pages have none.
+export type FooterConfiguration = {
+    columns?: { title: string, links: { name: string, link: string, icon?: string }[] }[],
+    text?: string,
+};
 
 export type NavbarConfiguration = {
     logo?: string,

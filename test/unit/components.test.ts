@@ -268,3 +268,45 @@ describe("plain text of components", () => {
         expect(text.replace(/\s+/g, " ").trim()).toBe("Why Because x New npm Run it");
     });
 });
+
+describe("fields and endpoints", () => {
+    it("show fields as name, type and flags, with their text and nested fields", async () => {
+        const root = await dom("::: fields\n- `name` string **required** *read-only*\n\n  The pet's *name*.\n\n  - `first` string\n- `old` · integer · ~~deprecated~~\n- [Person](/person) *one of*\n:::");
+        const [name, old, person] = [...root.querySelectorAll(".clay-fields > .clay-field")];
+        expect(name!.querySelector(".clay-field-name")?.textContent).toBe("name");
+        expect(name!.querySelector(".clay-field-type")?.textContent).toBe("string");
+        expect([...name!.querySelectorAll(".clay-field-flag")].map(f => [f.textContent, f.classList.contains("clay-field-required")])).toEqual([["required", true], ["read-only", false]]);
+        expect(name!.querySelector(".clay-field-text")?.innerHTML).toContain("<em>name</em>");
+        expect(name!.querySelector(".clay-fields-nested .clay-field-name")?.textContent).toBe("first");
+        expect(old!.querySelector(".clay-field-deprecated")?.textContent).toBe("deprecated");
+        expect(person!.querySelector(".clay-field-name")).toBeNull();
+        expect(person!.querySelector(".clay-field-type a")?.getAttribute("data-route")).toBe("/person");
+    });
+
+    it("take types with links and code, and leave other items as they are", async () => {
+        const root = await dom("::: fields\n- `owner` [Person](/p) | `null`\n- Just text\n:::");
+        const [owner, text] = [...root.querySelectorAll(".clay-fields > .clay-field")];
+        expect(owner!.querySelector(".clay-field-type")?.innerHTML).toBe('<a href="/p" data-route="/p">Person</a> | <code>null</code>');
+        expect(text!.querySelector(".clay-field-type")?.textContent).toBe("Just text");
+    });
+
+    it("show endpoints with their method, path and title, linked to their page", async () => {
+        const root = await dom("::: endpoints\n- `GET /pets` [List pets](/pets)\n- `DELETE /pets/{id}` [Delete](/delete) ~~deprecated~~\n- `POST` Sent to you\n:::");
+        const rows = [...root.querySelectorAll(".clay-endpoints .clay-endpoint")];
+        expect(rows.map(r => [r.querySelector(".clay-method")?.className, r.querySelector(".clay-endpoint-path")?.textContent, r.querySelector(".clay-endpoint-title")?.textContent]))
+            .toEqual([["clay-method clay-method-get", "/pets", "List pets"], ["clay-method clay-method-delete", "/pets/{id}", "Delete"], ["clay-method clay-method-post", undefined, "Sent to you"]]);
+        expect(rows[0]!.getAttribute("data-route")).toBe("/pets");
+        expect(rows[1]!.classList.contains("clay-endpoint-deprecated")).toBe(true);
+        expect(rows[2]!.tagName).toBe("DIV");
+        // Any case, and the path in a code span of its own
+        const other = (await dom("::: endpoints\n- `get` `/pets` [List](/pets)\n:::")).querySelector(".clay-endpoint")!;
+        expect([other.querySelector(".clay-method")?.textContent, other.querySelector(".clay-endpoint-path")?.textContent]).toEqual(["GET", "/pets"]);
+    });
+
+    it("color the tabs of responses by status, and keep them to their group", async () => {
+        const root = await dom("::: tabs status\n== 200\nOK\n== 404\nMissing\n== default\nError\n:::");
+        expect(root.querySelector("[data-tabs]")?.hasAttribute("data-tabs-local")).toBe(true);
+        expect([...root.querySelectorAll("[role=tab]")].map(t => t.className.match(/clay-status-\w+/)?.[0])).toEqual(["clay-status-2", "clay-status-4", "clay-status-default"]);
+        expect((await dom("::: tabs\n== a\nA\n:::")).querySelector("[data-tabs-local], .clay-status")).toBeNull();
+    });
+});

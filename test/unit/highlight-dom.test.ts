@@ -23,6 +23,15 @@ describe("highlightTerms", () => {
         expect(highlightTerms(root, ["loadlanguage"]).map(m => m.textContent)).toEqual(["loadLanguage"]);
     });
 
+    it("leaves request cells and the empty text nodes Vue keeps in them alone", () => {
+        const root = container('<p>pets</p><div class="clay-request"><code>/pets</code></div>');
+        const anchor = root.querySelector(".clay-request")!.appendChild(document.createTextNode(""));
+        expect(highlightTerms(root, ["pets"])).toHaveLength(1);
+        clearHighlights(root);
+        expect(anchor.parentNode).toBe(root.querySelector(".clay-request"));
+        expect(root.querySelector("p")!.childNodes).toHaveLength(1);
+    });
+
     it("does nothing without terms", () => {
         const root = container("<p>Plain text</p>");
         expect(highlightTerms(root, [])).toEqual([]);

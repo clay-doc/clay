@@ -16,6 +16,9 @@ import {messagesFor, type Messages} from "../../common/i18n";
 import {codeTitle, transformerCopyButton} from "./code-block";
 import {componentSyntax} from "../../common/markdown-components";
 import {componentRenderers, fileTree, mermaidDiagram} from "./components";
+import {typography} from "../../common/typography";
+import {LIGHT_PLUS_CONTRAST} from "../../common/code-colors";
+import type {CellResolver} from "./request-cell";
 
 
 const transformers = (messages: Messages, title?: string): ShikiTransformer[] => [
@@ -51,11 +54,13 @@ async function loadLanguages(highlighter: Highlighter, tokens: Token[], lexer: M
 }
 
 // Alert titles and the copy button are in the language of the doc
-function createRenderer(highlighter: Highlighter, messages: Messages) {
+function createRenderer(highlighter: Highlighter, messages: Messages, cells?: CellResolver) {
     let diagrams = 0;
     return new Marked()
     .use(headingIds(messages.sectionLink))
-    .use(componentSyntax(), componentRenderers(messages))
+    .use(componentSyntax(), componentRenderers(messages, cells))
+    // Arrows, dashes and the quotes of the page's language in its text
+    .use(typography(messages.quotes))
     .use(markedAlert({
         variants: [
             {type: "caution", icon: '<i class="fa-solid fa-triangle-exclamation mr-2"></i>', title: messages.alertCaution, titleClassName: "markdown-alert-title text-error"},
@@ -73,7 +78,8 @@ function createRenderer(highlighter: Highlighter, messages: Messages) {
             if (lang === "mermaid") return mermaidDiagram(code, ++diagrams);
             if (lang === "tree") return fileTree(code);
             return highlighter.codeToHtml(code, {
-                lang: lang && isLoaded(highlighter, lang) ? lang : "text",
+                // Very long blocks, like an API's example responses, stay plain: coloring them takes seconds
+                lang: lang && isLoaded(highlighter, lang) && code.length <= LONG_CODE ? lang : "text",
                 // Both themes as CSS variables; assets/css/code.css picks one per site theme
                 themes: {light: "light-plus", dark: "dark-plus"},
                 colorReplacements: {"light-plus": LIGHT_PLUS_CONTRAST},
@@ -85,12 +91,8 @@ function createRenderer(highlighter: Highlighter, messages: Messages) {
     }));
 }
 
-// Colors of light-plus that are too faint on the lighter backgrounds (highlighted
-// and diff lines), each darkened just enough for a contrast of 4.5:1 on all of them
-const LIGHT_PLUS_CONTRAST: Record<string, string> = {
-    "#008000": "#006400", "#098658": "#076240", "#e50000": "#ae0000", "#cd3131": "#a02626", "#795e26": "#695221",
-    "#267f99": "#1b5b6e", "#af00db": "#8f00b4", "#0070c1": "#005797", "#d16969": "#844242", "#ee0000": "#ae0000",
-};
+const LONG_CODE = 20_000;
+
 
 // Created on first use (top-level await is not available in the server build)
 let highlighterPromise: Promise<Highlighter> | undefined;
@@ -100,12 +102,13 @@ function getHighlighter() {
     return highlighterPromise;
 }
 
-// Markdown to HTML with headings ids, alerts, components and highlighted code blocks
-export async function renderMarkdown(markdown: string, messages: Messages = messagesFor("en")): Promise<string> {
+// Markdown to HTML with headings ids, alerts, components and highlighted code
+// blocks; cells finds what request cells send
+export async function renderMarkdown(markdown: string, messages: Messages = messagesFor("en"), cells?: CellResolver): Promise<string> {
     const highlighter = await getHighlighter();
     const lexer = new Marked({gfm: true}, componentSyntax());
     await loadLanguages(highlighter, lexer.lexer(markdown), lexer);
     // A renderer per document: heading ids are numbered per document, and
     // documents are rendered concurrently during the build
-    return createRenderer(highlighter, messages).parse(markdown, {gfm: true, breaks: true});
+    return createRenderer(highlighter, messages, cells).parse(markdown, {gfm: true, breaks: true});
 }

@@ -64,7 +64,7 @@
 }
 
 .prose .clay-steps > ol > li:not(:last-child)::after {
-    @apply absolute left-3.5 top-8 bottom-0 w-px bg-base-300;
+    @apply absolute left-3.5 top-7 bottom-0 w-px bg-base-300;
     content: "";
 }
 
@@ -322,4 +322,318 @@ a.clay-card:focus-visible {
 
 .mermaid-error-message {
     @apply text-error;
+}
+
+/* Request cells: a request to fill in and run, like a notebook cell
+   (RequestCell.vue); before the page's script runs, a curl command */
+.clay-request {
+    @apply my-6 overflow-hidden rounded-box border border-base-300 text-sm;
+}
+
+/* Inside a cell, code is plain text in the code font, not a chip like in the text */
+:root :is(.clay-request, .clay-credentials) code, :root .clay-fields code.clay-field-name, :root .clay-endpoints code.clay-endpoint-path {
+    @apply rounded-none border-0 bg-transparent p-0 font-mono text-[0.8125rem] text-inherit;
+}
+
+.clay-request-head {
+    @apply flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-base-300 bg-base-200 px-4 py-2.5;
+}
+
+.clay-request-path {
+    @apply font-mono text-[0.8125rem] font-medium [overflow-wrap:anywhere];
+}
+
+.clay-request-title {
+    @apply ms-auto text-base-content/70;
+}
+
+.clay-request-code {
+    @apply m-0 overflow-x-auto bg-transparent px-4 py-3 font-mono text-[0.8125rem] leading-relaxed whitespace-pre text-base-content;
+}
+
+/* Label and field side by side; on phones, one below the other */
+.clay-request-fields {
+    @apply grid grid-cols-1 items-start gap-x-6 gap-y-3 px-4 py-4 sm:grid-cols-[minmax(7rem,12rem)_minmax(0,1fr)];
+}
+
+.clay-request-label {
+    @apply flex min-w-0 flex-col pt-1.5 max-sm:pt-0;
+}
+
+.clay-request-name {
+    @apply text-[0.8125rem] font-semibold break-all text-base-content;
+}
+
+/* Parameters are named like in code */
+.clay-request-param {
+    @apply font-mono;
+}
+
+.clay-request-meta {
+    @apply mt-0.5 text-xs text-base-content/60;
+}
+
+.clay-request-value {
+    @apply flex min-w-0 flex-col items-stretch gap-1.5;
+}
+
+.clay-request-value > .input, .clay-request-value > .select, .clay-request-value > .file-input {
+    @apply w-full max-w-lg;
+}
+
+.clay-request-hint {
+    @apply text-xs text-base-content/60;
+}
+
+.clay-request-variable {
+    @apply grid max-w-lg grid-cols-[6rem_1fr] items-center gap-2 text-xs;
+}
+
+.clay-request-form {
+    @apply grid max-w-lg grid-cols-[minmax(5rem,auto)_1fr] items-center gap-2 text-xs;
+}
+
+.clay-request-security {
+    @apply flex-row flex-wrap items-center gap-3;
+}
+
+.clay-request-status-line {
+    @apply flex items-center gap-2 font-mono text-[0.8125rem];
+}
+
+.clay-request-editor {
+    @apply px-4 py-4;
+}
+
+.clay-request-actions {
+    @apply flex flex-wrap items-center gap-2 border-t border-base-300 bg-base-200/50 px-4 py-2;
+}
+
+.clay-request-code-block {
+    @apply relative border-t border-base-300 bg-base-200;
+}
+
+.clay-request-code-block > .copy-code {
+    @apply absolute top-1.5 right-1.5;
+}
+
+.clay-request-out {
+    @apply border-t border-base-300;
+}
+
+.clay-request-status {
+    @apply flex flex-wrap items-center gap-2 px-4 py-2 text-xs text-base-content/70;
+}
+
+.clay-request-out pre {
+    @apply m-0 max-h-[28rem] overflow-auto bg-transparent px-4 pt-0 pb-3 font-mono text-[0.8125rem] leading-relaxed text-base-content;
+}
+
+/* Until the cell runs: what the API answers, from its document */
+.clay-request-example pre {
+    @apply opacity-60;
+}
+
+.clay-request-headers {
+    @apply mx-4 mb-2 grid grid-cols-[auto_1fr] gap-x-4 font-mono text-xs;
+}
+
+.clay-request-headers dd {
+    @apply break-all;
+}
+
+.clay-request-image {
+    @apply mx-4 mb-3 max-h-80 rounded-field;
+}
+
+/* A field for code (CodeInput.vue): the text field's own text is transparent
+   over a colored copy; both share one grid cell, so they grow together */
+.clay-code-input {
+    @apply grid max-h-[28rem] overflow-auto rounded-field border border-base-300 bg-base-100 focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-primary;
+}
+
+.clay-code-input > pre, .clay-code-input > textarea {
+    grid-area: 1 / 1;
+    @apply m-0 min-h-20 overflow-hidden border-0 bg-transparent px-3 py-2 font-mono text-[0.8125rem] leading-relaxed break-all whitespace-pre-wrap;
+}
+
+.clay-code-input > pre {
+    @apply pointer-events-none text-base-content;
+}
+
+.clay-code-input > textarea {
+    @apply resize-none text-transparent caret-base-content outline-none selection:bg-primary/25;
+}
+
+/* Credentials of an API (ApiCredentials.vue), on its overview and in each cell's dialog */
+.clay-credentials {
+    @apply my-5;
+}
+
+.clay-auth {
+    @apply flex flex-col gap-3 text-sm;
+}
+
+.clay-auth-scheme {
+    @apply rounded-box border border-base-300 p-4;
+}
+
+/* Below tabs, a scheme's form needs no frame of its own */
+.clay-auth-scheme.clay-auth-tabbed {
+    @apply rounded-none border-0 px-0 pt-1;
+}
+
+/* The dialog of a cell keeps clear of the window's edges, and scrolls inside */
+.clay-request-dialog {
+    @apply max-h-[calc(100dvh-4rem)] w-[calc(100vw-2rem)] max-w-2xl overflow-y-auto;
+}
+
+.clay-auth-head {
+    @apply flex flex-wrap items-baseline gap-x-3 gap-y-1;
+}
+
+.clay-auth-name {
+    @apply font-mono text-[0.8125rem] font-semibold;
+}
+
+.clay-auth-kind, .clay-auth-text {
+    @apply text-xs text-base-content/60;
+}
+
+.clay-auth-text {
+    @apply m-0 mt-1;
+}
+
+.clay-auth-fields {
+    @apply mt-3 grid grid-cols-1 items-center gap-x-4 gap-y-2 sm:grid-cols-[8rem_minmax(0,1fr)];
+}
+
+.clay-auth-fields > label, .clay-auth-fields > span {
+    @apply text-xs text-base-content/80;
+}
+
+.clay-auth-fields > .input, .clay-auth-fields > .select {
+    @apply w-full max-w-md;
+}
+
+.clay-auth-wide {
+    @apply sm:col-start-2;
+}
+
+.clay-auth-scopes {
+    @apply flex flex-wrap gap-x-4 gap-y-1;
+}
+
+.clay-auth-scopes label {
+    @apply flex items-center gap-1.5 text-xs;
+}
+
+.clay-auth-foot {
+    @apply flex items-center justify-between text-xs text-base-content/70;
+}
+
+/* Fields: the properties of a schema, parameters, servers (::: fields): each a
+   name, its type and flags, its text below, nested fields indented */
+.clay-fields {
+    @apply my-5 divide-y divide-base-300 rounded-box border border-base-300 text-sm;
+}
+
+.clay-fields-nested {
+    @apply my-2 ms-1 rounded-none border-0 border-s-2 ps-3;
+}
+
+.clay-field {
+    @apply px-4 py-2.5;
+}
+
+.clay-fields-nested > .clay-field {
+    @apply px-0 py-2;
+}
+
+.clay-field-head {
+    @apply flex flex-wrap items-baseline gap-x-2 gap-y-1;
+}
+
+.clay-field-name {
+    @apply font-mono text-[0.8125rem] font-semibold text-base-content;
+}
+
+.clay-field-type {
+    @apply font-mono text-xs text-base-content/70;
+}
+
+.clay-field-flag {
+    @apply rounded-selector bg-base-200 px-1.5 text-xs leading-5 text-base-content/75;
+}
+
+.clay-field-required {
+    color: color-mix(in oklab, var(--color-error) 80%, var(--color-base-content));
+    background-color: color-mix(in oklab, var(--color-error) 12%, transparent);
+}
+
+.clay-field-deprecated {
+    @apply line-through;
+}
+
+.clay-field-text {
+    @apply mt-1 text-base-content/80;
+}
+
+.clay-field-text p {
+    @apply my-1;
+}
+
+.clay-fields a {
+    @apply text-primary underline-offset-2 hover:underline;
+}
+
+.clay-fields :not(pre) > code:not(.clay-field-name) {
+    @apply rounded-selector bg-base-200 px-1 font-mono text-[0.8em];
+}
+
+/* Endpoints: operations as their method, path and title (::: endpoints) */
+.clay-endpoints {
+    @apply my-4 divide-y divide-base-300 overflow-hidden rounded-box border border-base-300 p-0 text-sm;
+}
+
+.clay-endpoint {
+    @apply flex items-center gap-3 px-4 py-2 text-base-content;
+}
+
+a.clay-endpoint {
+    @apply no-underline hover:bg-base-200;
+}
+
+.clay-endpoint-path {
+    @apply max-w-[60%] min-w-0 shrink-0 font-mono text-[0.8125rem];
+}
+
+/* Long summaries take two lines at most */
+.clay-endpoint-title {
+    @apply ms-auto line-clamp-2 min-w-0 flex-1 text-end text-base-content/70;
+}
+
+.clay-endpoint-deprecated .clay-endpoint-path, .clay-endpoint-deprecated .clay-endpoint-title {
+    @apply line-through opacity-70;
+}
+
+/* Responses of an operation (::: tabs status), colored by their status */
+.clay-tabs .tab.clay-status {
+    @apply font-mono;
+}
+
+.clay-status-2 {
+    color: color-mix(in oklab, var(--color-success) 75%, var(--color-base-content)) !important;
+}
+
+.clay-status-3 {
+    color: color-mix(in oklab, var(--color-info) 75%, var(--color-base-content)) !important;
+}
+
+.clay-status-4 {
+    color: color-mix(in oklab, var(--color-warning) 70%, var(--color-base-content)) !important;
+}
+
+.clay-status-5 {
+    color: color-mix(in oklab, var(--color-error) 75%, var(--color-base-content)) !important;
 }

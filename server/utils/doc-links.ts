@@ -60,7 +60,8 @@ export function rewriteDocHtml(html: string, docPath: string, baseUrl: string, r
         const href = link.getAttribute("href")!;
 
         if (isAssetLink(href) && !hasScheme(href)) {
-            const asset = resolveDocAsset(href, assetPath);
+            // Clay's own files, e.g. an API's OpenAPI document (lib/openapi-pages.ts), are below the base path
+            const asset = href.startsWith("/_clay/") ? href : resolveDocAsset(href, assetPath);
             if (asset) link.setAttribute("href", linkConcat(baseUrl, asset));
             continue;
         }

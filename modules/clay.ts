@@ -79,16 +79,21 @@ export default defineNuxtModule({
         for (const warning of site.warnings) logger.warn(warning);
         for (const link of broken) logger.warn(`Broken link in ${link}`);
         if (strict && problems.length > 0) {
-            throw new Error(`clay build --strict: ${problems.length} problem(s) found, see the warnings above`);
+            throw new Error(`clay build --strict: ${problems.length} ${problems.length === 1 ? "problem" : "problems"} found, see the warnings above`);
         }
-        const docPages = (prefix: string) => site.pages.filter(page => page.prefix === prefix && !page.isDir);
-        const count = (name: string) => site.pages.filter(page => page.version === name && page.language === site.languages[0]!.code).length;
+        const docPages = (prefix: string) => site.pages.filter(page => page.prefix === prefix && !page.isDir && !site.apis.some(api => api.spec === page.source));
+        // Pages of the docs; an API's pages come from its document
+        const apiSpecs = new Set(site.apis.map(api => api.spec));
+        const count = (name: string) => site.pages.filter(page => page.version === name && page.language === site.languages[0]!.code && !apiSpecs.has(page.source)).length;
+        const apiPages = (spec: string) => site.pages.filter(page => page.source === spec && page.language === site.languages[0]!.code).length;
         const older = site.versions.slice(1).map(version => `${version.name} (${count(version.name)} pages)`);
         const translated = site.editions.filter(edition => !edition.version && edition.prefix).map(edition => {
             const pages = docPages(edition.prefix);
             return `${edition.language} (${pages.filter(page => !page.untranslated).length}/${pages.length} translated)`;
         });
-        const details = [older.length ? `versions ${older.join(", ")}` : "", translated.length ? `languages ${translated.join(", ")}` : ""].filter(Boolean);
+        const apis = site.apis.map(api => `${api.title} (${apiPages(api.spec)} pages)`);
+        const details = [older.length ? `versions ${older.join(", ")}` : "", translated.length ? `languages ${translated.join(", ")}` : "",
+            apis.length ? `APIs ${apis.join(", ")}` : ""].filter(Boolean);
 
         // Crawlers read robots.txt, and the sitemap it names, only at the root of a
         // domain; a site under a base path has to hand its sitemap in itself
@@ -168,6 +173,9 @@ export default defineNuxtModule({
                 // Old addresses of pages (server/middleware/redirects.ts)
                 ...site.redirects.map(redirect => redirect.from),
                 ...site.editions.map(edition => `/_clay${edition.prefix}/search.json`),
+                // Each API's document, and the page OAuth providers send readers back to (server/routes/_clay)
+                ...site.versions.flatMap(version => version.apis.map(api => `/_clay${version.name ? `/${version.name}` : ""}/openapi/${api.name}.json`)),
+                ...(site.versions.some(version => version.apis.length) ? ["/_clay/oauth-callback.html"] : []),
                 "/robots.txt",
                 ...(origin ? ["/sitemap.xml"] : []),
                 // For language models and agents (server/middleware/agent-docs.ts)

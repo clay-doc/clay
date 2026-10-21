@@ -3,6 +3,7 @@ import {tmpdir} from "node:os";
 import {dirname, join} from "node:path";
 import {describe, expect, it} from "vitest";
 import {applyLayout, describePlan, fixPaths, planLayout, saveVersion, type FixedPath} from "../../lib/versions";
+import {loadSite} from "../../lib/site";
 
 function project(files: Record<string, string>): string {
     const root = mkdtempSync(join(tmpdir(), "clay-layout-"));
@@ -70,6 +71,31 @@ describe("planLayout", () => {
 });
 
 describe("saveVersion", () => {
+    it("keeps the APIs as they are, with copies of their documents", () => {
+        const spec = (summary: string) => `openapi: 3.1.0\ninfo: {title: Shop, version: '1'}\npaths:\n  /items:\n    get:\n      operationId: listItems\n      summary: ${summary}\n      responses:\n        '200': {$ref: './parts/ok.yaml'}\n`;
+        const root = project({
+            "clay.yaml": "title: T\nlanguages: [en, de]\nopenapi:\n  - spec: api/shop.yaml\n    title: {en: Shop, de: Laden}\n",
+            "api/shop.yaml": spec("List items"),
+            "api/parts/ok.yaml": "description: ok\n",
+            "docs/latest/index.md": "# Home\n\n::: request shop listItems\n:::\n",
+            "docs/1.x/index.md": "# Old\n",
+        });
+        expect(saveVersion(root, "4.x").frozen.apis).toBe(1);
+        expect(readFileSync(join(root, "docs/4.x/_openapi/apis.yaml"), "utf8")).toContain("- spec: api/shop.yaml\n  title:\n    en: Shop\n    de: Laden\n");
+        expect(readFileSync(join(root, "docs/4.x/_openapi/api/parts/ok.yaml"), "utf8")).toBe("description: ok\n");
+        // The latest API changes; the version keeps its own
+        writeFileSync(join(root, "api/shop.yaml"), spec("List all items"));
+        const site = loadSite(root, {gitDates: false, env: {}});
+        expect(site.warnings).toEqual([]);
+        const title = (route: string) => site.pages.find(page => page.route === route)?.title;
+        expect(title("/api/shop/list-items")).toBe("List all items");
+        expect(title("/4.x/api/shop/list-items")).toBe("List items");
+        expect(title("/4.x/de/api/shop")).toBe("Laden");
+        expect(title("/1.x/api/shop")).toBeUndefined();
+        expect(site.versions.find(v => v.name === "4.x")!.nav.apis!.map(a => a.displayLink)).toEqual(["/4.x/api/shop"]);
+        expect(site.pages.find(page => page.route === "/4.x/api/shop")!.markdown).toContain("(/_clay/4.x/openapi/shop.json)");
+    });
+
     it("fills in variables and includes from outside the version, so the copy keeps today's text", () => {
         const root = project({
             "clay.yaml": "title: T\nlanguages: [en, de]\nvariables: config/variables.yaml\n",
@@ -101,6 +127,6 @@ describe("saveVersion", () => {
         expect(read("docs/4.x/_snippets/local.md")).toBe("Clay 4\n");
         // The latest docs keep their variables
         expect(read("docs/latest/guide.md")).toContain("# Clay {{major}}");
-        expect(frozen).toEqual({variables: 6, includes: 3, warnings: []});
+        expect(frozen).toEqual({variables: 6, includes: 3, apis: 0, warnings: []});
     });
 });

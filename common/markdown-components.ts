@@ -12,11 +12,17 @@ import type {MarkedExtension, Token, Tokens, TokenizerThis} from "marked";
 //   :::                                           ...
 //                                                 :::
 //   ::: prompt Title (a suggested prompt for AI assistants and agents, copied as written)
+//   ::: request petstore getPetById (a request to try, with starting values in YAML;
+//   ::: request alone holds a request written out: "POST https://...", headers, body)
+//   ::: fields     a list of "- `name` · type · **required**" with text and nested lists below
+//   ::: endpoints  a list of "- `GET /path` [Title](link)"
+//   ::: credentials petstore (where readers enter what an API's requests need;
+//   what it holds is shown without JavaScript and to agents)
 //   $inline math$   $$ block math $$   :badge[New]{tip}
 //
 // Containers nest; an inner one may use the same number of colons or more.
 
-export const CONTAINERS = ["tabs", "code-group", "steps", "cards", "details", "prompt"] as const;
+export const CONTAINERS = ["tabs", "code-group", "steps", "cards", "details", "prompt", "request", "fields", "endpoints", "credentials"] as const;
 export type ContainerKind = typeof CONTAINERS[number];
 
 // A tab of a tabs or code-group container
@@ -25,7 +31,7 @@ export type ContainerToken = {
     type: "container", raw: string, kind: ContainerKind,
     title: string, // the text after the name, e.g. the title of details
     tokens: Token[], // tabs and code groups: TabTokens
-    text?: string, // prompts: their text as written, not Markdown
+    text?: string, // prompts and requests: their text as written, not Markdown
 };
 export type MathToken = { type: "math" | "mathBlock", raw: string, text: string };
 export type BadgeToken = { type: "badge", raw: string, text: string, variant: string };
@@ -100,7 +106,7 @@ function containerTokenizer(this: TokenizerThis, src: string): ContainerToken | 
     if (kind === "tabs") {
         token.tokens = splitTabs(found.body).map(tab => ({type: "tab", raw: "", label: tab.label, tokens: this.lexer.blockTokens(tab.text, [])}) as TabToken as Token);
         if (!token.tokens.length) return undefined;
-    } else if (kind === "prompt") {
+    } else if (kind === "prompt" || kind === "request") {
         // A prompt is text to copy as it is, like code
         token.text = found.body.replace(/^\n+|\s+$/g, "");
     } else if (kind === "code-group") {

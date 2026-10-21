@@ -8,7 +8,7 @@ import {EDIT_HELP, runCheck, runEdit} from "../../lib/commands";
 let root = "";
 beforeEach(() => {
     root = mkdtempSync(join(tmpdir(), "clay-commands-"));
-    for (const entry of ["clay.yaml", "docs", "logo.svg"]) cpSync(join("playground", entry), join(root, entry), {recursive: true});
+    for (const entry of ["clay.yaml", "docs", "logo.svg", "openapi"]) cpSync(join("playground", entry), join(root, entry), {recursive: true});
 });
 afterEach(() => rmSync(root, {recursive: true, force: true}));
 

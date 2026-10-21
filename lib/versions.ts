@@ -3,6 +3,9 @@ import {basename, dirname, join, relative, resolve, sep} from "node:path";
 import {createExpander, INCLUDE, TARGET, VARIABLE, type Variables} from "./expand";
 import {isMarkdown, isVersioned, LATEST, loadConfig, localize, RESERVED_NAMES, siteLanguages, translationOf, VERSION_NAME} from "./site";
 import {getSetting, loadSettings, saveSettings, setSetting} from "./editor";
+import {dump} from "js-yaml";
+import {apiRoute, loadApis, VERSION_APIS, VERSION_APIS_FILE} from "./openapi";
+import type {ApiConfiguration} from "../common/configuration";
 
 // "clay version": saves the latest docs as an older version. Without versions,
 // docs/ holds the pages; the first version moves them into docs/latest/, next to
@@ -184,8 +187,8 @@ export function checkVersionName(root: string, name: string) {
     if (existsSync(join(root, "docs-archive", name))) throw new Error(`docs-archive/${name} already exists`);
 }
 
-// What saving a version filled in, so the copy keeps today's text
-export type Frozen = { variables: number, includes: number, warnings: string[] };
+// What saving a version filled in, so the copy keeps today's text, and the APIs it keeps
+export type Frozen = { variables: number, includes: number, apis: number, warnings: string[] };
 
 // Fills in the variables of a docs file of a saved version, and the includes of
 // files outside the version's folder (versionDir), like config/ or docs/_snippets/:
@@ -219,7 +222,7 @@ export function saveVersion(root: string, name: string): { dir: string, files: n
 
     const {config} = loadConfig(root, {});
     const codes = siteLanguages(config).languages.map(language => language.code);
-    const frozen: Frozen = {variables: 0, includes: 0, warnings: []};
+    const frozen: Frozen = {variables: 0, includes: 0, apis: 0, warnings: []};
     for (const file of markdownFiles(target)) {
         const language = translationOf(basename(file), codes.slice(1)) ?? codes[0]!;
         const variables = localize(config, language, codes).variables ?? {};
@@ -228,7 +231,26 @@ export function saveVersion(root: string, name: string): { dir: string, files: n
         const updated = freezeFile(text, path, target, root, variables, frozen);
         if (updated !== text) writeFileSync(path, updated);
     }
+    frozen.apis = freezeApis(root, target, config.openapi, codes);
     return {dir: `docs/${name}`, files: countFiles(target), frozen};
+}
+
+// The APIs of the latest docs, kept by the version: copies of their documents,
+// and the files these refer to, in _openapi/ laid out like the project, with
+// their settings from clay.yaml in _openapi/apis.yaml (site.ts reads them)
+function freezeApis(root: string, target: string, entries: ApiConfiguration[] | undefined, codes: string[]): number {
+    if (!entries?.length) return 0;
+    const {apis} = loadApis(root, localize(entries, codes[0]!, codes));
+    if (!apis.length) return 0;
+    const dir = join(target, VERSION_APIS);
+    for (const file of apis.flatMap(api => api.files)) {
+        mkdirSync(dirname(join(dir, file)), {recursive: true});
+        cpSync(join(root, file), join(dir, file));
+    }
+    const kept = entries.filter(entry => entry && typeof entry.spec === "string" && apis.some(api => api.route === apiRoute(entry)));
+    writeFileSync(join(dir, VERSION_APIS_FILE), `# The APIs of this version, as "openapi" in clay.yaml said when it was saved,\n`
+        + `# with copies of their documents next to this file\n${dump(kept, {lineWidth: -1})}`);
+    return apis.length;
 }
 
 // What "clay version" is about to do, for the author to confirm
