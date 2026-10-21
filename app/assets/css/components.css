@@ -160,17 +160,40 @@ a.clay-card:focus-visible {
     }
 }
 
-/* Prompts: a suggested prompt for AI assistants and agents, copied as written */
+/* Prompts: a suggested prompt for AI assistants and agents, copied as written.
+   In daisyUI's aura, a light in the primary color circles the box, over a
+   faint line that keeps its edge where the light is not. */
+.clay-prompt-aura {
+    @apply my-5 block bg-primary/25 text-primary;
+}
+
+/* A softer glow than the aura's own, so the box stays part of the page */
+.clay-prompt-aura::before {
+    @apply opacity-40 blur-[2px];
+}
+
+.clay-prompt-aura::after {
+    @apply hidden;
+}
+
 .clay-prompt {
-    @apply relative my-5 rounded-box border border-primary/30 bg-primary/5;
+    @apply relative rounded-box text-base-content;
+    background-color: color-mix(in oklab, var(--color-primary) 6%, var(--color-base-100));
 }
 
 .clay-prompt-title {
     @apply flex items-center gap-2 px-4 pt-3 pe-12 text-sm font-semibold text-primary;
 }
 
+/* Set as typed, in the code font, after a "›" like a chat's input; the mark is
+   drawn, so it is not copied (code-copy.ts copies the text) */
 .clay-prompt-text {
-    @apply m-0 whitespace-pre-wrap bg-transparent px-4 pt-2 pb-4 font-sans text-[0.9375rem] leading-relaxed text-base-content;
+    @apply relative m-0 whitespace-pre-wrap bg-transparent pt-2 pr-4 pb-4 pl-9 font-mono text-sm leading-relaxed text-base-content;
+}
+
+.clay-prompt-text::before {
+    @apply absolute left-4 font-bold text-primary;
+    content: "›";
 }
 
 /* Math: wide formulas scroll instead of widening the page */

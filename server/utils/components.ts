@@ -177,12 +177,13 @@ export function componentRenderers(messages: Messages, cells?: CellResolver): Ma
                         case "cards":
                             return cards(token, render);
                         case "prompt":
-                            return `<div class="clay-prompt code-block not-prose"><div class="clay-prompt-title">`
+                            // In daisyUI's aura: a light that runs around its edge
+                            return `<div class="clay-prompt-aura aura not-prose"><div class="clay-prompt code-block"><div class="clay-prompt-title">`
                                 + `<i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i>`
                                 + `<span>${inline.parseInline(token.title || escapeHtml(messages.suggestedPrompt))}</span></div>`
                                 + `<pre class="clay-prompt-text">${escapeHtml(token.text ?? "")}</pre>`
                                 + `<button type="button" class="copy-code btn btn-sm btn-square btn-ghost" title="${escapeHtml(messages.copyPrompt)}" `
-                                + `aria-label="${escapeHtml(messages.copyPrompt)}"><i class="${COPY_ICON}"></i></button></div>\n`;
+                                + `aria-label="${escapeHtml(messages.copyPrompt)}"><i class="${COPY_ICON}"></i></button></div></div>\n`;
                         case "request":
                             return requestCell(token, messages, cells);
                         case "fields": {
