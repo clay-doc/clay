@@ -60,6 +60,13 @@ describe("code groups", () => {
         // Highlighted as sh, without the label
         expect(root.querySelectorAll("[role=tabpanel] pre.shiki")).toHaveLength(2);
         expect(root.querySelector("pre")!.textContent).toBe("npm i clay-doc");
+        // One tab of shell code makes the group a terminal, with a window's buttons
+        expect(root.querySelector(".clay-code-group.is-terminal.has-dots")).not.toBeNull();
+    });
+
+    it("without shell code have plain tabs", async () => {
+        const root = await dom("::: code-group\n```ts\nconst a = 1;\n```\n```js\nconst a = 1;\n```\n:::");
+        expect(root.querySelector(".clay-code-group")!.className).toBe("clay-tabs clay-code-group");
     });
 });
 
@@ -88,6 +95,45 @@ describe("code block file names", () => {
         const root = await dom("```ts\nconst a = 1;\n```");
         expect(root.querySelector(".code-title")).toBeNull();
         expect(root.querySelector(".code-block")!.className).toBe("code-block");
+    });
+});
+
+describe("shell code", () => {
+    const commands = (root: DocumentFragment) => [...root.querySelectorAll(".line")].map(line => line.classList.contains("command"));
+
+    it("looks like a terminal, with commands marked for their \"$\", which is not copied", async () => {
+        const root = await dom("```bash\n# Install\nnpm i clay-doc \\\n  --save\n\nnpx clay build\n```");
+        expect(root.querySelector(".code-block.is-terminal.has-bar > .code-terminal")!.getAttribute("aria-hidden")).toBe("true");
+        expect(commands(root)).toEqual([false, true, false, false, true]);
+        expect(root.querySelector("pre")!.textContent).toBe("# Install\nnpm i clay-doc \\\n  --save\n\nnpx clay build");
+    });
+
+    it("skips the text of heredocs", async () => {
+        const root = await dom("```sh\ncat <<EOF > a.txt\nhello\nEOF\nls\n```");
+        expect(commands(root)).toEqual([true, false, false, true]);
+    });
+
+    it("keeps prompts that are written, and sessions with output as they are", async () => {
+        expect(commands(await dom("```sh\n$ ls\na.txt\n```"))).toEqual([false, false]);
+        const session = await dom("```console\n$ ls\na.txt\n```");
+        expect(session.querySelector(".code-terminal")).not.toBeNull();
+        expect(commands(session)).toEqual([false, false]);
+    });
+
+    it("has no bar without the window's buttons (\"windowDots: false\"); code groups keep the bar of their tabs", async () => {
+        const template = serverDocument.createElement("template");
+        template.innerHTML = (await renderDoc("```bash\nnpx clay dev\n```\n\n::: code-group\n```sh [npm]\nnpm i clay-doc\n```\n:::",
+            "/guides/page", "/", "", undefined, undefined, undefined, undefined, false)).html;
+        expect(template.content.querySelector(".code-terminal")).toBeNull();
+        expect(commands(template.content)).toEqual([true, true]);
+        expect(template.content.querySelector(".clay-code-group")!.className).toBe("clay-tabs clay-code-group is-terminal");
+    });
+
+    it("is a script when it has a file name", async () => {
+        const root = await dom("```bash [deploy.sh]\nnpm run build\n```");
+        expect(root.querySelector(".code-terminal")).toBeNull();
+        expect(root.querySelector(".code-title")!.textContent).toBe("deploy.sh");
+        expect(commands(root)).toEqual([false]);
     });
 });
 

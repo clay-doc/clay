@@ -23,10 +23,11 @@ export type RenderedDoc = {
 // Renders a doc for the app: sanitized HTML with links resolved for the site's
 // base URL, its table of contents and a description for search engines.
 export async function renderDoc(markdown: string, docPath: string, baseURL: string, fallbackDescription = "", assetPath = docPath,
-                                messages: Messages = messagesFor("en"), pageInfo?: PageInfo, cells?: CellResolver): Promise<RenderedDoc> {
+                                messages: Messages = messagesFor("en"), pageInfo?: PageInfo, cells?: CellResolver,
+                                windowDots = true): Promise<RenderedDoc> {
     const body = stripFrontMatter(markdown);
     const routeHref = (route: string) => route.startsWith("#") ? route : linkConcat(baseURL, route);
-    const html = rewriteDocHtml(sanitizeHtml(await renderMarkdown(body, messages, cells)), docPath, baseURL, routeHref, serverDocument, assetPath);
+    const html = rewriteDocHtml(sanitizeHtml(await renderMarkdown(body, messages, cells, windowDots)), docPath, baseURL, routeHref, serverDocument, assetPath);
 
     const template = serverDocument.createElement("template");
     template.innerHTML = html;

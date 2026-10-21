@@ -56,6 +56,66 @@
     @apply top-1;
 }
 
+/* Shell code (```bash, sh, shell, zsh, fish, console) looks like a terminal: a bar
+   with a window's three buttons on top, and a "$" before each command, which
+   is drawn, so it is not copied (server/utils/code-block.ts) */
+.code-block.has-bar {
+    @apply mt-6;
+}
+
+.code-terminal {
+    @apply flex items-center gap-1.5 rounded-t-md border-b border-base-300 bg-base-200 px-4 py-3;
+}
+
+.code-terminal > span {
+    @apply size-3 rounded-full bg-base-content/20;
+}
+
+.code-block.has-bar > pre.shiki {
+    @apply mt-0 rounded-t-none!;
+}
+
+.code-block.has-bar > .copy-code {
+    @apply top-1;
+}
+
+/* Code groups (server/utils/components.ts): the tabs sit in a bar on top of the
+   code, which has no bar of its own. With shell code in a tab, the bar is a
+   terminal's, with a window's buttons before the tabs, unless "windowDots" in
+   clay.yaml's theme is false. */
+.clay-code-group > [role="tablist"] {
+    @apply items-center rounded-t-md bg-base-200 ps-2;
+}
+
+.clay-code-group.has-dots > [role="tablist"] {
+    @apply ps-4;
+}
+
+.clay-code-group.has-dots > [role="tablist"]::before {
+    --dot: color-mix(in oklab, var(--color-base-content) 20%, transparent);
+    @apply me-12 size-3 shrink-0 rounded-full;
+    content: "";
+    background: var(--dot);
+    box-shadow: 1.125rem 0 var(--dot), 2.25rem 0 var(--dot);
+}
+
+.clay-code-group .code-block > pre.shiki {
+    @apply rounded-t-none!;
+}
+
+.clay-code-group .code-terminal {
+    @apply hidden;
+}
+
+.clay-code-group .code-block.has-bar > .copy-code {
+    @apply top-2;
+}
+
+pre.shiki .line.command::before {
+    @apply select-none text-base-content/50;
+    content: "$ ";
+}
+
 /* Touch screens have no hover, keep the button visible */
 @media (hover: none) {
     .copy-code {

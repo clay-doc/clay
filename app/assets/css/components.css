@@ -38,9 +38,9 @@
     @apply mb-0;
 }
 
-/* Code groups: the code block sits right below its tabs */
+/* Code groups: the code block sits right below the bar of its tabs (code.css) */
 .clay-code-group > .clay-tab-panel > :first-child {
-    @apply mt-2;
+    @apply mt-0;
 }
 
 .clay-code-group .code-block pre {

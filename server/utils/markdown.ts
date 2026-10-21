@@ -13,7 +13,7 @@ import markedShiki from "marked-shiki";
 import markedAlert from "marked-alert";
 import {headingIds} from "../../common/markdown-text";
 import {messagesFor, type Messages} from "../../common/i18n";
-import {codeTitle, transformerCopyButton} from "./code-block";
+import {codeTitle, hasPrompts, isTerminal, transformerCopyButton, transformerShellPrompts} from "./code-block";
 import {componentSyntax} from "../../common/markdown-components";
 import {componentRenderers, fileTree, mermaidDiagram} from "./components";
 import {typography} from "../../common/typography";
@@ -21,7 +21,7 @@ import {LIGHT_PLUS_CONTRAST} from "../../common/code-colors";
 import type {CellResolver} from "./request-cell";
 
 
-const transformers = (messages: Messages, title?: string): ShikiTransformer[] => [
+const transformers = (messages: Messages, lang: string, title?: string, windowDots = true): ShikiTransformer[] => [
     transformerNotationDiff({matchAlgorithm: "v3"}),
     transformerNotationHighlight({matchAlgorithm: "v3"}),
     transformerNotationWordHighlight({matchAlgorithm: "v3"}),
@@ -29,7 +29,10 @@ const transformers = (messages: Messages, title?: string): ShikiTransformer[] =>
     transformerNotationErrorLevel({matchAlgorithm: "v3"}),
     transformerMetaHighlight(),
     transformerMetaWordHighlight(),
-    transformerCopyButton(messages.copyCode, title)
+    // A shell's commands, unless the block is a file (a script) with a name
+    ...(hasPrompts(lang) && !title ? [transformerShellPrompts()] : []),
+    // Without the window's buttons, shell code has no bar, only its "$"
+    transformerCopyButton(messages.copyCode, title, isTerminal(lang) && !title, windowDots)
 ];
 
 type Highlighter = Awaited<ReturnType<typeof createHighlighter>>;
@@ -54,11 +57,11 @@ async function loadLanguages(highlighter: Highlighter, tokens: Token[], lexer: M
 }
 
 // Alert titles and the copy button are in the language of the doc
-function createRenderer(highlighter: Highlighter, messages: Messages, cells?: CellResolver) {
+function createRenderer(highlighter: Highlighter, messages: Messages, cells?: CellResolver, windowDots = true) {
     let diagrams = 0;
     return new Marked()
     .use(headingIds(messages.sectionLink))
-    .use(componentSyntax(), componentRenderers(messages, cells))
+    .use(componentSyntax(), componentRenderers(messages, cells, windowDots))
     // Arrows, dashes and the quotes of the page's language in its text
     .use(typography(messages.quotes))
     .use(markedAlert({
@@ -85,7 +88,7 @@ function createRenderer(highlighter: Highlighter, messages: Messages, cells?: Ce
                 colorReplacements: {"light-plus": LIGHT_PLUS_CONTRAST},
                 defaultColor: false,
                 meta: {__raw: meta},
-                transformers: transformers(messages, title)
+                transformers: transformers(messages, lang, title, windowDots)
             });
         }
     }));
@@ -103,12 +106,12 @@ function getHighlighter() {
 }
 
 // Markdown to HTML with headings ids, alerts, components and highlighted code
-// blocks; cells finds what request cells send
-export async function renderMarkdown(markdown: string, messages: Messages = messagesFor("en"), cells?: CellResolver): Promise<string> {
+// blocks; cells finds what request cells send; windowDots: "theme" in clay.yaml
+export async function renderMarkdown(markdown: string, messages: Messages = messagesFor("en"), cells?: CellResolver, windowDots = true): Promise<string> {
     const highlighter = await getHighlighter();
     const lexer = new Marked({gfm: true}, componentSyntax());
     await loadLanguages(highlighter, lexer.lexer(markdown), lexer);
     // A renderer per document: heading ids are numbered per document, and
     // documents are rendered concurrently during the build
-    return createRenderer(highlighter, messages, cells).parse(markdown, {gfm: true, breaks: true});
+    return createRenderer(highlighter, messages, cells, windowDots).parse(markdown, {gfm: true, breaks: true});
 }

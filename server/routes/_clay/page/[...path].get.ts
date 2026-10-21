@@ -31,7 +31,8 @@ export default defineEventHandler(async event => {
         return target && {icon: target.frontMatter.icon, description: target.frontMatter.description};
     };
     const cells = pageCells(site, page, messages);
-    const result = await renderDoc(page.markdown, path, baseURL, start?.frontMatter.description, assetPath, messages, pageInfo, cells);
+    const result = await renderDoc(page.markdown, path, baseURL, start?.frontMatter.description, assetPath, messages, pageInfo, cells,
+        site.config.theme?.windowDots !== false);
     // index.md can ask for a large header (hero) and a list of the folder's pages
     const hero = page.frontMatter.hero ? {title: page.title, icon: page.frontMatter.icon, description: page.frontMatter.description} : null;
     // The picture for link previews, drawn at build time (lib/social-images.ts)

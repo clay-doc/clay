@@ -142,7 +142,8 @@ function requestCell(token: ContainerToken, messages: Messages, cells?: CellReso
 // Renders the components of markdown-components.ts. Tabs are numbered per
 // document for their ids, so every document gets its own renderers. Request
 // cells are found by cells (request-cell.ts).
-export function componentRenderers(messages: Messages, cells?: CellResolver): MarkedExtension {
+// windowDots: code groups of shell code show a window's buttons in the bar of their tabs ("theme" in clay.yaml)
+export function componentRenderers(messages: Messages, cells?: CellResolver, windowDots = true): MarkedExtension {
     let tabGroups = 0;
 
     // "::: tabs status" holds the responses of an API operation (lib/openapi-pages.ts):
@@ -157,7 +158,10 @@ export function componentRenderers(messages: Messages, cells?: CellResolver): Ma
             + `aria-selected="${i === 0}" tabindex="${i ? -1 : 0}">${escapeHtml(tab.label)}</button>`);
         const panels = tabs.map((tab, i) =>
             `<div role="tabpanel" id="${group}-${i}-panel" class="clay-tab-panel" aria-labelledby="${group}-${i}"${i ? " hidden" : ""}>${render(tab.tokens)}</div>`);
-        return `<div class="clay-tabs${token.kind === "code-group" ? " clay-code-group" : ""}" data-tabs${status ? " data-tabs-local" : ""}>`
+        // A code group with shell code in a tab is a terminal: the bar of its tabs gets a window's buttons (code.css)
+        const terminal = token.kind === "code-group" && panels.some(panel => panel.includes('class="code-block is-terminal'));
+        const codeGroup = token.kind === "code-group" ? ` clay-code-group${terminal ? " is-terminal" : ""}${terminal && windowDots ? " has-dots" : ""}` : "";
+        return `<div class="clay-tabs${codeGroup}" data-tabs${status ? " data-tabs-local" : ""}>`
             + `<div role="tablist" class="tabs tabs-border not-prose">${buttons.join("")}</div>${panels.join("")}</div>\n`;
     }
 

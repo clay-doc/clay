@@ -25,7 +25,7 @@ export const configSchema: Schema = {
     head: {script: [true], link: [true], meta: [true]},
     analytics: {plausible: {domain: true, src: true}, umami: {websiteId: true, src: true}, goatcounter: {code: true, endpoint: true}, events: true},
     theme: {
-        primary: true, background: true, text: true, radius: true, font: true, codeFont: true,
+        primary: true, background: true, text: true, radius: true, font: true, codeFont: true, windowDots: true,
         light: {primary: true, background: true, text: true}, dark: {primary: true, background: true, text: true},
     },
 };
