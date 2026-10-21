@@ -138,7 +138,8 @@ export default defineNuxtModule({
         copyAssets(site, assetsDir);
         writeFonts(fonts, assetsDir);
         // favicon.ico and the home screen icon of iOS, from the favicon (lib/icons.ts)
-        nuxt.options.runtimeConfig.public.clayIcons = await writeIcons(root, site.config, assetsDir);
+        // Nuxt's generated config type drops the "?" of the paths; either may be missing
+        nuxt.options.runtimeConfig.public.clayIcons = await writeIcons(root, site.config, assetsDir) as typeof nuxt.options.runtimeConfig.public.clayIcons;
         // Social images are drawn into the built site; unchanged ones come from a
         // cache shared by all projects. Without Skia for this platform, pages do
         // not link to them (server/routes/_clay/page).
