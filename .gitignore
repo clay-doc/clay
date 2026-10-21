@@ -31,3 +31,5 @@ publish/
 playground/publish/
 test-results/
 playwright-report/
+/playground/.claude/
+/.claude/
