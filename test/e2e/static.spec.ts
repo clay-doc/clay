@@ -121,6 +121,24 @@ test.describe("in the browser", () => {
 
         await page.getByRole("button", {name: "Theme"}).click();
         await expect(page.locator("html")).toHaveAttribute("data-theme", "clay-dark");
+    test("links to other pages show a popup with the start of the page", async ({page}) => {
+        await page.goto("reference/feature-tour/");
+        await hydrated(page);
+        const link = page.locator(".prose a", {hasText: "code link"});
+        await link.hover();
+
+        const popup = page.getByRole("tooltip");
+        await expect(popup.locator(".clay-link-preview-title")).toHaveText("Getting Started");
+        await expect(popup.locator(".clay-link-preview-text")).toContainText(/^Welcome to Clay!/);
+        await expect(link).toHaveAttribute("aria-describedby", "clay-link-preview");
+        // It stays while the pointer reads it, and goes with Escape
+        await popup.hover();
+        await expect(popup).toBeVisible();
+        await page.keyboard.press("Escape");
+        await expect(popup).toHaveCount(0);
+        await expect(link).not.toHaveAttribute("aria-describedby");
+    });
+
         await expect(page.locator(".theme-to-light")).toBeVisible();
         expect(await code.evaluate(el => getComputedStyle(el).color)).not.toBe(lightColor);
 

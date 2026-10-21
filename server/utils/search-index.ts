@@ -35,6 +35,10 @@ export function splitIntoSections(markdown: string, page: SearchPage): SearchSec
             const anchor = anchors.get(token)!;
             current = {...base, id: `${page.link}#${anchor}`, anchor, heading: headingText(token.tokens ?? []), text: "", code: ""};
             sections.push(current);
+        } else if (token.type === "heading" && token.depth === 1 && current === sections[0] && !current.text.trim()) {
+            // Link previews (app/utils/link-preview.ts) show the intro without it
+            current.title = plainText(token);
+            current.text += current.title + " ";
         } else if (token.type === "code") {
             current.code += token.text + "\n";
         } else if (token.type === "container" || token.type === "tab") {
@@ -53,6 +57,7 @@ export function splitIntoSections(markdown: string, page: SearchPage): SearchSec
             // Icons of cards
             .replace(/\{fa-[\w\s-]*\}/g, " ").replace(/\s+/g, " ").trim();
         section.code = section.code.trim();
+        if (section.title) section.title = section.title.replace(/\s+/g, " ").trim();
     }
 
     return sections;
