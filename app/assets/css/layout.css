@@ -270,13 +270,22 @@ dialog input[type="search"]::-webkit-search-cancel-button {
     @apply cursor-col-resize select-none;
 }
 
-/* The footer below every page (ContentFooter.vue), from "footer" in clay.yaml */
+/* The footer below every page (ContentFooter.vue), from "footer" in clay.yaml:
+   the site and its text, then the columns of links; stacked on narrow screens */
 .clay-footer {
-    @apply mt-16 border-t border-base-300 px-6 py-10 text-sm sm:pl-9;
+    @apply mt-16 flex flex-col gap-10 border-t border-base-300 px-6 py-10 text-sm sm:pl-9 md:flex-row md:justify-between;
+}
+
+.clay-footer-brand {
+    @apply flex max-w-xs flex-col gap-3;
+}
+
+.clay-footer-home {
+    @apply inline-flex items-center gap-2 text-lg font-semibold text-base-content no-underline;
 }
 
 .clay-footer-columns {
-    @apply grid grid-cols-[repeat(auto-fit,minmax(10rem,1fr))] gap-8;
+    @apply grid grid-cols-[repeat(auto-fit,minmax(10rem,1fr))] gap-8 md:max-w-2xl md:flex-1;
 }
 
 .clay-footer-columns ul {
@@ -288,9 +297,18 @@ dialog input[type="search"]::-webkit-search-cancel-button {
 }
 
 .clay-footer-text {
-    @apply mt-8 text-xs text-base-content/60;
+    @apply text-sm leading-relaxed text-base-content/70;
 }
 
-.clay-footer-columns + .clay-footer-text {
-    @apply border-t border-base-300 pt-6;
+.clay-footer-credit {
+    @apply text-xs text-base-content/70;
+}
+
+.clay-footer-credit .fa-heart {
+    @apply mx-0.5;
+}
+
+/* Underlined like links in the page's text, so it reads as one */
+.clay-footer-credit a {
+    @apply font-medium text-base-content underline;
 }

@@ -26,7 +26,7 @@ footer:
     - title: "Community"
       links:
         - {name: "GitHub", icon: "fa-brands fa-github", link: "https://github.com/clay-doc/clay"}
-  text: {en: "Made with Clay", de: "Gemacht mit Clay"}
+  text: {en: "© 2026 The Clay authors", de: "© 2026 Die Clay-Autoren"}
 # {{version}} in the docs, and extra tags in the head of every page
 variables:
   version: "4.0"

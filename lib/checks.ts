@@ -19,7 +19,7 @@ export const configSchema: Schema = {
     // obsolete, reported separately
     langs: true, index: true,
     navbar: {logo: true, source: link, links: [link]},
-    footer: {columns: [{title: true, links: [link]}], text: true},
+    footer: {columns: [{title: true, links: [link]}], text: true, madeWithClay: true},
     openapi: [{spec: true, route: true, title: true, icon: true}],
     pageActions: {copyMarkdown: true, openMarkdown: true, chatgpt: true, claude: true},
     head: {script: [true], link: [true], meta: [true]},

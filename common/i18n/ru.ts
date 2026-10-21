@@ -135,5 +135,7 @@ export const ru: Messages = {
     requestInvalidValues: "Значения этого запроса — не корректный YAML.",
     requestAuthorize: "Авторизация",
     resizeNav: "Изменить ширину навигации",
+    madeWithClay: "Сделано с {heart} и {clay}",
+    love: "любовью",
     quotes: "«»„“",
 };

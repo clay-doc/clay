@@ -135,5 +135,7 @@ export const ja: Messages = {
     requestInvalidValues: "このリクエストの値は有効な YAML ではありません。",
     requestAuthorize: "認証情報",
     resizeNav: "ナビゲーションの幅を変更",
+    madeWithClay: "{heart}と{clay}で作られています",
+    love: "愛",
     quotes: "「」『』",
 };

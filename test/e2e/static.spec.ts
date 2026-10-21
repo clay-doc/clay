@@ -531,12 +531,17 @@ test.describe("snippets, variables, head and social images", () => {
         const footer = page.locator("footer.clay-footer");
         await expect(footer.getByRole("navigation", {name: "Docs"}).getByRole("link")).toHaveText(["Getting Started", "Components"]);
         await expect(footer.getByRole("link", {name: "GitHub"})).toHaveAttribute("target", "_blank");
-        await expect(footer).toContainText("Made with Clay");
+        await expect(footer).toContainText("© 2026 The Clay authors");
+        // "madeWithClay" is on unless false: the heart is read as "love", "Clay" leads to its repository
+        await expect(footer.locator(".clay-footer-credit")).toHaveText("Made with and Clay");
+        await expect(footer.getByRole("img", {name: "love"})).toBeVisible();
+        await expect(footer.locator(".clay-footer-credit").getByRole("link", {name: "Clay"})).toHaveAttribute("href", "https://github.com/clay-doc/clay");
         await footer.getByRole("link", {name: "Components"}).click();
         await expect(page.locator(".prose h1")).toContainText("Components");
         await page.goto("de/");
         await hydrated(page);
-        await expect(page.locator("footer.clay-footer")).toContainText("Gemacht mit Clay");
+        await expect(page.locator("footer.clay-footer")).toContainText("© 2026 Die Clay-Autoren");
+        await expect(page.locator(".clay-footer-credit")).toHaveText("Gemacht mit und Clay");
     });
 
     test("pages carry the head tags of clay.yaml", async ({request}) => {

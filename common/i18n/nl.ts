@@ -135,5 +135,7 @@ export const nl: Messages = {
     requestInvalidValues: "De waarden van dit verzoek zijn geen geldige YAML.",
     requestAuthorize: "Autoriseren",
     resizeNav: "Breedte van de navigatie aanpassen",
+    madeWithClay: "Gemaakt met {heart} en {clay}",
+    love: "liefde",
     quotes: "“”‘’",
 };

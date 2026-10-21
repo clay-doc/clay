@@ -137,6 +137,9 @@ export const en = {
     requestInvalidValues: "The values of this request are not valid YAML.",
     requestAuthorize: "Authorize",
     resizeNav: "Resize the navigation",
+    // The footer's last line (ContentFooter.vue): {heart} is a heart icon, read as "love"; {clay} links to Clay
+    madeWithClay: "Made with {heart} and {clay}",
+    love: "love",
     // Quotes in the text of pages (common/typography.ts): opening and closing, double then single
     quotes: "“”‘’",
 };

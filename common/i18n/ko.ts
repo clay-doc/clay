@@ -135,5 +135,7 @@ export const ko: Messages = {
     requestInvalidValues: "이 요청의 값이 올바른 YAML이 아닙니다.",
     requestAuthorize: "인증",
     resizeNav: "내비게이션 너비 조절",
+    madeWithClay: "{heart}과 {clay}로 만들었습니다",
+    love: "사랑",
     quotes: "“”‘’",
 };

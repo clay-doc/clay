@@ -135,5 +135,7 @@ export const pt: Messages = {
     requestInvalidValues: "Os valores desta requisição não são YAML válido.",
     requestAuthorize: "Autorizar",
     resizeNav: "Redimensionar a navegação",
+    madeWithClay: "Feito com {heart} e {clay}",
+    love: "amor",
     quotes: "“”‘’",
 };

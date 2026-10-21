@@ -53,6 +53,7 @@ export function showsPageAction(config: Configuration | undefined, action: PageA
 export type FooterConfiguration = {
     columns?: { title: string, links: { name: string, link: string, icon?: string }[] }[],
     text?: string,
+    madeWithClay?: boolean, // "Made with ♥ and Clay" below the text; shown unless false
 };
 
 export type NavbarConfiguration = {

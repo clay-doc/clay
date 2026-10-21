@@ -135,5 +135,7 @@ export const zh: Messages = {
     requestInvalidValues: "此请求的值不是有效的 YAML。",
     requestAuthorize: "授权",
     resizeNav: "调整导航宽度",
+    madeWithClay: "用{heart}和{clay}制作",
+    love: "爱",
     quotes: "“”‘’",
 };
