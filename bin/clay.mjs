@@ -12,7 +12,8 @@ import {createJiti} from "jiti";
 
 // The CLI's code is TypeScript in lib/, run without a build step
 const jiti = createJiti(import.meta.url);
-const {createBuildParser, createDevParser, createProgress} = await jiti.import("../lib/progress.ts");
+const {createBuildParser, createDevParser, createProgress, printFailure} = await jiti.import("../lib/progress.ts");
+const {rgb, SAGE} = await jiti.import("../lib/colors.ts");
 
 const packageDir = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const require = createRequire(import.meta.url);
@@ -45,6 +46,18 @@ Options:
 
 Environment overrides for clay.yaml: CLAY_TITLE, CLAY_BASE_URL, CLAY_SITE_URL, CLAY_FONTAWESOME_KIT`;
 
+// The help in the colors of the progress (lib/progress.ts): headings in bold,
+// commands and options in sage; plain without a terminal
+function colorHelp(text) {
+    if (!process.stdout.isTTY || "NO_COLOR" in process.env) return text;
+    const sage = value => `\x1b[${rgb(...SAGE)}m${value}\x1b[0m`;
+    return text.split("\n").map((line, i) => {
+        if (i === 0) return line.replace(/^(Clay \S+)/, "\x1b[1m$1\x1b[0m");
+        if (/^[A-Z][\w ]*:/.test(line)) return line.replace(/^([^:]+:)/, "\x1b[1m$1\x1b[0m");
+        return line.replace(/^( {2})((?:-\w, )?--?[\w-]+(?: <\w+>)?|\w+)(?= )/, (_, indent, name) => indent + sage(name));
+    }).join("\n");
+}
+
 let parsed;
 try {
     parsed = parseArgs({
@@ -67,7 +80,7 @@ try {
         },
     });
 } catch (error) {
-    console.error(`${error.message}\n\nRun "clay --help" for usage.`);
+    printFailure(error.message, 'Run "clay --help" for usage.');
     process.exit(2);
 }
 
@@ -81,7 +94,7 @@ if (options.version) {
 // "clay edit --help" and "clay edit help" explain the edit commands
 const editHelp = command === "edit" && (options.help || positionals[1] === "help");
 if ((options.help && !editHelp) || !command) {
-    console.log(HELP);
+    console.log(colorHelp(HELP));
     process.exit(options.help ? 0 : 2);
 }
 
@@ -89,7 +102,7 @@ const root = resolve(options.root ?? process.cwd());
 const out = resolve(options.out ?? join(root, "publish"));
 
 if (!existsSync(join(root, "clay.yaml"))) {
-    console.error(`No clay.yaml found in ${root}. Run clay in your docs project or pass --root.`);
+    printFailure(`No clay.yaml found in ${root}`, "Run clay in your docs project, or pass --root.");
     process.exit(1);
 }
 
@@ -159,46 +172,50 @@ switch (command) {
         // Copies docs/latest/ to docs/<name>/. The first version moves docs/ into
         // docs/latest/ (lib/versions.ts), which is explained and confirmed first.
         const name = positionals[1];
+        const progress = createProgress(`Clay ${version} · version`, {mode: "task"});
         try {
             const versions = await jiti.import("../lib/versions.ts");
             const plan = versions.planLayout(root);
             if (!name && !plan?.archived.length) versions.checkVersionName(root, "");
             if (name) versions.checkVersionName(root, name);
             if (plan) {
-                console.log(versions.describePlan(plan, name) + "\n");
+                for (const line of versions.describePlan(plan, name).split("\n")) progress.apply({type: "text", text: line});
+                progress.apply({type: "text", text: ""});
                 if (!options.yes) {
                     if (!process.stdin.isTTY) {
-                        console.error(`Nothing was changed. Run "clay version${name ? ` ${name}` : ""} --yes" to go ahead.`);
+                        progress.finish(1, null, {failed: `Nothing was changed. Run "clay version${name ? ` ${name}` : ""} --yes" to go ahead.`});
                         process.exit(1);
                     }
-                    const answer = await new Promise(done => {
-                        const prompt = createInterface({input: process.stdin, output: process.stdout});
-                        prompt.question("Go ahead? (y/N) ", reply => {
-                            prompt.close();
-                            done(reply);
-                        });
-                    });
+                    const answer = await progress.ask("Go ahead? (y/N)");
                     if (!/^y(es)?$/i.test(String(answer).trim())) {
-                        console.log("Nothing was changed.");
+                        progress.finish(0, null, {done: "Nothing was changed."});
                         break;
                     }
                 }
                 versions.applyLayout(root, plan);
-                console.log(`Moved docs/ into docs/latest/${plan.archived.map(v => `, and docs-archive/${v}/ to docs/${v}/`).join("")}.`);
-                if (plan.fixed.length + plan.settings.length) console.log(`Changed ${plan.fixed.length + plan.settings.length} path(s) that lead out of docs/.`);
+                const changed = plan.fixed.length + plan.settings.length;
+                progress.apply({
+                    type: "done", label: `Moved docs/ into docs/latest/${plan.archived.map(v => `, and docs-archive/${v}/ to docs/${v}/`).join("")}`,
+                    ...(changed ? {detail: `${changed} ${changed === 1 ? "path" : "paths"} out of docs/ changed`} : {}),
+                });
             }
             if (name) {
+                progress.apply({type: "step", label: `Saving docs/latest/ as version ${name}`});
                 const saved = versions.saveVersion(root, name);
-                console.log(`Saved docs/latest/ as version ${name} in ${saved.dir}/ (${saved.files} files), at /${name}.`);
-                const {variables, includes, warnings} = saved.frozen;
-                if (variables || includes) {
-                    console.log(`So that it keeps today's text, the copy has ${variables} variable(s) filled in, and ${includes} include(s) of files outside docs/latest/ written out.`);
-                }
-                for (const warning of warnings) console.warn(`  ${warning}`);
-                console.log(`docs/latest/ stays the latest version. Update it for the next release, and set "version" in clay.yaml to its label.`);
+                const {variables, includes, apis, warnings} = saved.frozen;
+                const count = (n, one, many) => `${n} ${n === 1 ? one : many}`;
+                const filled = [variables ? `${count(variables, "variable", "variables")} filled in` : "",
+                    includes ? `${count(includes, "include", "includes")} of files outside docs/latest/ written out` : ""].filter(Boolean);
+                if (filled.length) progress.apply({type: "note", text: `To keep today's text: ${filled.join(", ")}`});
+                if (apis) progress.apply({type: "note", text: `${count(apis, "API", "APIs")} kept as ${apis === 1 ? "it is" : "they are"} today, in ${saved.dir}/_openapi/`});
+                for (const warning of warnings) progress.apply({type: "warn", text: warning});
+                progress.apply({type: "done", label: `Saved version ${name} in ${saved.dir}/, at /${name}`, detail: `${saved.files} files`});
+                progress.finish(0, null, {done: `docs/latest/ stays the latest version. Update it for the next release, and set "version" in clay.yaml to its label.`});
+            } else {
+                progress.finish(0, null, {done: "Done"});
             }
         } catch (error) {
-            console.error(error.message);
+            progress.finish(1, null, {failed: error.message});
             process.exit(1);
         }
         break;
@@ -234,14 +251,33 @@ switch (command) {
     case "check": {
         // Generated docs are checked too; with --json, a failing command is a problem in the result
         const {runGenerate} = await jiti.import("../lib/generate.ts");
-        const failed = [];
-        const apply = options.json ? event => event.type === "error" && failed.push(event.text) : undefined;
-        if (!await runGenerate(root, {apply})) report({code: 1, text: "", data: {ok: false, problems: failed}});
         const commands = await jiti.import("../lib/commands.ts");
-        report(commands.runCheck(root));
-        break;
+        if (options.json) {
+            const failed = [];
+            if (!await runGenerate(root, {apply: event => event.type === "error" && failed.push(event.text)})) {
+                report({code: 1, text: "", data: {ok: false, problems: failed}});
+            }
+            report(commands.runCheck(root));
+        }
+        const progress = createProgress(`Clay ${version} · check`, {mode: "task"});
+        if (!await runGenerate(root, {apply: progress.apply})) {
+            progress.finish(1, null, {failed: 'A command of "generate" failed, so nothing was checked.'});
+            process.exit(1);
+        }
+        progress.apply({type: "step", label: "Checking links, translations and settings"});
+        const {code, data} = commands.runCheck(root);
+        if (data.error) {
+            progress.apply({type: "error", text: data.error});
+            progress.finish(1, null, {failed: "The docs could not be read."});
+            process.exit(1);
+        }
+        for (const problem of data.problems) progress.apply({type: "warn", text: problem});
+        if (code === 0) progress.apply({type: "done", label: `Checked ${data.pages} pages`});
+        const count = data.problems.length;
+        progress.finish(code, null, {done: "No problems", failed: `${count} ${count === 1 ? "problem" : "problems"}; "clay build --strict" fails on them too`});
+        process.exit(code);
     }
     default:
-        console.error(`Unknown command "${command}".\n\n${HELP}`);
+        printFailure(`Unknown command "${command}"`, 'Run "clay --help" for the commands.');
         process.exit(2);
 }

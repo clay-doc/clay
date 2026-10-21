@@ -1,5 +1,6 @@
 import {describe, expect, it} from "vitest";
-import {createBuildParser, createDevParser, createProgress} from "../../lib/progress";
+import {PassThrough} from "node:stream";
+import {createBuildParser, createDevParser, createProgress, printFailure} from "../../lib/progress";
 
 // Abridged output of "nuxt generate" when piped
 const LOG = [
@@ -180,14 +181,14 @@ describe("build parser in CI", () => {
             "[info] [clay] 10 pages in docs; languages de (1/7 translated)",
             "[error] [request error] [unhandled] [GET] http://localhost/de",
             "[error] [nuxt] instance unavailable",
-            "[error] clay build --strict: 1 problem(s) found, see the warnings above",
+            "[error] clay build --strict: 1 problem found, see the warnings above",
         ].flatMap(line => parse(line));
         expect(events).toEqual([
             {type: "step", label: "Loading docs"},
             {type: "warn", text: "Broken link in a.md: \"missing.md\" points to a missing page (/missing)"},
             {type: "done", label: "Loaded 10 pages from docs", detail: "languages de (1/7 translated)"},
             {type: "error", text: "[nuxt] instance unavailable (rendering /de)"},
-            {type: "error", text: "clay build --strict: 1 problem(s) found, see the warnings above"},
+            {type: "error", text: "clay build --strict: 1 problem found, see the warnings above"},
         ]);
     });
 });
@@ -273,5 +274,54 @@ describe("progress of a server without a terminal", () => {
         const output = render(["●  Nuxt 4.2.2", " ERROR  Port 3000 is in use"], 1);
         expect(output).toContain("│  ✖ Port 3000 is in use\n");
         expect(output).toContain("└  Stopped after 0ms. Run with --verbose.\n");
+    });
+});
+
+describe("tasks", () => {
+    const output = () => {
+        const out = {text: ""};
+        return {out, stream: {isTTY: false, write: (text: string) => (out.text += text)}};
+    };
+
+    it("end with a summary of their own, after their steps and problems", () => {
+        const {out, stream} = output();
+        const progress = createProgress("Clay 5.0.0 · check", {stream, now: () => 0, mode: "task"});
+        progress.apply({type: "done", label: "Generated docs: node gen.mjs"});
+        progress.apply({type: "step", label: "Checking links"});
+        progress.apply({type: "warn", text: "Broken link in a.md"});
+        progress.finish(1, null, {done: "No problems", failed: "1 problem"});
+        expect(out.text).toBe([
+            "┌  Clay 5.0.0 · check", "│",
+            "●  Generated docs: node gen.mjs  0ms", "│",
+            "✖  Checking links", "│  ▲ Broken link in a.md", "│",
+            "└  1 problem", "",
+        ].join("\n"));
+    });
+
+    it("show lines of text, and a failure before any step", () => {
+        const {out, stream} = output();
+        const progress = createProgress("Clay 5.0.0 · version", {stream, now: () => 0, mode: "task"});
+        progress.apply({type: "text", text: "What happens"});
+        progress.apply({type: "text", text: ""});
+        progress.finish(1, null, {failed: "Not a name"});
+        expect(out.text).toBe(["┌  Clay 5.0.0 · version", "│", "│  What happens", "│", "└  ✖ Not a name", ""].join("\n"));
+    });
+
+    it("ask questions", async () => {
+        const {out, stream} = output();
+        const progress = createProgress("Clay 5.0.0 · version", {stream: stream as never, now: () => 0, mode: "task"});
+        const input = new PassThrough();
+        const answer = progress.ask("Go ahead? (y/N)", input);
+        input.write("y\n");
+        expect(await answer).toBe("y");
+        expect(out.text).toContain("◆  Go ahead? (y/N) ");
+    });
+});
+
+describe("failures before a command starts", () => {
+    it("say what went wrong and what to do", () => {
+        let text = "";
+        printFailure("No clay.yaml found in /tmp", "Run clay in your docs project.", {isTTY: false, write: (t: string) => (text += t)});
+        expect(text).toBe("✖  No clay.yaml found in /tmp\n│\n└  Run clay in your docs project.\n");
     });
 });
