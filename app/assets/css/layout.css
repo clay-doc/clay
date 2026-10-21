@@ -215,9 +215,10 @@ dialog input[type="search"]::-webkit-search-cancel-button {
     @apply size-3.5 shrink-0 mx-px;
 }
 
-/* The line between the docs and each API in the sidebar (Sidebar.vue) */
+/* The line between the docs and each API in the sidebar (Sidebar.vue); daisyUI
+   fades empty menu entries to 10%, which left it hardly visible */
 .menu > .sidebar-separator {
-    @apply mx-2 my-3 h-0.5 rounded-full bg-base-content/15 p-0;
+    @apply mx-2 my-3 h-px bg-base-content/20 p-0 opacity-100;
 }
 
 /* The method of an API operation, in the sidebar and request cells */

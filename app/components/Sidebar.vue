@@ -117,8 +117,10 @@ onBeforeUnmount(() => {
 });
 </script>
 <template>
-  <!-- isolate: the highlight sits between the list's background and its entries -->
-  <ul ref="list" class="menu bg-base-200 overflow-y-auto overflow-x-hidden relative isolate">
+  <!-- isolate: the highlight sits between the list's background and its entries.
+       pb-24: the last entries scroll clear of the address browsers show at the
+       bottom of the window for the link under the pointer -->
+  <ul ref="list" class="menu bg-base-200 overflow-y-auto overflow-x-hidden relative isolate pb-24">
     <li ref="marker" aria-hidden="true" class="sidebar-marker"></li>
     <SidebarNode v-for="e in structure" :link="e.displayLink" :icon="e.icon" :title="e.title" :children="e.children"/>
     <template v-for="api in apis" :key="api.displayLink">
