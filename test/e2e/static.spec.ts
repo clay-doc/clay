@@ -110,17 +110,17 @@ test.describe("in the browser", () => {
         await expect(page.locator(".prose mark.search-hit-active")).toHaveText("Alerts");
     });
 
-    test("the theme toggle switches and remembers the theme", async ({page}) => {
-        await page.emulateMedia({colorScheme: "light"});
+    test("task lists show read-only checkboxes", async ({page}) => {
         await page.goto("reference/feature-tour/");
         await hydrated(page);
+        const boxes = page.locator(".prose input.clay-task");
+        await expect(boxes).toHaveCount(2);
+        await expect(boxes.first()).toBeChecked();
+        await expect(boxes.nth(1)).not.toBeChecked();
+        await expect(boxes.first()).toBeDisabled();
+        await expect(boxes.first()).toBeVisible();
+    });
 
-        const code = page.locator(".prose pre.shiki span[style*='--shiki']").first();
-        const lightColor = await code.evaluate(el => getComputedStyle(el).color);
-        await expect(page.locator(".theme-to-dark")).toBeVisible();
-
-        await page.getByRole("button", {name: "Theme"}).click();
-        await expect(page.locator("html")).toHaveAttribute("data-theme", "clay-dark");
     test("links to other pages show a popup with the start of the page", async ({page}) => {
         await page.goto("reference/feature-tour/");
         await hydrated(page);
@@ -139,6 +139,17 @@ test.describe("in the browser", () => {
         await expect(link).not.toHaveAttribute("aria-describedby");
     });
 
+    test("the theme toggle switches and remembers the theme", async ({page}) => {
+        await page.emulateMedia({colorScheme: "light"});
+        await page.goto("reference/feature-tour/");
+        await hydrated(page);
+
+        const code = page.locator(".prose pre.shiki span[style*='--shiki']").first();
+        const lightColor = await code.evaluate(el => getComputedStyle(el).color);
+        await expect(page.locator(".theme-to-dark")).toBeVisible();
+
+        await page.getByRole("button", {name: "Theme"}).click();
+        await expect(page.locator("html")).toHaveAttribute("data-theme", "clay-dark");
         await expect(page.locator(".theme-to-light")).toBeVisible();
         expect(await code.evaluate(el => getComputedStyle(el).color)).not.toBe(lightColor);
 
@@ -186,7 +197,7 @@ test.describe("in the browser", () => {
         await page.goto("reference/feature-tour/");
 
         const toc = page.getByRole("navigation", {name: "On this page"});
-        await expect(toc.getByRole("link")).toHaveText(["Links", "Images and files", "Code", "Alerts", "Tables"]);
+        await expect(toc.getByRole("link")).toHaveText(["Links", "Images and files", "Code", "Alerts", "Tables", "Task lists"]);
         await expect(page.locator("footer a[rel=next]")).toContainText("Security");
         await expect(page.locator("footer a", {hasText: "Edit this page"}))
             .toHaveAttribute("href", "https://github.com/clay-doc/clay/edit/main/playground/docs/latest/reference/feature-tour.md");

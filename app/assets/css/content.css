@@ -1,4 +1,4 @@
-/* The text of a page: alerts, search hits, links to sections, videos and embeds */
+/* The text of a page: alerts, search hits, links to sections, videos and embeds, task lists */
 
 /* Alerts: a box with a bar of its own in the alert's color, a little left of it */
 .markdown-alert {
@@ -68,4 +68,19 @@
 
 .prose iframe {
     @apply block aspect-video h-auto border-0 bg-base-200;
+}
+
+/* Task lists ("- [x] Done"): a checkbox in place of the bullet, read-only
+   (server/utils/sanitize.ts), so it looks like one rather than a faded control */
+.prose li:has(> label:first-child > .clay-task:first-child),
+.prose li:has(> p:first-child > label:first-child > .clay-task:first-child) {
+    @apply list-none;
+}
+
+.prose ul:has(> li > label:first-child > .clay-task, > li > p:first-child > label:first-child > .clay-task) {
+    @apply ps-1;
+}
+
+.clay-task {
+    @apply checkbox checkbox-sm checkbox-primary me-2 cursor-default align-[-0.2em] opacity-100!;
 }
