@@ -45,7 +45,7 @@ export function selectTab(tab: HTMLElement) {
 
 // Picks the tab named label in every group under root that has one
 export function selectLabel(root: ParentNode, label: string) {
-    for (const group of root.querySelectorAll("[data-tabs]")) {
+    for (const group of root.querySelectorAll("[data-tabs]:not([data-tabs-local])")) {
         const tab = tabsOf(group).find(t => t.textContent?.trim() === label);
         if (tab) selectTab(tab);
     }
@@ -74,7 +74,8 @@ export function restoreTabs(root: ParentNode) {
     const groups = [...root.querySelectorAll("[data-tabs]")];
     for (const group of groups) {
         const tabs = tabsOf(group);
-        const tab = labels.map(label => tabs.find(t => t.textContent?.trim() === label)).find(Boolean);
+        // Groups of their own, like an operation's responses, start with their first tab
+        const tab = group.hasAttribute("data-tabs-local") ? undefined : labels.map(label => tabs.find(t => t.textContent?.trim() === label)).find(Boolean);
         if (tab) selectTab(tab);
         placeLine(group, false);
     }

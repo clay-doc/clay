@@ -58,3 +58,8 @@ console.log(answer); // [!code focus]
 | Feature | Status |
 |---------|--------|
 | Search  | yes    |
+
+## Task lists
+
+- [x] Write the docs
+- [ ] Publish them

@@ -71,6 +71,23 @@ Read the docs of this project and add a page about
 **deploying** to `docs/guides/`.
 :::
 
+## Requests
+
+An operation of the Petstore API, with values to start with:
+
+::: request petstore getPet
+petId: 7
+:::
+
+A request written out:
+
+::: request
+POST https://httpbin.example.com/anything
+Content-Type: application/json
+
+{"name": "Rex"}
+:::
+
 ## Badges
 
 Old option :badge[Deprecated]{warning}, new one :badge[Since 4.0]{tip}.

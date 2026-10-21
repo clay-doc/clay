@@ -1,5 +1,5 @@
 import {existsSync, readdirSync, readFileSync, statSync} from "node:fs";
-import {basename, isAbsolute, join, relative, resolve} from "node:path";
+import {basename, dirname, isAbsolute, join, relative, resolve} from "node:path";
 import {load} from "js-yaml";
 import {Marked} from "marked";
 import {componentSyntax} from "../common/markdown-components";
@@ -13,6 +13,12 @@ import {lastUpdated} from "./git-dates";
 import {configSchema, unknownKeys} from "./checks";
 import {createExpander} from "./expand";
 import {themeWarnings} from "../common/theme";
+import {messagesFor} from "../common/i18n";
+import {apiRoute, findOperation, loadApis, VERSION_APIS, VERSION_APIS_FILE, type Api} from "./openapi";
+import type {ApiConfiguration} from "../common/configuration";
+import {rawCell} from "../common/openapi";
+import type {ContainerToken} from "../common/markdown-components";
+import {apiPages} from "./openapi-pages";
 import {analyticsWarnings} from "../common/analytics";
 
 // Fills in snippets and variables of a docs file (expand.ts) for a language
@@ -62,6 +68,7 @@ export type SiteVersion = VersionInfo & {
     docsDir: string;
     tree: DocNode;
     nav: DocItem;
+    apis: Api[]; // its OpenAPI documents (openapi.ts), with pages below its docs
 };
 
 // A version in one language, e.g. "/1.x/de"
@@ -84,6 +91,7 @@ export type Site = {
     editions: SiteEdition[];
     pages: Page[]; // of all editions; routes start with their prefix, e.g. "/1.x/de"
     redirects: Redirect[]; // of all editions, like pages
+    apis: Api[]; // OpenAPI documents of the current docs, with pages in every language (openapi-pages.ts); older versions have their own
     included: string[]; // files included into pages (expand.ts) and settings files of clay.yaml, relative to root
     warnings: string[];
 };
@@ -320,7 +328,7 @@ const envOverrides: [string, keyof Configuration][] = [
 ];
 
 // Settings that can live in a file of their own, e.g. "variables: variables.yaml"
-const SPLITTABLE = new Set(["navbar", "messages", "variables", "head", "analytics", "theme", "generate", "languages"]);
+const SPLITTABLE = new Set(["navbar", "footer", "messages", "variables", "head", "analytics", "theme", "generate", "languages", "openapi"]);
 
 // The settings named by file in clay.yaml, read from those files (relative to
 // clay.yaml, inside the project); files lists them for reloads during development
@@ -484,7 +492,7 @@ function loadVersion(root: string, info: VersionInfo, gitDates: boolean, languag
         editions.push({prefix, version: info.name, language: language.code, nav: buildNav(languageTree, prefix)});
         pages.push(...collectPages(languageTree, prefix, info.name, language.code).pages);
     }
-    return {version: {...info, docsDir, tree, nav: editions[0]!.nav}, editions, pages, warnings};
+    return {version: {...info, docsDir, tree, nav: editions[0]!.nav, apis: []}, editions, pages, warnings};
 }
 
 // The old addresses of pages ("redirects" in their front matter), in each
@@ -516,6 +524,33 @@ export function collectRedirects(pages: Page[], defaultLanguage: string): { redi
         }
     }
     return {redirects: [...redirects.values()], warnings};
+}
+
+// Request cells (::: request) that name an API or operation that does not
+// exist, or whose request cannot be read; once per page, in its own language
+function requestCellProblems(pages: Page[], versions: SiteVersion[]): string[] {
+    const problems: string[] = [];
+    for (const page of pages) {
+        if (!page.markdown || page.untranslated || !/^:{3,}[ \t]*request\b/m.test(page.markdown)) continue;
+        // Cells try the APIs of their own version
+        const apis = versions.find(version => version.name === page.version)?.apis ?? [];
+        if (apis.some(api => api.spec === page.source)) continue;
+        const source = page.version ? `docs/${page.version}/${page.source}` : page.source;
+        marked.walkTokens(marked.lexer(stripFrontMatter(page.markdown)), token => {
+            const cell = token as unknown as ContainerToken;
+            if (token.type !== "container" || cell.kind !== "request") return;
+            if (!cell.title) {
+                if (!rawCell(cell.text ?? "")) problems.push(`${source}: a request needs a first line like "GET https://api.example.com/items"`);
+                return;
+            }
+            const found = findOperation(apis, cell.title);
+            if (!("problem" in found)) return;
+            problems.push(found.problem === "api"
+                ? `${source}: "::: request ${cell.title}" names the API "${found.name}", which "openapi" in clay.yaml does not have`
+                : `${source}: "::: request ${cell.title}": the API "${found.name}" has no operation "${found.wanted}"`);
+        });
+    }
+    return [...new Set(problems)];
 }
 
 // Loads everything Clay needs from a project: config, directory metadata and
@@ -552,7 +587,46 @@ export function loadSite(root: string, {env = process.env, gitDates = true}: Loa
         return loaded;
     });
 
+    // The APIs of each version, with pages in each of its languages below its docs.
+    // The latest docs have those of "openapi" in clay.yaml; an older version the
+    // copies "clay version" saved in its folder (versions.ts).
+    const apiFiles: string[] = [];
+    const addApis = (loaded: ReturnType<typeof loadVersion>, entries: unknown, dir: string, source: string) => {
+        const entriesIn = (code: string) => localize(entries, code, codes) as ApiConfiguration[] | undefined;
+        const found = loadApis(root, entriesIn(codes[0]!), dir, source);
+        warnings.push(...found.warnings);
+        apiFiles.push(...found.files);
+        const prefix = loaded.editions[0]!.prefix;
+        for (const api of found.apis) {
+            const taken = loaded.pages.find(page => page.prefix === prefix && (page.route === prefix + api.route || page.route.startsWith(prefix + api.route + "/")));
+            if (taken) warnings.push(`${source.split(":")[0]}: the API ${api.spec} has the route ${api.route}, where ${loaded.version.dir}/${taken.source} is; give the API another "route"`);
+        }
+        for (const edition of loaded.editions) {
+            const t = messagesFor(edition.language, configs[edition.language]?.messages?.[edition.language]);
+            edition.nav.apis = found.apis.map(api => {
+                const title = entriesIn(edition.language)?.find(c => c && typeof c.spec === "string" && apiRoute(c) === api.route)?.title || api.title;
+                const made = apiPages(api, title, edition, t);
+                loaded.pages.push(...made.pages);
+                return made.nav;
+            });
+        }
+        loaded.version.apis = found.apis;
+    };
+    addApis(current, raw.openapi, root, "clay.yaml: openapi");
+    for (const loaded of older) {
+        const file = join(loaded.version.docsDir, VERSION_APIS, VERSION_APIS_FILE);
+        if (!existsSync(file)) continue;
+        const name = relative(root, file).split("\\").join("/");
+        try {
+            addApis(loaded, load(readFileSync(file, "utf8")), dirname(file), name);
+        } catch (error) {
+            warnings.push(`${name}: cannot be read: ${(error as Error).message.split("\n")[0]}`);
+        }
+    }
+    const apis = current.version.apis;
+
     const pages = [current.pages, ...older.map(o => o.pages)].flat();
+    warnings.push(...requestCellProblems(pages, [current.version, ...older.map(o => o.version)]));
     const {redirects, warnings: redirectWarnings} = collectRedirects(pages, codes[0]!);
     warnings.push(...redirectWarnings);
 
@@ -561,8 +635,8 @@ export function loadSite(root: string, {env = process.env, gitDates = true}: Loa
         root, docsDir, config, configs, tree, nav, languages,
         versions: [current.version, ...older.map(o => o.version)],
         editions: [current.editions, ...older.map(o => o.editions)].flat(),
-        pages, redirects,
-        included: [...expander.included, ...configFiles],
+        pages, redirects, apis,
+        included: [...expander.included, ...configFiles, ...apiFiles],
         warnings,
     };
 }

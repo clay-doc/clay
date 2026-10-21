@@ -5,6 +5,11 @@ import {isAssetLink, resolveDocAsset, resolveDocLink} from "./doc-links";
 import {docPath, markdownRoute} from "../../common/route-path";
 import linkConcat from "../../common/link-concat";
 import {firstParagraph} from "../../common/markdown-text";
+import {Marked, type Token} from "marked";
+import {componentSyntax, type ContainerToken} from "../../common/markdown-components";
+import {buildRequest, curlCommand, startingInputs} from "../../common/openapi";
+import {messagesFor} from "../../common/i18n";
+import {pageCells} from "./request-cell";
 
 // The docs for language models and agents (llmstxt.org): every page as
 // Markdown at its own path with ".md", and per version and language an index,
@@ -39,7 +44,7 @@ function rewriteLinks(markdown: string, page: Page, url: UrlOf): string {
     const target = (href: string) => {
         if (/^[a-z][a-z\d+.-]*:/i.test(href) || href.startsWith("//") || href.startsWith("#")) return href;
         if (isAssetLink(href)) {
-            const asset = resolveDocAsset(href, assetPath);
+            const asset = href.startsWith("/_clay/") ? href : resolveDocAsset(href, assetPath);
             return asset ? url(asset) : href;
         }
         const route = resolveDocLink(href, docPath(page.route, page.isDir));
@@ -66,10 +71,36 @@ function rewriteLinks(markdown: string, page: Page, url: UrlOf): string {
     }).join("\n");
 }
 
+const lexer = new Marked({gfm: true}, componentSyntax());
+
+// Request cells as agents can send them: a curl command, with a link to the operation's page
+function requestsAsCode(markdown: string, page: Page, site: Site): string {
+    if (!/^:{3,}[ \t]*(request|credentials)\b/m.test(markdown)) return markdown;
+    const config = site.configs[page.language];
+    const cells = pageCells(site, page, messagesFor(page.language, config?.messages?.[page.language]));
+    const found: ContainerToken[] = [];
+    lexer.walkTokens(lexer.lexer(markdown), (token: Token) => {
+        const kind = (token as unknown as ContainerToken).kind;
+        if (token.type === "container" && (kind === "request" || kind === "credentials")) found.push(token as unknown as ContainerToken);
+    });
+    for (const token of found) {
+        // The form for credentials is for readers of the site; agents read what it holds
+        if (token.kind === "credentials") {
+            markdown = markdown.replace(token.raw.replace(/\n$/, ""), token.raw.replace(/\n$/, "").split("\n").slice(1, -1).join("\n"));
+            continue;
+        }
+        const cell = cells(token.title, token.text ?? "");
+        const text = typeof cell === "string" ? `> ${cell}`
+            : (cell.title && cell.link ? `[${cell.title}](${cell.link})\n\n` : "") + "```sh\n" + curlCommand(buildRequest(cell, startingInputs(cell))) + "\n```";
+        markdown = markdown.replace(token.raw.replace(/\n$/, ""), text);
+    }
+    return markdown;
+}
+
 // A page as Markdown: its text without front matter, under its title. A folder
 // without text lists its pages.
 export function pageMarkdown(page: Page, site: Site, url: UrlOf): string {
-    const body = page.markdown !== undefined ? stripFrontMatter(page.markdown).trim() : "";
+    const body = page.markdown !== undefined ? requestsAsCode(stripFrontMatter(page.markdown).trim(), page, site) : "";
     const hasTitle = /^#\s/m.test(body.split("\n").find(line => line.trim()) ?? "");
     const about = description(page);
     const head = hasTitle ? "" : `# ${page.title}\n\n${about ? `> ${about}\n\n` : ""}`;
@@ -88,7 +119,7 @@ function pagesInOrder(site: Site, edition: SiteEdition): Page[] {
         return [...(page ? [page] : []), ...walk(item.children)];
     });
     const start = byRoute.get(edition.prefix || "/");
-    return [...(start ? [start] : []), ...walk(edition.nav.children)];
+    return [...(start ? [start] : []), ...walk(edition.nav.children), ...walk(edition.nav.apis)];
 }
 
 function editionLabel(site: Site, edition: SiteEdition): string {
@@ -123,6 +154,8 @@ export function llmsTxt(site: Site, edition: SiteEdition, url: UrlOf): string {
         ...(start ? [`\n## Start\n\n- [${start.title}](${url(markdownRouteOf(start))})${about ? `: ${about}` : ""}`] : []),
         ...(loose.length ? [`\n## Pages\n\n${loose.flatMap(item => entry(item, 0)).join("\n")}`] : []),
         ...sections.map(item => `\n## ${item.title}\n\n${entry(item, 0).join("\n")}`),
+        // Each API (OpenAPI): its overview, operations and schemas
+        ...(edition.nav.apis ?? []).map(item => `\n## ${item.title}\n\n${entry(item, 0).join("\n")}`),
         `\n## Optional\n\n- [All pages in one file](${url(`${edition.prefix}/llms-full.txt`)})${others.length ? `\n${others.join("\n")}` : ""}`,
     ].filter(Boolean).join("\n") + "\n";
 }

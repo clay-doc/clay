@@ -3,6 +3,7 @@ import {renderDoc} from "../../../utils/render-doc";
 import {useClaySite} from "../../../utils/use-clay-site";
 import {messagesFor} from "../../../../common/i18n";
 import {socialCard, socialImagePath} from "../../../../lib/social-card";
+import {pageCells} from "../../../utils/request-cell";
 
 // A rendered doc: a page, or a folder's index.md. During the build every page
 // is pre-rendered, and its data is stored in the page's payload, so the
@@ -29,7 +30,9 @@ export default defineEventHandler(async event => {
         const target = site.pages.find(p => p.route === route);
         return target && {icon: target.frontMatter.icon, description: target.frontMatter.description};
     };
-    const result = await renderDoc(page.markdown, path, baseURL, start?.frontMatter.description, assetPath, messages, pageInfo);
+    const cells = pageCells(site, page, messages);
+    const result = await renderDoc(page.markdown, path, baseURL, start?.frontMatter.description, assetPath, messages, pageInfo, cells,
+        site.config.theme?.windowDots !== false);
     // index.md can ask for a large header (hero) and a list of the folder's pages
     const hero = page.frontMatter.hero ? {title: page.title, icon: page.frontMatter.icon, description: page.frontMatter.description} : null;
     // The picture for link previews, drawn at build time (lib/social-images.ts)

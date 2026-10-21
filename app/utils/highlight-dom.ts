@@ -2,16 +2,23 @@ import {highlight} from "../../common/search";
 
 const MARK_CLASS = "search-hit";
 
+// Only where marks were: request cells (RequestCell.vue) keep empty text nodes
+// that Vue needs, which normalizing the whole page would remove
 export function clearHighlights(root: HTMLElement) {
+    const parents = new Set<Node>();
     for (const mark of root.querySelectorAll(`mark.${MARK_CLASS}`)) {
+        if (mark.parentNode) parents.add(mark.parentNode);
         mark.replaceWith(mark.textContent ?? "");
     }
-    root.normalize();
+    for (const parent of parents) parent.normalize();
 }
 
 // Wraps whole-word matches of terms in <mark>, returns the marks in document order.
 export function highlightTerms(root: HTMLElement, terms: string[]): HTMLElement[] {
-    const walker = root.ownerDocument.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    // Request cells are drawn by Vue, which must keep their text as it is
+    const walker = root.ownerDocument.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+        acceptNode: node => node.parentElement?.closest(".clay-request") ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT,
+    });
     const textNodes: Text[] = [];
     while (walker.nextNode()) textNodes.push(walker.currentNode as Text);
 

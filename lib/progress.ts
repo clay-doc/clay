@@ -13,6 +13,7 @@ export type ProgressEvent =
     | { type: "ready", label: string }
     | { type: "log", text: string, icon?: string }
     | { type: "warn" | "note" | "error", text: string }
+    | { type: "text", text: string } // a line of its own, e.g. what "clay version" is about to do
     | { type: "output", dir: string };
 
 // One line of Nuxt output without colors. In CI, Nuxt's logger writes "[info] …",
@@ -235,9 +236,12 @@ type Output = { write(text: string): unknown, isTTY?: boolean, columns?: number 
 
 type Step = { label: string, detail?: string | null, started: number, warnings: string[], notes: string[], idle?: boolean };
 
+// mode "task" is for commands that finish on their own, like "clay check":
+// its steps follow one another, and finish ends with a summary of its own.
 export function createProgress(title: string, {stream = process.stdout, now = Date.now, mode = "build", hint = ""}:
-    { stream?: Output, now?: () => number, mode?: "build" | "serve", hint?: string } = {}) {
+    { stream?: Output, now?: () => number, mode?: "build" | "serve" | "task", hint?: string } = {}) {
     const serve = mode === "serve";
+    const task = mode === "task";
     const tty = Boolean(stream.isTTY);
     const color = tty && !("NO_COLOR" in process.env);
     const paint = (code: string, text: string) => color ? `\x1b[${code}m${text}\x1b[0m` : text;
@@ -310,7 +314,7 @@ export function createProgress(title: string, {stream = process.stdout, now = Da
                     if (!current) start(event.label);
                     if (event.detail) current!.detail = event.detail;
                     complete(event.label);
-                    if (ready) break;
+                    if (ready || task) break;
                     // Nuxt keeps working until the next step is announced
                     start(serve ? "Starting dev server" : "Building");
                     current!.idle = true;
@@ -346,15 +350,37 @@ export function createProgress(title: string, {stream = process.stdout, now = Da
                 case "output":
                     outDir = event.dir;
                     break;
+                case "text":
+                    print([event.text ? `${bar}  ${event.text}` : bar]);
+                    break;
             }
         },
-        finish(code: number, signal?: NodeJS.Signals | null) {
+        // A question, answered with a line of input
+        async ask(question: string, input: NodeJS.ReadableStream = process.stdin): Promise<string> {
+            const {createInterface} = await import("node:readline");
+            const prompt = createInterface({input, output: stream as NodeJS.WritableStream});
+            restoreCursor();
+            const answer = await new Promise<string>(done => prompt.question(`${sage("◆")}  ${question} `, done));
+            prompt.close();
+            if (tty) stream.write("\x1b[?25l");
+            print([bar]);
+            return answer;
+        },
+        // summary: the last line of a task, when it worked and when it did not
+        finish(code: number, signal?: NodeJS.Signals | null, summary: { done?: string, failed?: string } = {}) {
             clearInterval(timer);
             const step = current;
             current = null;
             if (tty) stream.write("\r\x1b[2K");
             const total = duration(now() - started);
-            if (serve && (code === 0 || signal || code === 130)) {
+            if (task) {
+                const failed = code !== 0 && step && !step.idle;
+                stream.write([
+                    ...(failed ? [`${paint("31", "✖")}  ${step.label}`, ...step.warnings.map(warning => `${bar}  ${paint("33", "▲")} ${warning}`),
+                        ...errors.map(error => `${bar}  ${paint("31", error)}`), bar] : []),
+                    `${gray("└")}  ${code === 0 ? summary.done ?? `Done in ${total}` : `${failed ? "" : `${paint("31", "✖")} `}${summary.failed ?? `Failed after ${total}`}`}`,
+                ].map(line => `${line}\n`).join(""));
+            } else if (serve && (code === 0 || signal || code === 130)) {
                 stream.write(`${gray("└")}  Stopped\n`);
             } else if (serve) {
                 stream.write([
@@ -381,4 +407,12 @@ export function createProgress(title: string, {stream = process.stdout, now = Da
             restoreCursor();
         },
     };
+}
+
+// A command that cannot start, e.g. without clay.yaml: what went wrong, and what to do
+export function printFailure(message: string, hint = "", stream: Output = process.stderr) {
+    const color = Boolean(stream.isTTY) && !("NO_COLOR" in process.env);
+    const paint = (code: string, text: string) => color ? `\x1b[${code}m${text}\x1b[0m` : text;
+    const gray = (text: string) => paint(rgb(...GRAY), text);
+    stream.write([`${paint("31", "✖")}  ${message}`, ...(hint ? [gray("│"), `${gray("└")}  ${hint}`] : [])].map(line => `${line}\n`).join(""));
 }

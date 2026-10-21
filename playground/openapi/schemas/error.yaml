@@ -1,0 +1,6 @@
+# In a file of its own: references may lead to other files
+type: object
+required: [code, message]
+properties:
+  code: {type: integer}
+  message: {type: string}

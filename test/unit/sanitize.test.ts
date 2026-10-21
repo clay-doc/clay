@@ -20,10 +20,22 @@ describe("sanitizeHtml", () => {
         ["svg scripts", '<svg><script>alert(1)</script></svg>', "<script"],
         ["forms", '<form action="https://evil.example"><input name="password"></form>', "<form"],
         ["form inputs", '<input name="password">', "<input"],
+        ["checkboxes outside lists", '<input type="checkbox" name="agree">', "<input"],
+        ["other inputs in lists", '<ul><li><input type="password" name="pw"></li></ul>', "<input"],
         ["style tags", "<style>body{display:none}</style>", "<style"],
         ["inline styles outside code", '<div style="position:fixed;inset:0">x</div>', "style="],
     ])("removes %s", (_name, html, forbidden) => {
         expect(sanitizeHtml(html)).not.toContain(forbidden);
+    });
+
+    it("keeps the checkboxes of task lists, read-only and without anything else", () => {
+        expect(sanitizeHtml(new Marked({gfm: true}).parse("- [ ] Open\n- [x] Done\n") as string))
+            .toBe('<ul>\n<li><label><input type="checkbox" disabled="" class="clay-task"> Open</label></li>\n<li><label><input checked="" type="checkbox" disabled="" class="clay-task"> Done</label></li>\n</ul>\n');
+        const html = sanitizeHtml('<ul><li><input type="checkbox" name="x" form="f" onclick="alert(1)" autofocus></li></ul>');
+        expect(html).toBe('<ul><li><label><input type="checkbox" disabled="" class="clay-task"></label></li></ul>');
+        // Nested lists stay below the task's label
+        expect(sanitizeHtml(new Marked({gfm: true}).parse("- [ ] Parent\n  - [x] Child\n") as string))
+            .toContain('<li><label><input type="checkbox" disabled="" class="clay-task"> Parent</label><ul>');
     });
 
     it("keeps heading ids, including ones DOMPurify would treat as clobbering", () => {

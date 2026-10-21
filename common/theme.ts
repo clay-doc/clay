@@ -11,6 +11,7 @@ export type ThemeConfiguration = ThemeColors & {
     radius?: string, // corners of boxes, e.g. "0.5rem"; fields get half of it
     font?: string, // font-family of the text
     codeFont?: string, // font-family of code
+    windowDots?: boolean, // a window's three buttons on shell code and code groups; on unless false
     light?: ThemeColors, // for one mode only; overrides the colors above
     dark?: ThemeColors,
 };

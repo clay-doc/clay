@@ -53,7 +53,7 @@ jobs:
         run: |
           npm pack --pack-destination "$RUNNER_TEMP"
           mkdir "$RUNNER_TEMP/site"
-          cp -R playground/clay.yaml playground/logo.svg playground/docs "$RUNNER_TEMP/site/"
+          cp -R playground/clay.yaml playground/logo.svg playground/docs playground/openapi "$RUNNER_TEMP/site/"
           cd "$RUNNER_TEMP/site"
           npm init -y > /dev/null
           npm install --no-audit --no-fund "$RUNNER_TEMP"/clay-doc-*.tgz

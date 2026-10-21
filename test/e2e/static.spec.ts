@@ -14,6 +14,22 @@ test.describe("pre-rendered pages", () => {
         expect(html).toContain('"@type":"BreadcrumbList"');
         expect(html).toContain('<link rel="sitemap" type="application/xml" href="https://clay-doc.github.io/clay/sitemap.xml">');
         expect(html).toContain('class="shiki');
+        // Icons drawn from the favicon (lib/icons.ts), and the page's locale
+        expect(html).toContain('<link rel="icon" href="/clay/favicon.ico" sizes="32x32">');
+        expect(html).toContain('<link rel="icon" href="/clay/logo.svg" type="image/svg+xml">');
+        expect(html).toContain('<link rel="apple-touch-icon" href="/clay/_clay/icons/apple-touch-icon.png">');
+        expect(html).toContain('<meta property="og:locale" content="en">');
+        expect((await request.get("favicon.ico")).headers()["content-type"]).toMatch(/icon/);
+        expect((await request.get("_clay/icons/apple-touch-icon.png")).ok()).toBe(true);
+    });
+
+    test("start pages name the site for search engines, and translated pages their other languages", async ({request}) => {
+        const start = await (await request.get("")).text();
+        expect(start).toContain('"@type":"WebSite","name":"Clay","url":"https://clay-doc.github.io/clay/","inLanguage":"en"');
+        expect(start).not.toContain('"@type":"BreadcrumbList"');
+        const german = await (await request.get("de/getting-started/")).text();
+        expect(german).toContain('<meta property="og:locale" content="de">');
+        expect(german).toContain('<meta property="og:locale:alternate" content="en">');
     });
 
     test("redirect to the trailing slash and answer unknown pages with 404", async ({request}) => {
@@ -94,6 +110,35 @@ test.describe("in the browser", () => {
         await expect(page.locator(".prose mark.search-hit-active")).toHaveText("Alerts");
     });
 
+    test("task lists show read-only checkboxes", async ({page}) => {
+        await page.goto("reference/feature-tour/");
+        await hydrated(page);
+        const boxes = page.locator(".prose input.clay-task");
+        await expect(boxes).toHaveCount(2);
+        await expect(boxes.first()).toBeChecked();
+        await expect(boxes.nth(1)).not.toBeChecked();
+        await expect(boxes.first()).toBeDisabled();
+        await expect(boxes.first()).toBeVisible();
+    });
+
+    test("links to other pages show a popup with the start of the page", async ({page}) => {
+        await page.goto("reference/feature-tour/");
+        await hydrated(page);
+        const link = page.locator(".prose a", {hasText: "code link"});
+        await link.hover();
+
+        const popup = page.getByRole("tooltip");
+        await expect(popup.locator(".clay-link-preview-title")).toHaveText("Getting Started");
+        await expect(popup.locator(".clay-link-preview-text")).toContainText(/^Welcome to Clay!/);
+        await expect(link).toHaveAttribute("aria-describedby", "clay-link-preview");
+        // It stays while the pointer reads it, and goes with Escape
+        await popup.hover();
+        await expect(popup).toBeVisible();
+        await page.keyboard.press("Escape");
+        await expect(popup).toHaveCount(0);
+        await expect(link).not.toHaveAttribute("aria-describedby");
+    });
+
     test("the theme toggle switches and remembers the theme", async ({page}) => {
         await page.emulateMedia({colorScheme: "light"});
         await page.goto("reference/feature-tour/");
@@ -152,7 +197,7 @@ test.describe("in the browser", () => {
         await page.goto("reference/feature-tour/");
 
         const toc = page.getByRole("navigation", {name: "On this page"});
-        await expect(toc.getByRole("link")).toHaveText(["Links", "Images and files", "Code", "Alerts", "Tables"]);
+        await expect(toc.getByRole("link")).toHaveText(["Links", "Images and files", "Code", "Alerts", "Tables", "Task lists"]);
         await expect(page.locator("footer a[rel=next]")).toContainText("Security");
         await expect(page.locator("footer a", {hasText: "Edit this page"}))
             .toHaveAttribute("href", "https://github.com/clay-doc/clay/edit/main/playground/docs/latest/reference/feature-tour.md");
@@ -507,6 +552,25 @@ test.describe("snippets, variables, head and social images", () => {
         await page.goto("reference/components/");
         await expect(page.locator("#snippets + .markdown-alert")).toContainText("Included from a snippet, for Clay 4.0.");
         expect((await request.get("_snippets/note/")).status()).toBe(404);
+    });
+
+    test("pages end with the footer of clay.yaml, in their language", async ({page}) => {
+        await page.goto("configuration/");
+        await hydrated(page);
+        const footer = page.locator("footer.clay-footer");
+        await expect(footer.getByRole("navigation", {name: "Docs"}).getByRole("link")).toHaveText(["Getting Started", "Components"]);
+        await expect(footer.getByRole("link", {name: "GitHub"})).toHaveAttribute("target", "_blank");
+        await expect(footer).toContainText("© 2026 The Clay authors");
+        // "madeWithClay" is on unless false: the heart is read as "love", "Clay" leads to its repository
+        await expect(footer.locator(".clay-footer-credit")).toHaveText("Made with and Clay");
+        await expect(footer.getByRole("img", {name: "love"})).toBeVisible();
+        await expect(footer.locator(".clay-footer-credit").getByRole("link", {name: "Clay"})).toHaveAttribute("href", "https://github.com/clay-doc/clay");
+        await footer.getByRole("link", {name: "Components"}).click();
+        await expect(page.locator(".prose h1")).toContainText("Components");
+        await page.goto("de/");
+        await hydrated(page);
+        await expect(page.locator("footer.clay-footer")).toContainText("© 2026 Die Clay-Autoren");
+        await expect(page.locator(".clay-footer-credit")).toHaveText("Gemacht mit und Clay");
     });
 
     test("pages carry the head tags of clay.yaml", async ({request}) => {

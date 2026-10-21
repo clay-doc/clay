@@ -37,8 +37,8 @@ export default defineNuxtConfig({
     head: {
       // The default language; pages in other languages set theirs (app/layouts/default.vue)
       htmlAttrs: {lang: config.languages?.[0] || config.lang || "en"},
-      // Apply a stored theme choice before the first paint (see use-theme.ts)
-      script: [{innerHTML: "try{var t=localStorage.getItem('clay-theme');if(t==='clay-light'||t==='clay-dark')document.documentElement.dataset.theme=t}catch(e){}"}],
+      // Apply a stored theme choice (see use-theme.ts) and sidebar width (SidebarResizer.vue) before the first paint
+      script: [{innerHTML: "try{var t=localStorage.getItem('clay-theme');if(t==='clay-light'||t==='clay-dark')document.documentElement.dataset.theme=t;var w=parseInt(localStorage.getItem('clay-sidebar'));if(w>=224&&w<=640)document.documentElement.style.setProperty('--clay-sidebar',w+'px')}catch(e){}"}],
     },
   },
   runtimeConfig: {
@@ -46,6 +46,7 @@ export default defineNuxtConfig({
     claySocialImages: true, // false when Skia has no build for the platform (modules/clay.ts)
     public: {
       baseUrl: baseURL,
+      clayIcons: {} as { ico?: string, appleTouchIcon?: string }, // drawn from the favicon (lib/icons.ts)
     },
   },
   // Only builds write into the output folder: the dev server cleans its output

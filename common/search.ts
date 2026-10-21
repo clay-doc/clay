@@ -10,6 +10,7 @@ export type SearchSection = {
     path: string;
     text: string;
     code: string;
+    title?: string; // a page's intro: its "# heading", which its text starts with
 }
 
 export type SearchTarget = Pick<SearchSection, "link" | "anchor" | "pageTitle" | "heading" | "path">;
@@ -26,7 +27,7 @@ export type SearchHit = SearchTarget & {
 // with the same options (see MiniSearch.loadJSON)
 export const SEARCH_OPTIONS: Options<SearchSection> = {
     fields: ["pageTitle", "heading", "path", "text", "code"],
-    storeFields: ["link", "anchor", "pageTitle", "heading", "path", "text"],
+    storeFields: ["link", "anchor", "pageTitle", "heading", "path", "text", "title"],
     searchOptions: {
         boost: {pageTitle: 4, heading: 3, path: 2, text: 1, code: 0.5},
         // Match the word being typed as a prefix, tolerate typos in longer words

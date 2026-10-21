@@ -72,6 +72,24 @@ purify.addHook("afterSanitizeAttributes", node => {
     (node as Element).setAttribute("referrerpolicy", "strict-origin-when-cross-origin");
 });
 
+// Task lists ("- [x] Done") keep their checkboxes, read-only and with nothing
+// else: a box that cannot be changed or sent. Any other input could be part
+// of a fake form, so it goes.
+purify.addHook("uponSanitizeElement", (node, data) => {
+    if (data.tagName !== "input") return;
+    const input = node as Element;
+    if (input.getAttribute("type")?.toLowerCase() !== "checkbox" || !input.closest("li")) input.remove();
+});
+
+purify.addHook("afterSanitizeAttributes", node => {
+    if (node.nodeName !== "INPUT") return;
+    const input = node as Element;
+    for (const {name} of [...input.attributes]) if (name !== "checked") input.removeAttribute(name);
+    input.setAttribute("type", "checkbox");
+    input.setAttribute("disabled", "");
+    input.setAttribute("class", "clay-task");
+});
+
 const MATH_STYLE =/^(?:height|width|min-width|max-width|vertical-align|top|bottom|margin-(?:left|right|top|bottom)|padding-(?:left|right)|border-(?:top|bottom|right)-width|color)$/;
 
 // The declarations of a KaTeX style that cannot move content out of the formula
@@ -83,12 +101,30 @@ function mathStyle(style: string): string {
 }
 
 // Docs may come from outside contributors: remove scripts, event handlers,
-// javascript: URLs, forms (phishing), styles and frames other than known
-// embeds from rendered markdown.
+// javascript: URLs, forms and their fields (phishing; task lists keep their
+// checkboxes), styles and frames other than known embeds from rendered markdown.
 export function sanitizeHtml(html: string): string {
-    return purify.sanitize(html, {
-        FORBID_TAGS: ["form", "input", "textarea", "select", "option", "style"],
+    const fragment = purify.sanitize(html, {
+        FORBID_TAGS: ["form", "textarea", "select", "option", "style"],
         ADD_TAGS: ["iframe"],
         ADD_ATTR: ["allow", "allowfullscreen", "referrerpolicy", "loading"],
+        RETURN_DOM_FRAGMENT: true,
     });
+    for (const box of fragment.querySelectorAll(".clay-task")) labelTask(box);
+    const container = serverDocument.createElement("div");
+    container.append(fragment);
+    return container.innerHTML;
+}
+
+// A task's checkbox and its text go into a label, so the box is named by the
+// task; a nested list or paragraph below it stays outside
+function labelTask(box: Element) {
+    const label = serverDocument.createElement("label");
+    box.before(label);
+    let node: ChildNode | null = box;
+    while (node && !(node.nodeType === 1 && /^(UL|OL|P|DIV|PRE|BLOCKQUOTE|TABLE)$/.test(node.nodeName))) {
+        const next: ChildNode | null = node.nextSibling;
+        label.append(node);
+        node = next;
+    }
 }

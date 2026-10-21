@@ -36,6 +36,9 @@ const enter = usePageEnter();
 
 <template>
   <div :class="{'page-enter': enter}">
+    <!-- The start page of the site, a version or a language ("/1.x", "/de") is a
+         landing: docs/index.md, or the site title with the top-level pages. Any
+         other folder is a directory: its index.md, or its title with its pages. -->
     <Landing v-if="isEditionRoot" :route="path"/>
     <Error v-else-if="!item" :code="404" :message="t.notFound"/>
     <Directory v-else-if="isDirectory"/>

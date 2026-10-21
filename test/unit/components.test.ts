@@ -60,6 +60,13 @@ describe("code groups", () => {
         // Highlighted as sh, without the label
         expect(root.querySelectorAll("[role=tabpanel] pre.shiki")).toHaveLength(2);
         expect(root.querySelector("pre")!.textContent).toBe("npm i clay-doc");
+        // One tab of shell code makes the group a terminal, with a window's buttons
+        expect(root.querySelector(".clay-code-group.is-terminal.has-dots")).not.toBeNull();
+    });
+
+    it("without shell code have plain tabs", async () => {
+        const root = await dom("::: code-group\n```ts\nconst a = 1;\n```\n```js\nconst a = 1;\n```\n:::");
+        expect(root.querySelector(".clay-code-group")!.className).toBe("clay-tabs clay-code-group");
     });
 });
 
@@ -88,6 +95,45 @@ describe("code block file names", () => {
         const root = await dom("```ts\nconst a = 1;\n```");
         expect(root.querySelector(".code-title")).toBeNull();
         expect(root.querySelector(".code-block")!.className).toBe("code-block");
+    });
+});
+
+describe("shell code", () => {
+    const commands = (root: DocumentFragment) => [...root.querySelectorAll(".line")].map(line => line.classList.contains("command"));
+
+    it("looks like a terminal, with commands marked for their \"$\", which is not copied", async () => {
+        const root = await dom("```bash\n# Install\nnpm i clay-doc \\\n  --save\n\nnpx clay build\n```");
+        expect(root.querySelector(".code-block.is-terminal.has-bar > .code-terminal")!.getAttribute("aria-hidden")).toBe("true");
+        expect(commands(root)).toEqual([false, true, false, false, true]);
+        expect(root.querySelector("pre")!.textContent).toBe("# Install\nnpm i clay-doc \\\n  --save\n\nnpx clay build");
+    });
+
+    it("skips the text of heredocs", async () => {
+        const root = await dom("```sh\ncat <<EOF > a.txt\nhello\nEOF\nls\n```");
+        expect(commands(root)).toEqual([true, false, false, true]);
+    });
+
+    it("keeps prompts that are written, and sessions with output as they are", async () => {
+        expect(commands(await dom("```sh\n$ ls\na.txt\n```"))).toEqual([false, false]);
+        const session = await dom("```console\n$ ls\na.txt\n```");
+        expect(session.querySelector(".code-terminal")).not.toBeNull();
+        expect(commands(session)).toEqual([false, false]);
+    });
+
+    it("has no bar without the window's buttons (\"windowDots: false\"); code groups keep the bar of their tabs", async () => {
+        const template = serverDocument.createElement("template");
+        template.innerHTML = (await renderDoc("```bash\nnpx clay dev\n```\n\n::: code-group\n```sh [npm]\nnpm i clay-doc\n```\n:::",
+            "/guides/page", "/", "", undefined, undefined, undefined, undefined, false)).html;
+        expect(template.content.querySelector(".code-terminal")).toBeNull();
+        expect(commands(template.content)).toEqual([true, true]);
+        expect(template.content.querySelector(".clay-code-group")!.className).toBe("clay-tabs clay-code-group is-terminal");
+    });
+
+    it("is a script when it has a file name", async () => {
+        const root = await dom("```bash [deploy.sh]\nnpm run build\n```");
+        expect(root.querySelector(".code-terminal")).toBeNull();
+        expect(root.querySelector(".code-title")!.textContent).toBe("deploy.sh");
+        expect(commands(root)).toEqual([false]);
     });
 });
 
@@ -266,5 +312,47 @@ describe("plain text of components", () => {
         const lexer = new Marked({gfm: true}, componentSyntax());
         const text = lexer.lexer("::: details Why\nBecause $x$ :badge[New]\n:::\n\n::: tabs\n== npm\nRun it\n:::").map(plainText).join(" ");
         expect(text.replace(/\s+/g, " ").trim()).toBe("Why Because x New npm Run it");
+    });
+});
+
+describe("fields and endpoints", () => {
+    it("show fields as name, type and flags, with their text and nested fields", async () => {
+        const root = await dom("::: fields\n- `name` string **required** *read-only*\n\n  The pet's *name*.\n\n  - `first` string\n- `old` · integer · ~~deprecated~~\n- [Person](/person) *one of*\n:::");
+        const [name, old, person] = [...root.querySelectorAll(".clay-fields > .clay-field")];
+        expect(name!.querySelector(".clay-field-name")?.textContent).toBe("name");
+        expect(name!.querySelector(".clay-field-type")?.textContent).toBe("string");
+        expect([...name!.querySelectorAll(".clay-field-flag")].map(f => [f.textContent, f.classList.contains("clay-field-required")])).toEqual([["required", true], ["read-only", false]]);
+        expect(name!.querySelector(".clay-field-text")?.innerHTML).toContain("<em>name</em>");
+        expect(name!.querySelector(".clay-fields-nested .clay-field-name")?.textContent).toBe("first");
+        expect(old!.querySelector(".clay-field-deprecated")?.textContent).toBe("deprecated");
+        expect(person!.querySelector(".clay-field-name")).toBeNull();
+        expect(person!.querySelector(".clay-field-type a")?.getAttribute("data-route")).toBe("/person");
+    });
+
+    it("take types with links and code, and leave other items as they are", async () => {
+        const root = await dom("::: fields\n- `owner` [Person](/p) | `null`\n- Just text\n:::");
+        const [owner, text] = [...root.querySelectorAll(".clay-fields > .clay-field")];
+        expect(owner!.querySelector(".clay-field-type")?.innerHTML).toBe('<a href="/p" data-route="/p">Person</a> | <code>null</code>');
+        expect(text!.querySelector(".clay-field-type")?.textContent).toBe("Just text");
+    });
+
+    it("show endpoints with their method, path and title, linked to their page", async () => {
+        const root = await dom("::: endpoints\n- `GET /pets` [List pets](/pets)\n- `DELETE /pets/{id}` [Delete](/delete) ~~deprecated~~\n- `POST` Sent to you\n:::");
+        const rows = [...root.querySelectorAll(".clay-endpoints .clay-endpoint")];
+        expect(rows.map(r => [r.querySelector(".clay-method")?.className, r.querySelector(".clay-endpoint-path")?.textContent, r.querySelector(".clay-endpoint-title")?.textContent]))
+            .toEqual([["clay-method clay-method-get", "/pets", "List pets"], ["clay-method clay-method-delete", "/pets/{id}", "Delete"], ["clay-method clay-method-post", undefined, "Sent to you"]]);
+        expect(rows[0]!.getAttribute("data-route")).toBe("/pets");
+        expect(rows[1]!.classList.contains("clay-endpoint-deprecated")).toBe(true);
+        expect(rows[2]!.tagName).toBe("DIV");
+        // Any case, and the path in a code span of its own
+        const other = (await dom("::: endpoints\n- `get` `/pets` [List](/pets)\n:::")).querySelector(".clay-endpoint")!;
+        expect([other.querySelector(".clay-method")?.textContent, other.querySelector(".clay-endpoint-path")?.textContent]).toEqual(["GET", "/pets"]);
+    });
+
+    it("color the tabs of responses by status, and keep them to their group", async () => {
+        const root = await dom("::: tabs status\n== 200\nOK\n== 404\nMissing\n== default\nError\n:::");
+        expect(root.querySelector("[data-tabs]")?.hasAttribute("data-tabs-local")).toBe(true);
+        expect([...root.querySelectorAll("[role=tab]")].map(t => t.className.match(/clay-status-\w+/)?.[0])).toEqual(["clay-status-2", "clay-status-4", "clay-status-default"]);
+        expect((await dom("::: tabs\n== a\nA\n:::")).querySelector("[data-tabs-local], .clay-status")).toBeNull();
     });
 });

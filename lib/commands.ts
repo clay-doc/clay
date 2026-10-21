@@ -354,7 +354,7 @@ export function runCheck(root: string): CommandResult {
         const problems = [...site.warnings, ...broken.map(link => `Broken link in ${link}`)];
         return {
             code: problems.length ? 1 : 0,
-            text: problems.length ? `${problems.join("\n")}\n\n${problems.length} problem(s)` : `No problems in ${site.pages.length} pages`,
+            text: problems.length ? `${problems.join("\n")}\n\n${problems.length} ${problems.length === 1 ? "problem" : "problems"}` : `No problems in ${site.pages.length} pages`,
             data: {ok: problems.length === 0, pages: site.pages.length, problems},
         };
     } catch (error) {

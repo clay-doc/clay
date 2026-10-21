@@ -97,6 +97,16 @@ describe("rewriteDocHtml", () => {
         expect(mail!.hasAttribute("target")).toBe(false);
     });
 
+    it("puts an icon before the text of external links, but not on images or cards", () => {
+        const root = rewrite('<a href="https://x.dev">x</a><a href="https://x.dev"><img src="https://x.dev/b.png" alt="b"></a>'
+            + '<a class="clay-card" href="https://x.dev">c</a><a href="/guides/a">a</a>');
+        const [text, image, card, page] = root.querySelectorAll("a");
+        expect(text!.firstElementChild!.className).toBe("fa-solid fa-arrow-up-right-from-square clay-external-icon");
+        expect(text!.firstElementChild!.getAttribute("aria-hidden")).toBe("true");
+        expect(text!.textContent).toBe("x");
+        for (const link of [image, card, page]) expect(link!.querySelector(".clay-external-icon")).toBeNull();
+    });
+
     it("keeps the rest of the markup", () => {
         const html = '<h2 id="a">A</h2><pre><code>x &lt; y</code></pre>';
         expect(rewriteDocHtml(html, "/a", "/", r => r)).toBe(html);
