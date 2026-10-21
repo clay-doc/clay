@@ -3,8 +3,8 @@
 export default defineNuxtRouteMiddleware((to) => {
     if (/^\/docs(\/|$)/.test(to.path)) {
         return abortNavigation({
-            statusCode: 404,
-            statusMessage: 'Document Not Found'
+            status: 404,
+            statusText: 'Document Not Found'
         })
     }
 })
