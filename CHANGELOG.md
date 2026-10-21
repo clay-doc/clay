@@ -1,5 +1,33 @@
 # Changelog
 
+## [5.0.0](https://github.com/clay-doc/clay/compare/v4.1.0...v5.0.0) (2026-10-21)
+
+
+### Features
+
+* add OpenAPI pages, request cells, footer and resizable sidebar ([8dcf16a](https://github.com/clay-doc/clay/commit/8dcf16a44347d4643955ec7cdf0f5bd90ad3516b))
+* Clay 5 ([2265dcc](https://github.com/clay-doc/clay/commit/2265dcc3cef3eb345bfdac59d35153f22db4527c))
+* **cli:** show check and version as task progress ([ecef28a](https://github.com/clay-doc/clay/commit/ecef28a93f88194918a2ce5ba3ca00e16b4744f9))
+* **code:** show shell code as a terminal ([e3e5ac7](https://github.com/clay-doc/clay/commit/e3e5ac7b6d7d9008c1737ce9976c1fc9634ceca7))
+* **footer:** add a brand column and a "Made with Clay" line ([e749596](https://github.com/clay-doc/clay/commit/e74959657387aae6f3a06e6e1798092a66e75537))
+* **links:** mark links to other sites with an icon ([572f59e](https://github.com/clay-doc/clay/commit/572f59ea09cf7e42448794415d688bc70d129e83))
+* **links:** preview other pages in a popup on hover ([0d7f747](https://github.com/clay-doc/clay/commit/0d7f7470bcdbbef142a770ffd40141b17c798472))
+* **prompts:** circle suggested prompts with daisyUI's aura ([051226f](https://github.com/clay-doc/clay/commit/051226f7a02d36944939d8d004a96396d7ef2d6a))
+* **seo:** add icons, site name and og:locale for search results and link previews ([3d34162](https://github.com/clay-doc/clay/commit/3d34162e44846e24a547902748403705860dbf5c))
+
+
+### Bug Fixes
+
+* **build:** type the site icons in the runtime config ([1f7380b](https://github.com/clay-doc/clay/commit/1f7380befdd310b877c07b1703f5e76bf72828b3))
+* **markdown:** show the checkboxes of task lists, read-only ([23eccba](https://github.com/clay-doc/clay/commit/23eccba479d1b24390f8023e56af7320fd4b3d9e))
+* **middleware:** use status and statusText in abortNavigation ([27096e7](https://github.com/clay-doc/clay/commit/27096e7697d2332a1e3aaafe45910300b7214bfd))
+* **sidebar:** show the API separators and keep the last entries clear of link previews ([7648cd5](https://github.com/clay-doc/clay/commit/7648cd5c119c104b386edef128856ee25b9019c6))
+
+
+### Miscellaneous Chores
+
+* release 5.0.0 ([011edca](https://github.com/clay-doc/clay/commit/011edca8365dae9a2bca8972ad2402da2b837182))
+
 ## [4.1.0](https://github.com/clay-doc/clay/compare/v4.0.0...v4.1.0) (2026-10-16)
 
 

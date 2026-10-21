@@ -1,6 +1,6 @@
 {
   "name": "clay-doc",
-  "version": "4.1.0",
+  "version": "5.0.0",
   "description": "Documentation sites from Markdown: write docs, get a fast, searchable, SEO-ready static site.",
   "license": "Apache-2.0",
   "repository": {
