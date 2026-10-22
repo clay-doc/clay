@@ -1,5 +1,24 @@
 # Changelog
 
+## [5.1.0](https://github.com/clay-doc/clay/compare/v5.0.0...v5.1.0) (2026-10-22)
+
+
+### Features
+
+* **analytics:** ask whether a page was helpful ([7b4ed10](https://github.com/clay-doc/clay/commit/7b4ed10922be25bc3ae800200a4e022301eb743d))
+* Clay 5.1 with clay search, enlarged images, printing and page feedback ([ee56d9a](https://github.com/clay-doc/clay/commit/ee56d9ac679959584d366d6c25979ed21942ff3c))
+* **cli:** add clay search, and give each command its own help and options ([09ee958](https://github.com/clay-doc/clay/commit/09ee9587c9023bed39c22d2d222cfa698be1a2aa))
+* **images:** open images shown smaller than they are in full ([31427ad](https://github.com/clay-doc/clay/commit/31427ad9c73209c4b3fa9af57c13286d6d7e22ab))
+* **print:** print pages as their text alone ([e7ac1c0](https://github.com/clay-doc/clay/commit/e7ac1c049c272406f2f87d1ec5d1ccbabc48c2f4))
+
+
+### Bug Fixes
+
+* **cli:** start clay dev --host instead of failing to find the project ([5efbb40](https://github.com/clay-doc/clay/commit/5efbb40d2290579aa40217645cd27a0a9cf4c5f9)), closes [#17](https://github.com/clay-doc/clay/issues/17)
+* **deps:** require Node.js 22.22.3 as Nuxt does, and update dependencies ([34fe037](https://github.com/clay-doc/clay/commit/34fe0377d6eef349cc7817b4189359ef4a1f9c9e))
+* **navbar:** name the version and language menus after what they show ([a9c62dc](https://github.com/clay-doc/clay/commit/a9c62dc396ac0e01574ce3c71623a9d2b43b7188))
+* **page:** open links to a section of another page at that section ([2ef3a1a](https://github.com/clay-doc/clay/commit/2ef3a1af2fbf0ca50e32e089cdc7ddf141dd1f74))
+
 ## [5.0.0](https://github.com/clay-doc/clay/compare/v4.1.0...v5.0.0) (2026-10-21)
 
 
