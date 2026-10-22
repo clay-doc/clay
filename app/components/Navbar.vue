@@ -110,10 +110,12 @@ onUnmounted(() => {
     <div class="navbar-end">
       <!-- Every item shows what it does in a tooltip; dropdowns hide theirs while open (assets/css/layout.css) -->
       <ul class="menu menu-horizontal flex-nowrap items-center px-1">
-        <!-- On narrow screens the switchers and links are in the navigation drawer (MobileNav.vue) -->
+        <!-- On narrow screens the switchers and links are in the navigation drawer (MobileNav.vue).
+             Their names start with what they switch and end with what they show, as a
+             name must contain the visible text (WCAG 2.5.3) -->
         <li v-if="versions.length > 1" class="hidden lg:block tooltip tooltip-bottom" :data-tip="t.docsVersion">
           <details>
-            <summary :aria-label="t.docsVersion"><i class="fa-solid fa-code-branch text-xs"></i>{{edition.version.label}}</summary>
+            <summary :aria-label="`${t.docsVersion}: ${edition.version.label}`"><i class="fa-solid fa-code-branch text-xs"></i>{{edition.version.label}}</summary>
             <ul class="bg-base-100 p-2 end-0 sm:end-auto z-10">
               <li v-for="v in versions" :key="v.name">
                 <NuxtLink :to="versionLink(v)" :class="{'menu-active': v.name === edition.version.name}"
@@ -124,7 +126,7 @@ onUnmounted(() => {
         </li>
         <li v-if="languages.length > 1" class="hidden lg:block tooltip tooltip-bottom" :data-tip="t.language">
           <details>
-            <summary :aria-label="t.language"><i class="fa-solid fa-language"></i>{{edition.language.label}}</summary>
+            <summary :aria-label="`${t.language}: ${edition.language.label}`"><i class="fa-solid fa-language"></i>{{edition.language.label}}</summary>
             <ul class="bg-base-100 p-2 end-0 sm:end-auto z-10">
               <li v-for="l in languages" :key="l.code">
                 <NuxtLink :to="languageLink(l)" :lang="l.code" :hreflang="l.code" :class="{'menu-active': l.code === edition.language.code}"

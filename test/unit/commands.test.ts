@@ -2,7 +2,7 @@ import {afterEach, beforeEach, describe, expect, it} from "vitest";
 import {cpSync, existsSync, mkdtempSync, readFileSync, rmSync} from "node:fs";
 import {tmpdir} from "node:os";
 import {join} from "node:path";
-import {EDIT_HELP, runCheck, runEdit} from "../../lib/commands";
+import {EDIT_HELP, runCheck, runEdit, runSearch} from "../../lib/commands";
 
 // Each test works on its own copy of the playground
 let root = "";
@@ -85,5 +85,30 @@ describe("clay check", () => {
         const {code, data} = runCheck(root);
         expect(code).toBe(1);
         expect((data.problems as string[]).some(problem => problem.startsWith("Broken link in"))).toBe(true);
+    });
+});
+
+describe("clay search", () => {
+    type Result = { file: string, line?: number, url: string, heading?: string, lines?: { line: number, text: string }[], generated?: boolean };
+    const results = (query: string, options = {}) => runSearch(root, query, options).data.results as Result[];
+
+    it("finds sections with the file and line they start at, and the lines that match", () => {
+        const [first] = results("page order");
+        expect(first).toMatchObject({file: "docs/latest/writing-documentation.md", heading: "Page Order", url: "/writing-documentation#page-order"});
+        const lines = read(first!.file).split("\n");
+        expect(lines[first!.line! - 1]).toBe("## Page Order");
+        expect(first!.lines!.length).toBeGreaterThan(0);
+        for (const {line, text} of first!.lines!) expect(lines[line - 1]!.trim().startsWith(text.replace(/…$/, ""))).toBe(true);
+    });
+
+    it("searches one language and version, and names the spec of generated pages", () => {
+        expect(results("Schritte", {lang: "de"})[0]!.file).toMatch(/\.de\.md$/);
+        expect(results("create pet")[0]).toMatchObject({file: "openapi/petstore.yaml", generated: true});
+        expect(runSearch(root, "x", {docsVersion: "nope"})).toMatchObject({code: 1, data: {ok: false}});
+    });
+
+    it("needs words to search for", () => {
+        expect(runSearch(root, " ")).toMatchObject({code: 2, data: {ok: false}});
+        expect(runSearch(root, "zzzqqq")).toMatchObject({code: 0, data: {results: []}});
     });
 });

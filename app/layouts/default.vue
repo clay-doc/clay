@@ -135,16 +135,17 @@ provide('untranslatedNote', untranslatedNote)
 
 <template>
   <!-- The sidebar's width can be changed by the reader (SidebarResizer.vue) -->
-  <div class="grid grid-rows-[4.5rem_1fr] grid-cols-[var(--clay-sidebar,20rem)_1fr] row-end-auto w-screen h-screen">
+  <div class="grid grid-rows-[4.5rem_1fr] grid-cols-[var(--clay-sidebar,20rem)_1fr] row-end-auto w-screen h-screen print:block print:h-auto print:w-auto">
     <!-- The first stop for the keyboard: past the navbar and sidebar to the page. It
          waits above the window rather than in "sr-only", which Font Awesome's
          stylesheet defines too, out of reach of Tailwind's "focus:not-sr-only" -->
-    <a href="#content" class="btn btn-sm btn-primary absolute top-4 left-4 z-50 -translate-y-24 focus:translate-y-0"
+    <a href="#content" class="btn btn-sm btn-primary absolute top-4 left-4 z-50 -translate-y-24 focus:translate-y-0 print:hidden"
        @click.prevent="skipToContent">{{messages.skipToContent}}</a>
-    <Navbar class="col-span-2"/>
-    <Sidebar class="hidden lg:block w-full"/>
-    <SidebarResizer class="hidden lg:block"/>
-    <Content class="h-full w-full col-span-2 lg:col-span-1 overflow-hidden">
+    <!-- Printed, the page is its text alone (print.css) -->
+    <Navbar class="col-span-2 print:hidden!"/>
+    <Sidebar class="hidden lg:block w-full print:hidden!"/>
+    <SidebarResizer class="hidden lg:block print:hidden!"/>
+    <Content class="h-full w-full col-span-2 lg:col-span-1 overflow-hidden print:h-auto print:overflow-visible">
       <div v-if="version.name" role="status" class="alert alert-warning alert-soft rounded-none sm:rounded-tl-2xl">
         <i class="fa-solid fa-clock-rotate-left"></i>
         <span>
@@ -153,7 +154,7 @@ provide('untranslatedNote', untranslatedNote)
         </span>
       </div>
       <slot />
-      <ContentFooter />
+      <ContentFooter class="print:hidden"/>
     </Content>
     <SearchModal/>
     <MobileNav/>

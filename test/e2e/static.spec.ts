@@ -92,8 +92,72 @@ test.describe("in the browser", () => {
         await expect(links.filter({hasText: /^Security$/})).toHaveAttribute("href", "/clay/reference/security#forms");
         await expect(links.filter({hasText: "external"})).toHaveAttribute("target", "_blank");
         await expect(links.filter({hasText: "mail"})).toHaveAttribute("href", "mailto:team@example.com");
-        await expect(page.locator(".prose img")).toHaveAttribute("src", "/clay/docs/reference/img/diagram.svg");
-        expect(await page.locator(".prose img").evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth > 0)).toBe(true);
+        await expect(page.locator('.prose img[alt="Diagram"]')).toHaveAttribute("src", "/clay/docs/reference/img/diagram.svg");
+        expect(await page.locator('.prose img[alt="Diagram"]').evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth > 0)).toBe(true);
+    });
+
+    test("images shown smaller than they are open in full, by pointer and keyboard", async ({page}) => {
+        await page.goto("reference/feature-tour/");
+        const screenshot = page.locator('.prose img[alt="The playground in a wide window"]');
+        const zoom = page.locator("dialog.clay-zoom");
+        await expect(screenshot).toHaveAttribute("role", "button");
+        await expect(screenshot).toHaveAttribute("aria-label", "Enlarge image: The playground in a wide window");
+        // The diagram is no bigger than it is shown
+        await expect(page.locator('.prose img[alt="Diagram"]')).not.toHaveClass(/clay-zoomable/);
+
+        await screenshot.click();
+        await expect(zoom).toBeVisible();
+        await expect(zoom.locator("figcaption")).toHaveText("The playground in a wide window");
+        await page.keyboard.press("Escape");
+        await expect(zoom).toBeHidden();
+        await expect(screenshot).toBeFocused();
+
+        await page.keyboard.press("Enter");
+        await expect(zoom).toBeVisible();
+        await zoom.click({position: {x: 10, y: 10}});
+        await expect(zoom).toBeHidden();
+    });
+
+    test("printed, a page is its text alone, with every tab and folded text shown", async ({page}) => {
+        await page.goto("reference/components/");
+        await page.evaluate(() => window.dispatchEvent(new Event("beforeprint")));
+        await page.emulateMedia({media: "print"});
+        await expect(page.locator("html")).toHaveAttribute("data-theme", "clay-light");
+        await expect(page.locator(".navbar").first()).toBeHidden();
+        await expect(page.locator("aside")).toBeHidden();
+        const panels = page.locator(".clay-tab-panel");
+        for (let i = 0; i < await panels.count(); i++) await expect(panels.nth(i)).toBeVisible();
+        await expect(page.getByText("Hidden folded text.")).toBeVisible();
+
+        await page.evaluate(() => window.dispatchEvent(new Event("afterprint")));
+        await page.emulateMedia({media: "screen"});
+        await expect(page.getByText("Hidden folded text.")).toBeHidden();
+    });
+
+    test("asks whether a page helped where analytics count events, once per page while the site is open", async ({page}) => {
+        await page.goto("reference/feature-tour/");
+        // The playground has no analytics: nothing to send the answer to
+        await expect(page.locator(".clay-feedback")).toHaveCount(0);
+
+        // As the analytics plugin leaves it with a service loaded (Plausible)
+        await page.addInitScript(() => Object.assign(window, {
+            clayAnalyticsEvents: true, clayFeedback: true,
+            plausible: (...args: unknown[]) => ((window as unknown as { sent: unknown[] }).sent ??= []).push(args),
+        }));
+        await page.reload();
+        const feedback = page.locator(".clay-feedback");
+        await expect(feedback).toContainText("Was this page helpful?");
+        await feedback.getByRole("button", {name: "No"}).click();
+        await expect(feedback).toHaveText("Thanks for your feedback!");
+        expect(await page.evaluate(() => (window as unknown as { sent: unknown[] }).sent))
+            .toEqual([["Page feedback", {props: {page: "/reference/feature-tour", helpful: "no"}}]]);
+        // Back on the page, it is not asked again; nothing is stored, so a new visit asks
+        await page.locator('a[rel="next"]').click();
+        await expect(page).toHaveURL(/security/);
+        await page.goBack();
+        await expect(page.locator(".clay-feedback")).toHaveText("Thanks for your feedback!");
+        await page.reload();
+        await expect(page.locator(".clay-feedback")).toContainText("Was this page helpful?");
     });
 
     test("search finds sections despite typos and highlights them on the page", async ({page}) => {
@@ -108,6 +172,19 @@ test.describe("in the browser", () => {
 
         await expect(page).toHaveURL(/\/clay\/reference\/feature-tour\?highlight=.*#alerts$/);
         await expect(page.locator(".prose mark.search-hit-active")).toHaveText("Alerts");
+    });
+
+    test("links to a section of another page open it at that section", async ({page}) => {
+        await page.goto("configuration/");
+        await hydrated(page);
+        await page.locator(".prose a", {hasText: "Page order"}).click();
+        await expect(page).toHaveURL(/\/writing-documentation#page-order$/);
+        const heading = page.locator("h2#page-order");
+        // At the top of the pane: the scroll to a new page's top used to undo it
+        await expect.poll(() => heading.evaluate(el => el.getBoundingClientRect().top - document.querySelector("#content")!.getBoundingClientRect().top))
+            .toBeGreaterThanOrEqual(0);
+        await expect.poll(() => heading.evaluate(el => el.getBoundingClientRect().top - document.querySelector("#content")!.getBoundingClientRect().top))
+            .toBeLessThan(40);
     });
 
     test("task lists show read-only checkboxes", async ({page}) => {

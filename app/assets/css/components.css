@@ -161,10 +161,13 @@ a.clay-card:focus-visible {
 }
 
 /* Prompts: a suggested prompt for AI assistants and agents, copied as written.
-   In daisyUI's aura, a light in the primary color circles the box, over a
-   faint line that keeps its edge where the light is not. */
+   In daisyUI's aura, a light in the primary color drifts around the box,
+   over a faint line that keeps its edge where the light is not. The light
+   fades in and out evenly and moves a little slower than the aura's own,
+   which, sharp at its front and quick, looks like something loading. */
 .clay-prompt-aura {
-    @apply my-5 block bg-primary/25 text-primary;
+    @apply my-5 block bg-primary/25 text-primary duration-[9s];
+    background-image: conic-gradient(from var(--aura-angle), transparent 0deg, currentColor 70deg, transparent 140deg);
 }
 
 /* A softer glow than the aura's own, so the box stays part of the page */
@@ -659,4 +662,17 @@ a.clay-endpoint {
 
 .clay-status-5 {
     color: color-mix(in oklab, var(--color-error) 75%, var(--color-base-content)) !important;
+}
+
+/* "Was this page helpful?" under a page (PageFeedback.vue) */
+.clay-feedback {
+    @apply flex min-h-8 flex-wrap items-center gap-x-1 gap-y-2 border-t border-base-300 pt-6;
+}
+
+.clay-feedback > span {
+    @apply me-2 font-semibold;
+}
+
+.clay-feedback i {
+    @apply me-1;
 }

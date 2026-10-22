@@ -2,6 +2,7 @@
 import {editLink, type Configuration} from "#common/configuration";
 import {adjacentPages, type DocItem} from "#common/nav";
 import type {Edition} from "#common/editions";
+import PageFeedback from "~/components/PageFeedback.vue";
 
 const props = defineProps<{ url: string }>();
 const config = inject('config') as Ref<Configuration | undefined>;
@@ -26,6 +27,7 @@ const adjacent = computed(() => structure.value ? adjacentPages(structure.value,
 
 <template>
   <footer class="not-prose mt-12 flex flex-col gap-6 text-sm">
+    <PageFeedback v-if="doc" :url="url"/>
     <div v-if="edit || updated" class="flex flex-wrap justify-between gap-2 opacity-80">
       <a v-if="edit" :href="edit" target="_blank" rel="noopener noreferrer" class="link link-hover">
         <i class="fa-solid fa-pen-to-square mr-1"></i>{{t.editPage}}

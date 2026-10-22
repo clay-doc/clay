@@ -15,6 +15,8 @@ Relative: [Configuration](../configuration.md), same folder: [Security](./securi
 
 ![Diagram](img/diagram.svg)
 
+![The playground in a wide window](img/screenshot.png)
+
 Download the [diagram](img/diagram.svg).
 
 ## Code

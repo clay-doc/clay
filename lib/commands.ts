@@ -1,4 +1,7 @@
-import {posix} from "node:path";
+import {existsSync, readFileSync, statSync} from "node:fs";
+import {join, posix, relative} from "node:path";
+import GithubSlugger from "github-slugger";
+import {Marked, type Tokens} from "marked";
 import {
     addLink, createFolder, createPage, createTranslation, deleteEntry, editorContext, getSetting, loadDocsTree, loadSettings,
     moveEntry, removeLink, reorder, saveSettings, setFields, setSetting, settingRows, slugify,
@@ -6,9 +9,13 @@ import {
 } from "./editor";
 import {loadSite} from "./site";
 import {brokenLinks} from "./checks";
+import {headingText} from "../common/markdown-text";
+import {componentSyntax} from "../common/markdown-components";
+import {highlight, searchSections} from "../common/search";
+import {buildSearchIndex} from "../server/utils/search-index";
 
-// "clay edit <command>" and "clay check": the editor's actions as commands for
-// scripts and AI agents. Each returns what happened, for people as text and
+// "clay edit <command>", "clay check" and "clay search": the editor's actions,
+// and finding what to change, as commands for scripts and AI agents. Each returns what happened, for people as text and
 // for programs as JSON (--json); the interactive editor is editor-screen.ts.
 
 export type CommandOptions = {
@@ -19,6 +26,7 @@ export type CommandOptions = {
     slug?: string;
     position?: string;
     redirect?: boolean;
+    limit?: number;
 };
 
 export type CommandResult = { code: number, text: string, data: Record<string, unknown> };
@@ -359,5 +367,104 @@ export function runCheck(root: string): CommandResult {
         };
     } catch (error) {
         return {code: 1, text: (error as Error).message, data: {ok: false, error: (error as Error).message}};
+    }
+}
+
+// Where a section starts in its file: the line of each heading, by the id the
+// site gives it (the same slugs as the renderer, see headingIds), and of the
+// first line after the front matter. Lines count from 1.
+const headingLexer = new Marked({gfm: true}, componentSyntax());
+
+function sectionLines(text: string): { intro: number, anchors: Map<string, number>, starts: number[] } {
+    const lines = text.split("\n");
+    let intro = 1;
+    if (lines[0]?.trim() === "---") {
+        const end = lines.findIndex((line, i) => i > 0 && line.trim() === "---");
+        if (end > 0) intro = end + 2;
+    }
+    const slugger = new GithubSlugger();
+    const anchors = new Map<string, number>();
+    const starts: number[] = [];
+    let fence = "";
+    for (let i = intro - 1; i < lines.length; i++) {
+        const line = lines[i]!;
+        const marker = /^\s{0,3}(`{3,}|~{3,})/.exec(line)?.[1];
+        if (fence) {
+            if (marker && marker[0] === fence[0] && marker.length >= fence.length) fence = "";
+            continue;
+        }
+        if (marker) {
+            fence = marker;
+            continue;
+        }
+        const heading = /^\s{0,3}(#{1,6})\s/.exec(line);
+        if (!heading) continue;
+        const token = headingLexer.lexer(line.trim())[0] as Tokens.Heading | undefined;
+        if (token?.type !== "heading") continue;
+        anchors.set(slugger.slug(headingText(token.tokens)), i + 1);
+        if (heading[1]!.length <= 3) starts.push(i + 1);
+    }
+    return {intro, anchors, starts};
+}
+
+const MATCHED_LINES = 5;
+
+// The site's search over the docs of one version and language: each result is
+// a section with the file and line it starts at, and the lines in it that
+// match, to open and change them. Generated pages (OpenAPI) name their spec.
+export function runSearch(root: string, query: string, options: CommandOptions = {}): CommandResult {
+    try {
+        if (!query.trim()) throw new UsageError("Name what to search for, e.g. clay search page order");
+        const limit = options.limit ?? 10;
+        if (!Number.isInteger(limit) || limit < 1) throw new UsageError(`--limit is a number from 1, not "${options.limit}"`);
+        const edition = editionOf(root, options);
+        const site = loadSite(root, {gitDates: false});
+        const version = site.versions.find(v => v.name === edition.version)!;
+        const pages = site.pages.filter(page => page.version === edition.version && page.language === edition.language);
+        const byRoute = new Map(pages.map(page => [page.route, page]));
+        const hits = searchSections(buildSearchIndex(pages), query, limit);
+
+        const files = new Map<string, ReturnType<typeof sectionLines> & { lines: string[] }>();
+        const results = hits.map(hit => {
+            const page = byRoute.get(hit.link)!;
+            const spec = version.apis.find(api => api.spec === page.source);
+            const path = join(version.docsDir, page.source);
+            const file = spec ? page.source : relative(root, path).split("\\").join("/");
+            const result: Record<string, unknown> = {
+                file, title: hit.pageTitle, ...(hit.heading ? {heading: hit.heading} : {}),
+                url: hit.link + (hit.anchor ? `#${hit.anchor}` : ""),
+                snippet: hit.snippet.map(part => part.text).join(""),
+                ...(spec ? {generated: true} : {}),
+            };
+            if (spec || !existsSync(path) || !statSync(path).isFile()) return result;
+
+            let read = files.get(path);
+            if (!read) {
+                const text = readFileSync(path, "utf8");
+                read = {...sectionLines(text), lines: text.split("\n")};
+                files.set(path, read);
+            }
+            const line = hit.anchor ? read.anchors.get(hit.anchor) ?? read.intro : read.intro;
+            const end = read.starts.find(start => start > line) ?? read.lines.length + 1;
+            const matched = read.lines.slice(line - 1, end - 1)
+                .map((text, i) => ({line: line + i, text: text.trim()}))
+                .filter(({text}) => text && highlight(text, hit.terms).some(part => part.match))
+                .slice(0, MATCHED_LINES)
+                .map(({line, text}) => ({line, text: text.length > 160 ? `${text.slice(0, 159)}…` : text}));
+            return {...result, line, lines: matched};
+        });
+
+        const text = results.length ? results.map((result, i) => [
+            `${i + 1}. ${result.heading ? `${result.title} › ${result.heading}` : result.title}`,
+            `   ${result.file}${result.line ? `:${result.line}` : ""}  ${result.url}${result.generated ? "  (generated from this OpenAPI spec)" : ""}`,
+            ...((result.lines as { line: number, text: string }[] | undefined)?.length
+                ? (result.lines as { line: number, text: string }[]).map(({line, text}) => `   ${String(line).padStart(4)}: ${text}`)
+                : [`   ${result.snippet}`]),
+        ].join("\n")).join("\n\n") : `Nothing found for "${query}"`;
+        return done(text, {query, edition: {version: edition.version, language: edition.language}, results});
+    } catch (error) {
+        const message = (error as Error).message;
+        return {code: error instanceof UsageError ? 2 : 1, text: error instanceof UsageError ? `${message}\n\nRun "clay search --help" for usage.` : message,
+            data: {ok: false, error: message}};
     }
 }

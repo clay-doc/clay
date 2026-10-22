@@ -202,7 +202,7 @@ test.describe("request cells", () => {
         await hydrated(page);
         const run = page.locator(".clay-request-actions .btn-primary");
         await expect(run).toHaveText("Run");
-        await page.locator("summary[aria-label='Language']").click();
+        await page.locator("summary[aria-label^='Language']").click();
         await page.locator(".navbar a", {hasText: "Deutsch"}).click();
         await page.waitForURL(/\/de\//);
         await expect(run).toHaveText("Ausführen");

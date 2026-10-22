@@ -42,9 +42,11 @@
 }
 
 /* "#" links to sections, shown left of a heading on hover like on GitHub
-   (the page has room for them in its left padding, see Markdown.vue) */
+   (the page has room for them in its left padding, see Markdown.vue). A
+   section scrolled to keeps some room above it, also when the page is still
+   sliding in (page-enter) as a link from another page opens it. */
 .prose :is(h2, h3, h4, h5, h6) {
-    @apply relative;
+    @apply relative scroll-mt-4;
 }
 
 .prose .heading-anchor {
@@ -92,3 +94,74 @@
     @apply me-1 text-[0.85em] align-[0.035em];
 }
 
+
+/* Images shown smaller than they are open in full (ImageZoom.vue): over the
+   page, which dims, fading in and growing a little, with their text below */
+.clay-zoomable {
+    @apply cursor-zoom-in;
+}
+
+.clay-zoom {
+    @apply fixed inset-0 m-0 flex h-dvh max-h-none w-dvw max-w-none cursor-zoom-out items-center justify-center bg-transparent p-4 sm:p-8;
+    @apply opacity-0 transition-[opacity,display,overlay] transition-discrete duration-200;
+}
+
+.clay-zoom:not([open]) {
+    @apply hidden;
+}
+
+.clay-zoom[open] {
+    @apply opacity-100;
+}
+
+@starting-style {
+    .clay-zoom[open] {
+        @apply opacity-0;
+    }
+}
+
+.clay-zoom::backdrop {
+    @apply bg-black/0 backdrop-blur-none transition-[background-color,backdrop-filter,display,overlay] transition-discrete duration-200;
+}
+
+.clay-zoom[open]::backdrop {
+    @apply bg-black/70 backdrop-blur-sm;
+}
+
+@starting-style {
+    .clay-zoom[open]::backdrop {
+        @apply bg-black/0 backdrop-blur-none;
+    }
+}
+
+.clay-zoom figure {
+    @apply m-0 flex max-h-full max-w-full scale-96 flex-col items-center gap-3 transition-transform duration-200;
+}
+
+.clay-zoom[open] figure {
+    @apply scale-100;
+}
+
+@starting-style {
+    .clay-zoom[open] figure {
+        @apply scale-96;
+    }
+}
+
+.clay-zoom img {
+    @apply m-0 max-h-[calc(100dvh-6rem)] min-h-0 max-w-full rounded-box object-contain shadow-2xl;
+}
+
+.clay-zoom figcaption {
+    @apply max-w-2xl text-center text-sm text-white/85;
+}
+
+.clay-zoom-close {
+    @apply absolute end-3 top-3 text-lg text-white hover:bg-white/15;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .clay-zoom, .clay-zoom::backdrop, .clay-zoom figure {
+        @apply transition-none;
+    }
+}

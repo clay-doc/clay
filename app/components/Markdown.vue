@@ -5,6 +5,7 @@ import PageFooter from "~/components/PageFooter.vue";
 import PageList from "~/components/PageList.vue";
 import PageActions from "~/components/PageActions.vue";
 import LinkPreview from "~/components/LinkPreview.vue";
+import ImageZoom from "~/components/ImageZoom.vue";
 import {clearHighlights, firstMarkInSection, highlightTerms} from "~/utils/highlight-dom";
 import {copyCodeBlock} from "~/utils/code-copy";
 import {remember, restoreTabs, reveal, selectLabel, selectTab, tabKeydown} from "~/utils/tabs";
@@ -55,8 +56,9 @@ const tocBox = ref<HTMLDetailsElement | null>(null);
 const scrollContainer = ref<HTMLElement | null>(null);
 
 // Once the page is shown: mark the words from a search result (?highlight=)
-// and jump to the first one in the #section
-async function revealResult() {
+// and jump to the first one in the #section. A new page (fresh) whose section
+// or match is missing starts at the top, which Content.vue leaves to it.
+async function revealResult(fresh = false) {
   await nextTick();
   const root = contentEl.value;
   if (!root) return;
@@ -72,7 +74,8 @@ async function revealResult() {
   // A hit in a hidden tab or folded details: show it first
   const target = mark ?? anchor;
   if (target) reveal(target);
-  (mark ?? anchor)?.scrollIntoView({block: mark ? "center" : "start"});
+  if (target) target.scrollIntoView({block: mark ? "center" : "start"});
+  else if (fresh) scrollContainer.value?.scrollTo({top: 0});
 }
 
 // Components that need the browser: the reader's tabs, diagrams in the site's
@@ -120,9 +123,9 @@ onBeforeUnmount(unmountCells);
 onMounted(() => {
   scrollContainer.value = contentEl.value?.closest<HTMLElement>("#content") ?? null;
   drawComponents();
-  revealResult();
+  revealResult(true);
 });
-watch(() => [route.hash, route.query.highlight], revealResult);
+watch(() => [route.hash, route.query.highlight], () => revealResult());
 watch(() => doc.value?.html, () => nextTick(drawComponents));
 // Before the page's HTML is replaced
 watch(() => doc.value?.html, unmountCells, {flush: "pre"});
@@ -170,7 +173,7 @@ function handleKeys(event: KeyboardEvent) {
 
 <template>
   <!-- More room on the left for the "#" links next to headings -->
-  <div class="flex gap-10 p-6 sm:pl-9">
+  <div class="flex gap-10 p-6 sm:pl-9 print:p-0">
     <article class="prose prose-sm sm:prose max-w-none! min-w-0 flex-1">
       <template v-if="doc">
         <!-- The full text color: the article's own is a softer one for body text -->
@@ -187,7 +190,7 @@ function handleKeys(event: KeyboardEvent) {
         </div>
         <!-- Narrower screens have no room beside the page: the contents and the
              page's actions fold up above it -->
-        <details v-if="doc.toc.length > 1 || hasActions" ref="tocBox" class="not-prose xl:hidden mb-6 rounded-box border border-base-300 text-sm">
+        <details v-if="doc.toc.length > 1 || hasActions" ref="tocBox" class="not-prose xl:hidden mb-6 rounded-box border border-base-300 text-sm print:hidden!">
           <summary class="cursor-pointer px-4 py-2 font-semibold">{{doc.toc.length > 1 ? t.onThisPage : t.pageActions}}</summary>
           <div class="px-4 pb-3">
             <TableOfContents v-if="doc.toc.length > 1" :entries="doc.toc" :scroll-container="scrollContainer" :title="false"
@@ -197,12 +200,13 @@ function handleKeys(event: KeyboardEvent) {
         </details>
         <div ref="contentEl" v-html="doc.html" @click="handleClicks" @keydown="handleKeys" class="w-full"></div>
         <LinkPreview :root="contentEl" :here="url"/>
+        <ImageZoom :root="contentEl" :html="doc.html"/>
         <PageList v-if="doc.list"/>
-        <PageFooter v-if="!start" :url="url"/>
+        <PageFooter v-if="!start" :url="url" class="print:hidden"/>
       </template>
       <Error v-else :code="error?.status ?? 500" :message="error?.statusText ?? 'Error'"/>
     </article>
-    <aside v-if="doc" class="hidden xl:block w-56 shrink-0 ml-auto">
+    <aside v-if="doc" class="hidden xl:block w-56 shrink-0 ml-auto print:hidden!">
       <div class="sticky top-6">
         <TableOfContents v-if="doc.toc.length > 1" :entries="doc.toc" :scroll-container="scrollContainer"/>
         <!-- Below a line under the contents: the page for language models -->
