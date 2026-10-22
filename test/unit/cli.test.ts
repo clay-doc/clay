@@ -1,6 +1,8 @@
 import {describe, expect, it} from "vitest";
 import {spawnSync} from "node:child_process";
 import {COMMANDS, commandHelp, mainHelp} from "../../lib/cli/main";
+import {PACKAGE_DIR} from "../../lib/cli/command";
+import {nuxtArguments} from "../../lib/cli/nuxt";
 
 const clay = (...args: string[]) => spawnSync(process.execPath, ["bin/clay.mjs", ...args], {encoding: "utf8", env: {...process.env, NO_COLOR: "1"}});
 
@@ -35,4 +37,9 @@ describe("the clay command line", () => {
         expect(clay("search", "--help").stdout).toContain("Usage: clay search <words> [options]");
     });
 
+    // Issue #17: "--host" took the package's directory for its value, and Nuxt found no project
+    it("gives Nuxt the package's directory before options that take a value", () => {
+        expect(nuxtArguments(["dev", "--port", "3000", "--host"])).toEqual(["dev", PACKAGE_DIR, "--port", "3000", "--host"]);
+        expect(nuxtArguments(["generate"])).toEqual(["generate", PACKAGE_DIR]);
+    });
 });
