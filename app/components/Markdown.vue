@@ -173,7 +173,7 @@ function handleKeys(event: KeyboardEvent) {
 
 <template>
   <!-- More room on the left for the "#" links next to headings -->
-  <div class="flex gap-10 p-6 sm:pl-9">
+  <div class="flex gap-10 p-6 sm:pl-9 print:p-0">
     <article class="prose prose-sm sm:prose max-w-none! min-w-0 flex-1">
       <template v-if="doc">
         <!-- The full text color: the article's own is a softer one for body text -->
@@ -190,7 +190,7 @@ function handleKeys(event: KeyboardEvent) {
         </div>
         <!-- Narrower screens have no room beside the page: the contents and the
              page's actions fold up above it -->
-        <details v-if="doc.toc.length > 1 || hasActions" ref="tocBox" class="not-prose xl:hidden mb-6 rounded-box border border-base-300 text-sm">
+        <details v-if="doc.toc.length > 1 || hasActions" ref="tocBox" class="not-prose xl:hidden mb-6 rounded-box border border-base-300 text-sm print:hidden!">
           <summary class="cursor-pointer px-4 py-2 font-semibold">{{doc.toc.length > 1 ? t.onThisPage : t.pageActions}}</summary>
           <div class="px-4 pb-3">
             <TableOfContents v-if="doc.toc.length > 1" :entries="doc.toc" :scroll-container="scrollContainer" :title="false"
@@ -202,11 +202,11 @@ function handleKeys(event: KeyboardEvent) {
         <LinkPreview :root="contentEl" :here="url"/>
         <ImageZoom :root="contentEl" :html="doc.html"/>
         <PageList v-if="doc.list"/>
-        <PageFooter v-if="!start" :url="url"/>
+        <PageFooter v-if="!start" :url="url" class="print:hidden"/>
       </template>
       <Error v-else :code="error?.status ?? 500" :message="error?.statusText ?? 'Error'"/>
     </article>
-    <aside v-if="doc" class="hidden xl:block w-56 shrink-0 ml-auto">
+    <aside v-if="doc" class="hidden xl:block w-56 shrink-0 ml-auto print:hidden!">
       <div class="sticky top-6">
         <TableOfContents v-if="doc.toc.length > 1" :entries="doc.toc" :scroll-container="scrollContainer"/>
         <!-- Below a line under the contents: the page for language models -->

@@ -1,0 +1,52 @@
+/* Printing a page, or saving it as a PDF: its text alone, without the navbar,
+   sidebar and footers (the layout's "print:" classes), in the light theme with
+   folded details open (plugins/print.client.ts), and with what only works on
+   screen spelled out */
+@media print {
+    @page {
+        margin: 1.5cm;
+    }
+
+    /* Tabs: every tab's content, each under its label */
+    .clay-tabs [role=tablist] {
+        @apply hidden;
+    }
+
+    /* In the layer of Tailwind's base styles: their "hidden" is !important,
+       which only a rule in the same layer (or one before it) can undo */
+    @layer base {
+        .clay-tab-panel[hidden] {
+            display: block !important;
+        }
+    }
+
+    .clay-tab-panel::before {
+        @apply mt-4 block text-sm font-semibold;
+        content: attr(data-label);
+    }
+
+    /* Links to other sites: their address after them, as paper has no links */
+    .prose a[href^="http"]:not(.clay-card)::after {
+        @apply text-[0.85em] font-normal break-all text-base-content/70;
+        content: " (" attr(href) ")";
+    }
+
+    /* Buttons that do nothing on paper */
+    .copy-code, .heading-anchor {
+        @apply hidden!;
+    }
+
+    /* Long lines of code wrap instead of being cut off */
+    .prose pre, .prose pre code {
+        @apply overflow-visible whitespace-pre-wrap break-words;
+    }
+
+    /* Blocks are not split across pages, and headings stay with their text */
+    .prose :is(pre, figure, img, table, .markdown-alert, .clay-card, .code-block) {
+        @apply break-inside-avoid;
+    }
+
+    .prose :is(h2, h3, h4) {
+        @apply break-after-avoid;
+    }
+}

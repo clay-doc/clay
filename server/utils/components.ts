@@ -157,7 +157,8 @@ export function componentRenderers(messages: Messages, cells?: CellResolver, win
             `<button type="button" role="tab" id="${group}-${i}" class="tab${i ? "" : " tab-active"}${statusClass(tab.label)}" aria-controls="${group}-${i}-panel" `
             + `aria-selected="${i === 0}" tabindex="${i ? -1 : 0}">${escapeHtml(tab.label)}</button>`);
         const panels = tabs.map((tab, i) =>
-            `<div role="tabpanel" id="${group}-${i}-panel" class="clay-tab-panel" aria-labelledby="${group}-${i}"${i ? " hidden" : ""}>${render(tab.tokens)}</div>`);
+            `<div role="tabpanel" id="${group}-${i}-panel" class="clay-tab-panel" aria-labelledby="${group}-${i}" data-label="${escapeHtml(tab.label)}"${i ? " hidden" : ""}>`
+            + `${render(tab.tokens)}</div>`);
         // A code group with shell code in a tab is a terminal: the bar of its tabs gets a window's buttons (code.css)
         const terminal = token.kind === "code-group" && panels.some(panel => panel.includes('class="code-block is-terminal'));
         const codeGroup = token.kind === "code-group" ? ` clay-code-group${terminal ? " is-terminal" : ""}${terminal && windowDots ? " has-dots" : ""}` : "";

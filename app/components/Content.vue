@@ -11,12 +11,12 @@ watch(() => route.path, () => {
 });
 </script>
 <template>
-<div class="bg-base-200 relative">
+<div class="bg-base-200 relative print:bg-transparent">
   <!-- Focusable, so the skip link can move the keyboard here -->
-  <main id="content" ref="pane" tabindex="-1" class="bg-base-100 sm:rounded-tl-2xl h-full w-full overflow-auto outline-none">
+  <main id="content" ref="pane" tabindex="-1" class="bg-base-100 sm:rounded-tl-2xl h-full w-full overflow-auto outline-none print:h-auto print:overflow-visible print:rounded-none">
     <slot/>
   </main>
   <!-- The navbar and sidebar cast a shadow onto the page, above everything on it -->
-  <div aria-hidden="true" class="content-shadow pointer-events-none absolute inset-0 sm:rounded-tl-2xl"></div>
+  <div aria-hidden="true" class="content-shadow pointer-events-none absolute inset-0 sm:rounded-tl-2xl print:hidden"></div>
 </div>
 </template>

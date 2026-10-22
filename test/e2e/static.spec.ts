@@ -118,6 +118,22 @@ test.describe("in the browser", () => {
         await expect(zoom).toBeHidden();
     });
 
+    test("printed, a page is its text alone, with every tab and folded text shown", async ({page}) => {
+        await page.goto("reference/components/");
+        await page.evaluate(() => window.dispatchEvent(new Event("beforeprint")));
+        await page.emulateMedia({media: "print"});
+        await expect(page.locator("html")).toHaveAttribute("data-theme", "clay-light");
+        await expect(page.locator(".navbar").first()).toBeHidden();
+        await expect(page.locator("aside")).toBeHidden();
+        const panels = page.locator(".clay-tab-panel");
+        for (let i = 0; i < await panels.count(); i++) await expect(panels.nth(i)).toBeVisible();
+        await expect(page.getByText("Hidden folded text.")).toBeVisible();
+
+        await page.evaluate(() => window.dispatchEvent(new Event("afterprint")));
+        await page.emulateMedia({media: "screen"});
+        await expect(page.getByText("Hidden folded text.")).toBeHidden();
+    });
+
     test("search finds sections despite typos and highlights them on the page", async ({page}) => {
         await page.goto("");
         await hydrated(page);
