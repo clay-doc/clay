@@ -11,4 +11,3 @@ impact.
   support since April 2026; requiring Node.js 22 is a change for the next major version.
 - unstorage stays pinned to 1.17.5: 1.17.6 breaks Nitro's prerendering (`[unstorage] Invalid key: "/"`); unpin
   once a fixed release is out (`.github/dependabot.yml` skips 1.17.6).
-- the cli is currently a big switch case statement, no real parser is present; this needs to be refactored to be expandable
