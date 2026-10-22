@@ -663,3 +663,16 @@ a.clay-endpoint {
 .clay-status-5 {
     color: color-mix(in oklab, var(--color-error) 75%, var(--color-base-content)) !important;
 }
+
+/* "Was this page helpful?" under a page (PageFeedback.vue) */
+.clay-feedback {
+    @apply flex min-h-8 flex-wrap items-center gap-x-1 gap-y-2 border-t border-base-300 pt-6;
+}
+
+.clay-feedback > span {
+    @apply me-2 font-semibold;
+}
+
+.clay-feedback i {
+    @apply me-1;
+}

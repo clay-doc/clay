@@ -16,6 +16,8 @@ export default defineNuxtPlugin(() => {
         (queue.q ??= []).push(args);
     };
     services.clayAnalyticsEvents = config.analytics?.events !== false;
+    // "Was this page helpful?" (PageFeedback.vue)
+    services.clayFeedback = config.analytics?.feedback !== false;
     for (const {src, attributes} of scripts) {
         const script = document.createElement("script");
         script.src = src;

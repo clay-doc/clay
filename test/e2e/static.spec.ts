@@ -134,6 +134,32 @@ test.describe("in the browser", () => {
         await expect(page.getByText("Hidden folded text.")).toBeHidden();
     });
 
+    test("asks whether a page helped where analytics count events, once per page while the site is open", async ({page}) => {
+        await page.goto("reference/feature-tour/");
+        // The playground has no analytics: nothing to send the answer to
+        await expect(page.locator(".clay-feedback")).toHaveCount(0);
+
+        // As the analytics plugin leaves it with a service loaded (Plausible)
+        await page.addInitScript(() => Object.assign(window, {
+            clayAnalyticsEvents: true, clayFeedback: true,
+            plausible: (...args: unknown[]) => ((window as unknown as { sent: unknown[] }).sent ??= []).push(args),
+        }));
+        await page.reload();
+        const feedback = page.locator(".clay-feedback");
+        await expect(feedback).toContainText("Was this page helpful?");
+        await feedback.getByRole("button", {name: "No"}).click();
+        await expect(feedback).toHaveText("Thanks for your feedback!");
+        expect(await page.evaluate(() => (window as unknown as { sent: unknown[] }).sent))
+            .toEqual([["Page feedback", {props: {page: "/reference/feature-tour", helpful: "no"}}]]);
+        // Back on the page, it is not asked again; nothing is stored, so a new visit asks
+        await page.locator('a[rel="next"]').click();
+        await expect(page).toHaveURL(/security/);
+        await page.goBack();
+        await expect(page.locator(".clay-feedback")).toHaveText("Thanks for your feedback!");
+        await page.reload();
+        await expect(page.locator(".clay-feedback")).toContainText("Was this page helpful?");
+    });
+
     test("search finds sections despite typos and highlights them on the page", async ({page}) => {
         await page.goto("");
         await hydrated(page);

@@ -7,6 +7,7 @@ export type AnalyticsConfiguration = {
     umami?: { websiteId?: string, src?: string },
     goatcounter?: { code?: string, endpoint?: string }, // code: <code>.goatcounter.com; endpoint: your own server
     events?: boolean, // searches without results, copied code, the page menu; on unless false
+    feedback?: boolean, // "Was this page helpful?" under pages, sent as an event; on unless false
 };
 
 export type AnalyticsScript = { src: string, attributes: Record<string, string> };
