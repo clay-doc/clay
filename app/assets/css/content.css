@@ -42,9 +42,11 @@
 }
 
 /* "#" links to sections, shown left of a heading on hover like on GitHub
-   (the page has room for them in its left padding, see Markdown.vue) */
+   (the page has room for them in its left padding, see Markdown.vue). A
+   section scrolled to keeps some room above it, also when the page is still
+   sliding in (page-enter) as a link from another page opens it. */
 .prose :is(h2, h3, h4, h5, h6) {
-    @apply relative;
+    @apply relative scroll-mt-4;
 }
 
 .prose .heading-anchor {

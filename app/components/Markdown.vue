@@ -55,8 +55,9 @@ const tocBox = ref<HTMLDetailsElement | null>(null);
 const scrollContainer = ref<HTMLElement | null>(null);
 
 // Once the page is shown: mark the words from a search result (?highlight=)
-// and jump to the first one in the #section
-async function revealResult() {
+// and jump to the first one in the #section. A new page (fresh) whose section
+// or match is missing starts at the top, which Content.vue leaves to it.
+async function revealResult(fresh = false) {
   await nextTick();
   const root = contentEl.value;
   if (!root) return;
@@ -72,7 +73,8 @@ async function revealResult() {
   // A hit in a hidden tab or folded details: show it first
   const target = mark ?? anchor;
   if (target) reveal(target);
-  (mark ?? anchor)?.scrollIntoView({block: mark ? "center" : "start"});
+  if (target) target.scrollIntoView({block: mark ? "center" : "start"});
+  else if (fresh) scrollContainer.value?.scrollTo({top: 0});
 }
 
 // Components that need the browser: the reader's tabs, diagrams in the site's
@@ -120,9 +122,9 @@ onBeforeUnmount(unmountCells);
 onMounted(() => {
   scrollContainer.value = contentEl.value?.closest<HTMLElement>("#content") ?? null;
   drawComponents();
-  revealResult();
+  revealResult(true);
 });
-watch(() => [route.hash, route.query.highlight], revealResult);
+watch(() => [route.hash, route.query.highlight], () => revealResult());
 watch(() => doc.value?.html, () => nextTick(drawComponents));
 // Before the page's HTML is replaced
 watch(() => doc.value?.html, unmountCells, {flush: "pre"});

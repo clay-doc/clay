@@ -110,6 +110,19 @@ test.describe("in the browser", () => {
         await expect(page.locator(".prose mark.search-hit-active")).toHaveText("Alerts");
     });
 
+    test("links to a section of another page open it at that section", async ({page}) => {
+        await page.goto("configuration/");
+        await hydrated(page);
+        await page.locator(".prose a", {hasText: "Page order"}).click();
+        await expect(page).toHaveURL(/\/writing-documentation#page-order$/);
+        const heading = page.locator("h2#page-order");
+        // At the top of the pane: the scroll to a new page's top used to undo it
+        await expect.poll(() => heading.evaluate(el => el.getBoundingClientRect().top - document.querySelector("#content")!.getBoundingClientRect().top))
+            .toBeGreaterThanOrEqual(0);
+        await expect.poll(() => heading.evaluate(el => el.getBoundingClientRect().top - document.querySelector("#content")!.getBoundingClientRect().top))
+            .toBeLessThan(40);
+    });
+
     test("task lists show read-only checkboxes", async ({page}) => {
         await page.goto("reference/feature-tour/");
         await hydrated(page);
