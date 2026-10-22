@@ -41,6 +41,8 @@ export const nl: Messages = {
     copyCode: "Code kopiëren",
     copied: "Gekopieerd",
     copyFailed: "Kopiëren mislukt",
+    enlargeImage: "Afbeelding vergroten",
+    closeImage: "Afbeelding sluiten",
     alertNote: "Opmerking",
     alertTip: "Tip",
     alertImportant: "Belangrijk",

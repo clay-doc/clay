@@ -41,6 +41,8 @@ export const zh: Messages = {
     copyCode: "复制代码",
     copied: "已复制",
     copyFailed: "复制失败",
+    enlargeImage: "放大图片",
+    closeImage: "关闭图片",
     alertNote: "注意",
     alertTip: "提示",
     alertImportant: "重要",

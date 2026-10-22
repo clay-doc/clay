@@ -41,6 +41,8 @@ export const it: Messages = {
     copyCode: "Copia codice",
     copied: "Copiato",
     copyFailed: "Copia non riuscita",
+    enlargeImage: "Ingrandisci immagine",
+    closeImage: "Chiudi immagine",
     alertNote: "Nota",
     alertTip: "Suggerimento",
     alertImportant: "Importante",

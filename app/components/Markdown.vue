@@ -5,6 +5,7 @@ import PageFooter from "~/components/PageFooter.vue";
 import PageList from "~/components/PageList.vue";
 import PageActions from "~/components/PageActions.vue";
 import LinkPreview from "~/components/LinkPreview.vue";
+import ImageZoom from "~/components/ImageZoom.vue";
 import {clearHighlights, firstMarkInSection, highlightTerms} from "~/utils/highlight-dom";
 import {copyCodeBlock} from "~/utils/code-copy";
 import {remember, restoreTabs, reveal, selectLabel, selectTab, tabKeydown} from "~/utils/tabs";
@@ -199,6 +200,7 @@ function handleKeys(event: KeyboardEvent) {
         </details>
         <div ref="contentEl" v-html="doc.html" @click="handleClicks" @keydown="handleKeys" class="w-full"></div>
         <LinkPreview :root="contentEl" :here="url"/>
+        <ImageZoom :root="contentEl" :html="doc.html"/>
         <PageList v-if="doc.list"/>
         <PageFooter v-if="!start" :url="url"/>
       </template>

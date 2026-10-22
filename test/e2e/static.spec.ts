@@ -92,8 +92,30 @@ test.describe("in the browser", () => {
         await expect(links.filter({hasText: /^Security$/})).toHaveAttribute("href", "/clay/reference/security#forms");
         await expect(links.filter({hasText: "external"})).toHaveAttribute("target", "_blank");
         await expect(links.filter({hasText: "mail"})).toHaveAttribute("href", "mailto:team@example.com");
-        await expect(page.locator(".prose img")).toHaveAttribute("src", "/clay/docs/reference/img/diagram.svg");
-        expect(await page.locator(".prose img").evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth > 0)).toBe(true);
+        await expect(page.locator('.prose img[alt="Diagram"]')).toHaveAttribute("src", "/clay/docs/reference/img/diagram.svg");
+        expect(await page.locator('.prose img[alt="Diagram"]').evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth > 0)).toBe(true);
+    });
+
+    test("images shown smaller than they are open in full, by pointer and keyboard", async ({page}) => {
+        await page.goto("reference/feature-tour/");
+        const screenshot = page.locator('.prose img[alt="The playground in a wide window"]');
+        const zoom = page.locator("dialog.clay-zoom");
+        await expect(screenshot).toHaveAttribute("role", "button");
+        await expect(screenshot).toHaveAttribute("aria-label", "Enlarge image: The playground in a wide window");
+        // The diagram is no bigger than it is shown
+        await expect(page.locator('.prose img[alt="Diagram"]')).not.toHaveClass(/clay-zoomable/);
+
+        await screenshot.click();
+        await expect(zoom).toBeVisible();
+        await expect(zoom.locator("figcaption")).toHaveText("The playground in a wide window");
+        await page.keyboard.press("Escape");
+        await expect(zoom).toBeHidden();
+        await expect(screenshot).toBeFocused();
+
+        await page.keyboard.press("Enter");
+        await expect(zoom).toBeVisible();
+        await zoom.click({position: {x: 10, y: 10}});
+        await expect(zoom).toBeHidden();
     });
 
     test("search finds sections despite typos and highlights them on the page", async ({page}) => {

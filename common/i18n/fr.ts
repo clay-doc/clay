@@ -41,6 +41,8 @@ export const fr: Messages = {
     copyCode: "Copier le code",
     copied: "Copié",
     copyFailed: "Échec de la copie",
+    enlargeImage: "Agrandir l’image",
+    closeImage: "Fermer l’image",
     alertNote: "Remarque",
     alertTip: "Astuce",
     alertImportant: "Important",

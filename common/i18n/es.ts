@@ -41,6 +41,8 @@ export const es: Messages = {
     copyCode: "Copiar código",
     copied: "Copiado",
     copyFailed: "Error al copiar",
+    enlargeImage: "Ampliar imagen",
+    closeImage: "Cerrar imagen",
     alertNote: "Nota",
     alertTip: "Consejo",
     alertImportant: "Importante",

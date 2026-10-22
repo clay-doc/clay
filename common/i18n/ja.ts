@@ -41,6 +41,8 @@ export const ja: Messages = {
     copyCode: "コードをコピー",
     copied: "コピーしました",
     copyFailed: "コピーできませんでした",
+    enlargeImage: "画像を拡大",
+    closeImage: "画像を閉じる",
     alertNote: "注記",
     alertTip: "ヒント",
     alertImportant: "重要",

@@ -41,6 +41,8 @@ export const en = {
     copyCode: "Copy code",
     copied: "Copied",
     copyFailed: "Copy failed",
+    enlargeImage: "Enlarge image",
+    closeImage: "Close image",
     alertNote: "Note",
     alertTip: "Tip",
     alertImportant: "Important",

@@ -41,6 +41,8 @@ export const ru: Messages = {
     copyCode: "Копировать код",
     copied: "Скопировано",
     copyFailed: "Не удалось скопировать",
+    enlargeImage: "Увеличить изображение",
+    closeImage: "Закрыть изображение",
     alertNote: "Примечание",
     alertTip: "Совет",
     alertImportant: "Важно",

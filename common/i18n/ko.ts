@@ -41,6 +41,8 @@ export const ko: Messages = {
     copyCode: "코드 복사",
     copied: "복사됨",
     copyFailed: "복사 실패",
+    enlargeImage: "이미지 확대",
+    closeImage: "이미지 닫기",
     alertNote: "참고",
     alertTip: "팁",
     alertImportant: "중요",
