@@ -21,9 +21,3 @@ updates:
       # Newer Node.js types would allow APIs that the oldest supported Node.js lacks
       - dependency-name: "@types/node"
         update-types: ["version-update:semver-major"]
-      # Breaks Nitro's prerendering ("Invalid key"); unstorage is pinned to 1.17.5
-      - dependency-name: unstorage
-        versions: ["1.17.6"]
-      # jsdom 30 needs Node.js 22.22; Clay supports Node.js 20.19 and newer
-      - dependency-name: jsdom
-        update-types: ["version-update:semver-major"]

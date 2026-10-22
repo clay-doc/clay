@@ -318,7 +318,8 @@ describe("plain text of components", () => {
 describe("fields and endpoints", () => {
     it("show fields as name, type and flags, with their text and nested fields", async () => {
         const root = await dom("::: fields\n- `name` string **required** *read-only*\n\n  The pet's *name*.\n\n  - `first` string\n- `old` · integer · ~~deprecated~~\n- [Person](/person) *one of*\n:::");
-        const [name, old, person] = [...root.querySelectorAll(".clay-fields > .clay-field")];
+        // The top-level fields: nested ones are in a .clay-fields too
+        const [name, old, person] = [...root.querySelectorAll(".clay-fields:not(.clay-fields-nested) > .clay-field")];
         expect(name!.querySelector(".clay-field-name")?.textContent).toBe("name");
         expect(name!.querySelector(".clay-field-type")?.textContent).toBe("string");
         expect([...name!.querySelectorAll(".clay-field-flag")].map(f => [f.textContent, f.classList.contains("clay-field-required")])).toEqual([["required", true], ["read-only", false]]);

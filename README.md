@@ -38,7 +38,7 @@ site you can host anywhere, such as GitHub Pages. There is no theme to set up an
 
 ## Quick start
 
-In the repository that holds your docs (Node.js 20.19 or newer):
+In the repository that holds your docs (Node.js 22.22.3 or newer):
 
 ```bash
 npm install --save-dev clay-doc
